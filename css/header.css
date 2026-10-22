@@ -1,0 +1,216 @@
+/* Psicólogos Brasil — Faixa de cima, menu do topo, menu lateral do celular e botão flutuante de baixo. */
+
+@media (hover: hover) {
+  nav.top a:hover {
+    color: var(--ink);
+  }
+}
+header.site {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  gap: 16px;
+}
+
+.logo {
+  font:
+    700 1.4rem "Bricolage Grotesque",
+    serif;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo i {
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 8px;
+  background: var(--sea);
+  display: inline-block;
+}
+
+nav.top {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+nav.top a {
+  position: relative;
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+nav.top a::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--sea);
+  transform: scaleX(0);
+  transition: transform 0.24s var(--out);
+}
+
+nav.top a[aria-current="page"] {
+  color: var(--ink);
+}
+
+nav.top a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+header .btn {
+  white-space: nowrap;
+  padding: 11px 20px;
+  font-size: 0.92rem;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ann {
+  background: var(--sea);
+  color: var(--on-sea);
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 9px 16px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ann a {
+  font-weight: 700;
+  margin-left: 10px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+/* ===== Logo: troque o arquivo assets/imagens/logo.svg ===== */
+.logo-img { display: block; width: auto; height: 36px; max-width: 160px; object-fit: contain; }
+.logo span { white-space: nowrap; }
+
+/* ===== Menu do topo (computador) ===== */
+nav.top { gap: 2px; }
+nav.top a { padding: 10px 10px; font-size: 0.82rem; letter-spacing: 0.04em; }
+nav.top a::after { left: 10px; right: 10px; }
+.right .btn[aria-current="page"] { background: var(--sea-d); }
+
+.menu-btn {
+  display: none; place-items: center; width: 42px; height: 42px; flex: none; padding: 0;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+@media (max-width: 1180px) {
+  nav.top { display: none; }
+  .menu-btn { display: grid; }
+}
+
+/* ===== Cabeçalho fixo só no computador; no celular ele rola junto com a página ===== */
+@media (max-width: 760px) {
+  header.site { position: static; }
+  header .right .btn { display: none; }
+}
+@media (max-width: 480px) {
+  .logo { font-size: 1.2rem; }
+}
+
+/* ===== Menu lateral (abre pela direita, como no celular da Telavita) ===== */
+html.menu-open { overflow: hidden; }
+.scrim {
+  position: fixed; inset: 0; z-index: 40; background: rgba(10, 18, 60, 0.5);
+  opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0s 0.25s;
+}
+.scrim.show { opacity: 1; visibility: visible; transition: opacity 0.25s ease; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 50;
+  width: min(88vw, 380px); display: flex; flex-direction: column;
+  background: var(--surface); box-shadow: -24px 0 48px -24px rgba(10, 18, 60, 0.45);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateX(100%); visibility: hidden;
+  transition: transform 0.3s var(--out), visibility 0s 0.3s;
+}
+.drawer.open { transform: none; visibility: visible; transition: transform 0.3s var(--out); }
+.drawer-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 14px; border-bottom: 1px solid var(--line);
+}
+.drawer-close {
+  display: grid; place-items: center; width: 42px; height: 42px; padding: 0; flex: none;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.drawer-nav { flex: 1; overflow-y: auto; padding: 8px 20px; }
+.drawer-nav a {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 17px 0; border-bottom: 1px solid var(--line); text-decoration: none; font-weight: 600; font-size: 1.08rem;
+}
+.drawer-nav a svg { color: var(--muted); flex: none; }
+.drawer-nav a[aria-current="page"] { color: var(--sea); }
+.drawer-cta { display: grid; gap: 10px; padding: 16px 20px 20px; border-top: 1px solid var(--line); }
+.drawer-cta .btn { width: 100%; }
+@media (min-width: 1181px) { .drawer, .scrim { display: none; } }
+
+/* ===== Botão flutuante de baixo (celular): some ao rolar para baixo, volta ao parar ou subir ===== */
+.fab-bar { display: none; }
+@media (max-width: 760px) {
+  .fab-bar {
+    display: flex; gap: 10px; position: fixed; left: 16px; right: 16px; z-index: 30;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.55s ease;
+  }
+  .fab-bar.is-hidden { transform: translateY(calc(100% + 40px)); opacity: 0; pointer-events: none; }
+  .fab-main {
+    flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 22px;
+    border-radius: 999px; background: var(--sea); color: var(--on-sea); text-decoration: none;
+    font: 700 0.98rem Figtree, sans-serif; box-shadow: 0 12px 26px -10px rgba(31, 53, 181, 0.7);
+  }
+  .fab-psi {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 50px; padding: 0 18px;
+    border-radius: 999px; background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+    text-decoration: none; font: 700 0.98rem Figtree, sans-serif; box-shadow: var(--sh); white-space: nowrap;
+  }
+  .fab-main:active, .fab-psi:active { transform: scale(0.97); }
+  /* bolinha verde piscando (online) */
+  .fab-dot { position: relative; width: 10px; height: 10px; flex: none; border-radius: 50%; background: #22c55e; }
+  .fab-dot::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; background: #22c55e;
+    animation: online 1.8s ease-out infinite;
+  }
+  html.menu-open .fab-bar, .pg-agendamento .fab-bar { display: none; }
+}
+@keyframes online {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fab-bar, .drawer, .scrim { transition: none; }
+  .fab-dot::after { animation: none; }
+}
+
+/* Faixa de cima: texto curto no celular (uma linha só) */
+.ann .ann-short { display: none; }
+@media (max-width: 600px) {
+  .ann .ann-full { display: none; }
+  .ann .ann-short { display: inline; }
+  .ann a { margin-left: 6px; }
+}
