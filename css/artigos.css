@@ -1,0 +1,54 @@
+/* Psicólogos Brasil — Página Artigos (artigos.html). */
+
+.arts {
+  display: grid;
+  gap: 16px;
+  max-width: none; /* mesma largura do conteúdo da home (1120px) */
+}
+
+details.post {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--sh);
+}
+
+details.post summary {
+  align-items: flex-start;
+  font-weight: 400;
+}
+
+details.post summary div {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+details.post h2 {
+  font-size: 1.45rem;
+}
+
+details.post summary p {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+details.post .body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  max-width: 72ch; /* o texto do artigo continua com linhas confortáveis de ler */
+}
+
+details.post .body p {
+  color: var(--ink);
+  margin: 0;
+}
+
+details.post .body .btn {
+  justify-self: start;
+  margin-top: 6px;
+}
