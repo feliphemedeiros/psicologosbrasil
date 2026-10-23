@@ -1,0 +1,2668 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel · Psicólogos Brasil</title>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nuvem.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --sea:#1f35b5; --sea-2:#162895; --sea-claro:#eef1fc;
+  --bg:#f4f6fb; --card:#ffffff; --linha:#e3e7f0; --texto:#1b2133; --suave:#667085;
+  --ok:#12805c; --ok-bg:#e7f6ef; --aviso:#9a6700; --aviso-bg:#fff6dd; --erro:#b42318; --erro-bg:#fdecea;
+  --raio:12px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--texto);font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+/* Lateral */
+.lado{background:#0f1a5c;color:#dfe4ff;padding:22px 16px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+.marca{display:flex;align-items:center;gap:10px;padding:0 6px}
+.marca-ico{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--sea);display:grid;place-items:center;font-weight:700}
+.marca b{display:block;color:#fff;font-size:15px}
+.marca span{font-size:12px;opacity:.7}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;display:flex;gap:10px;align-items:center;font-weight:500}
+.nav button:hover{background:rgba(255,255,255,.08)}
+.nav button.ativo{background:#fff;color:var(--sea)}
+.nav .qtd{margin-left:auto;font-size:12px;opacity:.7}
+.pasta-box{margin-top:auto;background:rgba(255,255,255,.07);border-radius:12px;padding:14px}
+.pasta-box .rot{font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.7}
+.pasta-nome{font-weight:600;color:#fff;margin:4px 0 10px;word-break:break-all}
+.pasta-nome.off{color:#ffcf6b}
+.pasta-box .dica{font-size:12px;opacity:.7;margin:10px 0 0;line-height:1.4}
+
+/* Conteúdo */
+.conteudo{padding:26px 30px 60px;min-width:0}
+.view{display:none}
+.view.ativa{display:block}
+.topbar{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.topbar h1{margin:0;font-size:24px}
+.sub{margin:4px 0 0;color:var(--suave)}
+.duas{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+
+/* Botões */
+.btn{border:1px solid var(--linha);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:#c9d0e0}
+a.btn{text-decoration:none;color:var(--texto)}
+.btn.primario{background:var(--sea);border-color:var(--sea);color:#fff}
+.btn.primario:hover{background:var(--sea-2)}
+.btn.perigo{color:var(--erro)}
+.btn.perigo:hover{background:var(--erro-bg);border-color:#f3c3be}
+.btn.pequeno{padding:7px 12px;font-size:13px}
+.lado .btn{width:100%;justify-content:center;background:#fff;color:var(--sea);border:0}
+
+/* Lista */
+.lista{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 140px);overflow:auto;padding-right:2px}
+.item{all:unset;cursor:pointer;background:#fff;border:1px solid var(--linha);border-radius:var(--raio);padding:12px 14px;display:flex;gap:12px;align-items:center}
+.item:hover{border-color:#c9d0e0}
+.item.sel{border-color:var(--sea);box-shadow:0 0 0 3px var(--sea-claro)}
+.item img,.item .ph{width:46px;height:46px;border-radius:9px;object-fit:cover;flex:none;background:var(--sea-claro);display:grid;place-items:center;color:var(--sea);font-weight:700}
+.item .t{font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item .m{font-size:12px;color:var(--suave);margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.vazio-lista{background:#fff;border:1px dashed #cdd4e3;border-radius:var(--raio);padding:20px;color:var(--suave);text-align:center;font-size:14px}
+.selo{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+.selo.rasc{background:#eef0f4;color:#4b5565}
+.selo.ok{background:var(--ok-bg);color:var(--ok)}
+.selo.alt{background:var(--aviso-bg);color:var(--aviso)}
+
+/* Editor */
+.cartao{background:#fff;border:1px solid var(--linha);border-radius:16px}
+.ed-vazio{padding:60px 20px;text-align:center;color:var(--suave)}
+.ed-vazio h2{color:var(--texto);margin:0 0 6px}
+.abas{display:flex;gap:4px;padding:10px 12px 0;border-bottom:1px solid var(--linha)}
+.abas button{all:unset;cursor:pointer;padding:10px 14px;border-bottom:2px solid transparent;font-weight:600;color:var(--suave)}
+.abas button.ativo{color:var(--sea);border-color:var(--sea)}
+.aba-painel{display:none;padding:20px}
+.aba-painel.ativo{display:block}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo.cheio{grid-column:1/-1}
+.campo label{font-weight:600;font-size:13px}
+.campo .aj{font-size:12px;color:var(--suave);font-weight:400}
+input[type=text],input[type=date],input[type=url],input[type=number],select,textarea{border:1px solid var(--linha);border-radius:10px;padding:10px 12px;background:#fff;width:100%}
+input:focus,select:focus,textarea:focus,.editor:focus{outline:none;border-color:var(--sea);box-shadow:0 0 0 3px var(--sea-claro)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+textarea.codigo{font-family:ui-monospace,Consolas,monospace;font-size:13px;min-height:160px}
+.contador{font-size:12px;color:var(--suave);text-align:right}
+.contador.ruim{color:var(--erro)}
+.contador.bom{color:var(--ok)}
+.slug-pre{display:flex;align-items:center;border:1px solid var(--linha);border-radius:10px;overflow:hidden;background:#f8f9fc}
+.slug-pre span{padding:0 4px 0 12px;color:var(--suave);font-size:13px;white-space:nowrap}
+.slug-pre input{border:0;border-radius:0;background:#fff}
+
+.imagem-campo{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.imagem-prev{width:160px;aspect-ratio:16/9;border-radius:10px;background:var(--sea-claro) center/cover no-repeat;border:1px solid var(--linha);display:grid;place-items:center;color:var(--sea);font-size:12px;text-align:center}
+.imagem-prev.quad{width:110px;aspect-ratio:1}
+.imagem-prev.retrato{width:112px;aspect-ratio:4/5}
+.imagem-acoes{display:flex;flex-direction:column;gap:8px;flex:1;min-width:200px}
+
+.ferramentas{display:flex;flex-wrap:wrap;gap:4px;padding:8px;border:1px solid var(--linha);border-bottom:0;border-radius:10px 10px 0 0;background:#f8f9fc;position:sticky;top:0;z-index:2}
+.ferramentas button{all:unset;cursor:pointer;padding:6px 10px;border-radius:7px;font-size:13px;font-weight:600}
+.ferramentas button:hover{background:#e8ecf6}
+.ferramentas .sep{width:1px;background:var(--linha);margin:2px 4px}
+.editor{border:1px solid var(--linha);border-radius:0 0 10px 10px;min-height:340px;padding:18px 20px;line-height:1.7;font-size:16px}
+.editor h2{font-size:22px;margin:1.2em 0 .4em}
+.editor h3{font-size:18px;margin:1em 0 .3em}
+.editor p{margin:0 0 .8em}
+.editor img{max-width:100%;height:auto;border-radius:8px;display:block;margin:10px 0}
+.editor blockquote{border-left:4px solid var(--sea);margin:1em 0;padding:.2em 0 .2em 1em;color:#475467;font-style:italic}
+.editor a{color:var(--sea)}
+
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:500;font-size:13px}
+.checks input{accent-color:var(--sea)}
+.checks label:has(input:checked){background:var(--sea-claro);border-color:var(--sea);color:var(--sea)}
+.linha-check{display:flex;align-items:center;gap:8px;font-weight:500}
+.linha-check input{accent-color:var(--sea);width:18px;height:18px}
+
+.previa-frame{width:100%;height:70vh;border:1px solid var(--linha);border-radius:10px;background:#fff}
+.disp{display:flex;gap:6px;margin-bottom:10px}
+.html-saida{min-height:60vh}
+
+.rodape-ed{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-top:1px solid var(--linha);flex-wrap:wrap;background:#fbfcfe;border-radius:0 0 16px 16px}
+.rodape-ed .info{font-size:13px;color:var(--suave)}
+.rodape-ed .acoes{display:flex;gap:8px;flex-wrap:wrap}
+
+.cfg-grupo{padding:20px;border-bottom:1px solid var(--linha)}
+.cfg-grupo:last-child{border-bottom:0}
+.cfg-grupo h2{font-size:16px;margin:0 0 4px}
+.cfg-grupo > p{margin:0 0 14px;color:var(--suave);font-size:13px}
+.botoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.seo-box{border:1px solid var(--linha);border-radius:14px;padding:16px;background:#fbfcfe;display:flex;flex-direction:column;gap:14px}
+.seo-topo{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.seo-topo b{font-size:15px}
+.seo-nota{font-weight:700;font-size:13px;padding:5px 12px;border-radius:999px;background:#eef0f4;color:#4b5565}
+.seo-nota.bom,.selo.seo-bom{background:var(--ok-bg);color:var(--ok)}
+.seo-nota.medio,.selo.seo-medio{background:var(--aviso-bg);color:var(--aviso)}
+.seo-nota.ruim,.selo.seo-ruim{background:var(--erro-bg);color:var(--erro)}
+.snippet{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;font-family:Arial,Helvetica,sans-serif}
+.sn-url{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.sn-ico{width:28px;height:28px;border-radius:50%;background:var(--sea-claro);color:var(--sea);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}
+.sn-site{font-size:14px;color:#202124}
+.sn-link{font-size:12px;color:#4d5156;word-break:break-all}
+.sn-titulo{color:#1a0dab;font-size:20px;line-height:1.3;margin-bottom:4px}
+.sn-desc{color:#4d5156;font-size:14px;line-height:1.58}
+.sn-desc.vazio{color:#98a2b3;font-style:italic}
+.seo-rot{font-weight:600;font-size:13px;display:block;margin-bottom:6px}
+.seo-rot .aj{font-size:12px;color:var(--suave);font-weight:400}
+.tags{display:flex;flex-wrap:wrap;gap:6px;border:1px solid var(--linha);border-radius:10px;padding:8px;background:#fff;cursor:text}
+.tags:focus-within{border-color:var(--sea);box-shadow:0 0 0 3px var(--sea-claro)}
+.tags input{border:0;flex:1;min-width:150px;padding:5px 6px;outline:none;background:transparent}
+.tags input:focus{box-shadow:none}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--sea-claro);color:var(--sea);border-radius:999px;padding:4px 12px 4px 4px;font-size:13px;font-weight:600;cursor:pointer;user-select:none}
+.tag.principal{background:var(--sea);color:#fff}
+.tag-x{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:15px;line-height:1}
+.tag-x:hover{background:rgba(0,0,0,.12)}
+.seo-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:13px}
+.seo-checks li{display:flex;gap:8px;align-items:flex-start;line-height:1.4}
+.seo-checks .i{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px}
+.seo-checks .ok .i{background:var(--ok)}
+.seo-checks .no .i{background:var(--erro)}
+.seo-checks .no{color:#344054}
+/* ===== Editor de blocos (estilo Gutenberg) ===== */
+.ed-barra{display:flex;align-items:center;flex-wrap:wrap;gap:4px;min-height:56px;padding:8px 10px;border:1px solid var(--linha);border-bottom:0;border-radius:10px 10px 0 0;background:#fff;position:sticky;top:0;z-index:8}
+.ed-barra > button{all:unset;cursor:pointer;width:34px;height:34px;border-radius:6px;display:grid;place-items:center;color:#1e1e1e}
+.ed-barra > button:hover{background:#f0f0f0}
+.ed-barra .eb-add{background:#1e1e1e;color:#fff}
+.ed-barra .eb-add:hover{background:var(--sea)}
+.eb-dica{margin-left:auto;font-size:12px;color:var(--suave)}
+kbd{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:#f2f4f7;border:1px solid #d0d5dd;border-bottom-width:2px;border-radius:4px;padding:0 5px}
+.ed-wrap{position:relative}
+.ed-wrap .editor{border-radius:0 0 10px 10px;padding:28px 32px 80px;min-height:420px}
+.editor > *{position:relative}
+.editor .b-vazio::before{content:'Digite / para escolher um bloco';position:absolute;left:0;top:0;color:#98a2b3;pointer-events:none;white-space:nowrap}
+.editor .centro{text-align:center}
+.editor .centro img{margin-left:auto;margin-right:auto}
+.editor h4{font-size:16px;margin:1em 0 .3em}
+.editor ul,.editor ol{padding-left:1.4em;margin:0 0 .8em}
+.editor hr{border:0;border-top:2px solid #d0d5dd;margin:28px auto;width:40%;cursor:pointer;height:0}
+.editor code{background:#f1f3f8;padding:.1em .35em;border-radius:5px;font-size:.92em;font-family:ui-monospace,Consolas,monospace}
+.editor .botao{text-align:center;margin:1em 0}
+.editor .botao a{display:inline-block;background:var(--sea);color:#fff;padding:11px 24px;border-radius:999px;text-decoration:none;font-weight:600}
+.editor > hr.b-sel,.editor > p.b-sel:has(> img),.editor > .botao.b-sel{outline:2px solid var(--sea);outline-offset:6px;border-radius:4px}
+.ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block}
+.ico svg.cheio{fill:currentColor;stroke:none}
+.bt{display:flex;align-items:center;gap:1px;white-space:nowrap;margin-left:6px;padding-left:8px;border-left:1px solid #e0e0e0;overflow-x:auto;max-width:100%}
+.bt button{all:unset;cursor:pointer;min-width:36px;height:36px;display:grid;place-items:center;border-radius:3px;color:#1e1e1e;font-size:14px;font-weight:600;padding:0 5px;box-sizing:border-box}
+.bt button:hover{background:#f0f0f0;color:var(--sea)}
+.bt .bt-tipo{min-width:44px;font-size:13px}
+.bt-mover{display:flex;flex-direction:column}
+.bt-mover button{height:19px;min-width:26px;padding:0}
+.bt-mover svg{width:16px;height:16px}
+.bt-sep{width:1px;align-self:stretch;background:#e0e0e0;margin:0 4px}
+.ins{all:unset;position:absolute;z-index:7;width:28px;height:28px;border-radius:4px;background:#1e1e1e;color:#fff;display:grid;place-items:center;cursor:pointer}
+.ins:hover{background:var(--sea)}
+.ins svg{width:18px;height:18px}
+.menu-blocos{position:absolute;z-index:10;width:310px;max-width:calc(100% - 12px);background:#fff;border:1px solid #1e1e1e;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:8px}
+.menu-blocos input{margin-bottom:6px}
+.mb-lista{max-height:320px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.mb-lista button{all:unset;cursor:pointer;display:flex;gap:12px;align-items:center;padding:8px;border-radius:4px;box-sizing:border-box}
+.mb-lista button.ativo,.mb-lista button:hover{background:var(--sea-claro)}
+.mb-ico{width:34px;height:34px;border-radius:6px;background:#f2f4f7;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.mb-lista b{display:block;font-size:14px}
+.mb-lista small{display:block;color:var(--suave);font-size:12px}
+.mb-vazio{margin:10px;color:var(--suave);font-size:13px}
+.pop{position:absolute;z-index:11;top:calc(100% + 4px);min-width:220px;background:#fff;border:1px solid #1e1e1e;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px}
+.pop button{all:unset;cursor:pointer;display:flex;gap:10px;align-items:center;width:100%;box-sizing:border-box;padding:9px 10px;border-radius:3px;font-size:14px}
+.pop button:hover{background:#f0f0f0}
+.pop button.on{color:var(--sea);font-weight:700}
+.pop button.perigo{color:var(--erro)}
+.pop hr{border:0;border-top:1px solid #eee;margin:4px 0}
+.pop-ico{width:22px;display:grid;place-items:center;font-size:13px}
+.pop-ico svg{width:18px;height:18px}
+.schema-intro{margin:0;color:var(--suave);font-size:13px;line-height:1.5}
+.faq-item{border:1px solid var(--linha);border-radius:10px;background:#fff;padding:10px;display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.faq-cab{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--suave)}
+.faq-cab .btn{padding:4px 10px;font-size:12px}
+.faq-vazio{margin:0;color:var(--suave);font-size:13px}
+.schema-ver summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--sea)}
+.schema-ver textarea{margin-top:8px;min-height:260px}
+.verif-box{border:1px solid var(--linha);border-radius:12px;padding:14px 16px;background:#fbfcfe;display:flex;flex-direction:column;gap:8px}
+.verif-box.on{border-color:var(--sea);background:var(--sea-claro)}
+.verif-box p{margin:0;font-size:13px;color:var(--suave);line-height:1.5}
+.verif-box a{color:var(--sea)}
+.verif-data{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.verif-data input{width:auto}
+.selo-ok{display:inline-block;width:18px;height:18px;flex:none;color:var(--sea);vertical-align:-3px}
+.item .selo-ok{width:15px;height:15px}
+.sec-sep{border-top:1px solid var(--linha);padding-top:16px;margin-top:6px}
+.sec-sep b{font-size:15px}
+.sec-sep .aj{font-size:12px;color:var(--suave)}
+.checks-temas{max-height:260px;overflow:auto;padding:4px 2px}
+.passos-ed{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.passos-ed > div{border:1px solid var(--linha);border-radius:10px;padding:10px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.passos-ed span{font-size:12px;font-weight:700;color:var(--sea)}
+.passos-ed textarea{min-height:90px}
+@media (max-width:900px){.passos-ed{grid-template-columns:1fr}}
+#toast{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:50;max-width:min(420px,calc(100vw - 40px))}
+.toast{background:#101828;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-size:14px;line-height:1.45;animation:entra .2s ease-out}
+.toast.ok{background:var(--ok)}
+.toast.erro{background:var(--erro)}
+.toast.aviso{background:#7a5200}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}}
+
+@media (max-width:1000px){
+  .duas{grid-template-columns:1fr}
+  .lista{max-height:none;flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .item{min-width:240px}
+}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  .lado{position:static;height:auto;padding:14px}
+  .nav{flex-direction:row;overflow-x:auto}
+  .pasta-box{margin-top:0}
+  .conteudo{padding:18px 16px 60px}
+  .grade{grid-template-columns:1fr}
+}
+
+/* ===== Painel online: login e status ===== */
+body:not(.logado) .app{display:none}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(160deg,#0f1a5c 0%,#1f35b5 100%)}
+.login-card{width:min(400px,100%);background:#fff;border-radius:20px;padding:32px 28px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:14px}
+.login-card .marca-ico{background:var(--sea);color:#fff;width:44px;height:44px;border-radius:12px;font-size:16px}
+.login-card h1{margin:4px 0 0;font-size:22px}
+.login-card p{margin:0}
+.login-sub{color:var(--suave);font-size:14px}
+.login-card label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px}
+.login-card input{border:1px solid var(--linha);border-radius:10px;padding:12px 14px;font-weight:400}
+.login-card input:focus{outline:2px solid var(--sea);outline-offset:1px;border-color:transparent}
+.login-card .btn{justify-content:center;padding:12px}
+.login-erro{color:var(--erro);font-size:14px;min-height:1.2em}
+.login-erro:empty{min-height:0}
+.login-esq{align-self:flex-start;background:none;border:0;padding:0;color:var(--sea);font-size:13px;cursor:pointer;text-decoration:underline}
+.login-modo{font-size:12.5px;color:var(--suave);text-align:center;border-top:1px solid var(--linha);padding-top:12px}
+.nuvem-status{font-size:12px;margin:0 0 10px;opacity:.85}
+.nuvem-status.ok{color:#8ff0c4}
+.nuvem-status.erro{color:#ffb4a8;opacity:1}
+.btn[disabled]{opacity:.6;cursor:wait}
+</style>
+</head>
+<body>
+<!-- ============ LOGIN ============ -->
+<div class="login" id="login">
+  <form class="login-card" id="loginForm" autocomplete="on">
+    <div class="marca-ico">PB</div>
+    <div><h1>Painel Psicólogos Brasil</h1><p class="login-sub">Entre para publicar artigos e psicólogos.</p></div>
+    <label><span id="loginUsuarioRot">Usuário</span><input id="loginUsuario" name="usuario" type="text" autocomplete="username" required></label>
+    <label>Senha<input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></label>
+    <p class="login-erro" id="loginErro" role="alert"></p>
+    <button class="btn primario" type="submit" id="loginBtn">Entrar</button>
+    <button class="login-esq" type="button" id="loginEsqueci" hidden>Esqueci a senha</button>
+    <p class="login-modo" id="loginModo">Carregando…</p>
+  </form>
+</div>
+<div class="app">
+  <aside class="lado">
+    <div class="marca">
+      <div class="marca-ico">PB</div>
+      <div><b>Psicólogos Brasil</b><span>Painel de conteúdo</span></div>
+    </div>
+    <nav class="nav">
+      <button data-view="artigos" class="ativo">📝 Artigos <span class="qtd" id="qtdArtigos">0</span></button>
+      <button data-view="psicologos">👤 Psicólogos <span class="qtd" id="qtdPsicologos">0</span></button>
+      <button data-view="config">⚙️ Configurações</button>
+    </nav>
+    <div class="pasta-box">
+      <div class="rot">Pasta do site</div>
+      <div class="pasta-nome off" id="pastaNome">Não conectada</div>
+      <button class="btn pequeno" id="btnPasta">Conectar pasta</button>
+      <p class="dica" id="pastaDica">Escolha a pasta principal do site (onde fica o index.html). Assim o painel salva as páginas direto nela.</p>
+    </div>
+  </aside>
+
+  <main class="conteudo">
+    <!-- ================= ARTIGOS ================= -->
+    <section class="view ativa" id="view-artigos">
+      <header class="topbar">
+        <div>
+          <h1>Artigos</h1>
+          <p class="sub">Escreva, confira a prévia e gere a página pronta com SEO.</p>
+        </div>
+        <button class="btn primario" id="novoArtigo">+ Novo artigo</button>
+      </header>
+      <div class="duas">
+        <div class="lista" id="listaArtigos"></div>
+        <div class="cartao">
+          <div class="ed-vazio" id="artigoVazio">
+            <h2>Nenhum artigo aberto</h2>
+            <p>Clique em “+ Novo artigo” ou escolha um da lista.</p>
+          </div>
+          <div id="artigoEd" hidden>
+            <div class="abas" data-tipo="artigo">
+              <button data-aba="editar" class="ativo">Escrever</button>
+              <button data-aba="previa">Prévia</button>
+              <button data-aba="html">Código HTML</button>
+            </div>
+            <div class="aba-painel ativo" data-aba="editar">
+              <div class="grade">
+                <div class="campo cheio">
+                  <label for="a-titulo">Título do artigo</label>
+                  <input type="text" id="a-titulo" placeholder="Ex.: Síndrome da Cabana: por que algumas pessoas têm medo de sair de casa?">
+                </div>
+                <div class="campo cheio">
+                  <label for="a-slug">Link do artigo <span class="aj">— gerado pelo título, pode editar</span></label>
+                  <div class="slug-pre"><span id="a-dominio">psicologosbrasil.com.br/</span><input type="text" id="a-slug" placeholder="sindrome-da-cabana"></div>
+                </div>
+                <div class="campo">
+                  <label for="a-categoria">Categoria</label>
+                  <select id="a-categoria"></select>
+                </div>
+                <div class="campo">
+                  <label for="a-data">Data de publicação</label>
+                  <input type="date" id="a-data">
+                </div>
+                <div class="campo">
+                  <label for="a-autor">Autor / revisado por</label>
+                  <input type="text" id="a-autor">
+                </div>
+                <div class="campo">
+                  <label for="a-tituloSeo">Título para o Google <span class="aj">— opcional</span></label>
+                  <input type="text" id="a-tituloSeo" placeholder="Se ficar vazio, usa o título">
+                  <div class="contador" id="a-tituloSeo-c"></div>
+                </div>
+                <div class="campo cheio">
+                  <label for="a-descricao">Resumo para o Google <span class="aj">— aparece embaixo do título na busca</span></label>
+                  <textarea id="a-descricao" rows="2" placeholder="Uma ou duas frases que fazem a pessoa querer clicar."></textarea>
+                  <div class="contador" id="a-descricao-c"></div>
+                </div>
+                <div class="campo cheio">
+                  <div class="seo-box">
+                    <div class="seo-topo"><b>SEO do artigo</b><span class="seo-nota" id="a-seo-nota">0 / 100</span></div>
+                    <div>
+                      <span class="seo-rot">Como aparece no Google</span>
+                      <div class="snippet">
+                        <div class="sn-url"><span class="sn-ico">PB</span><div><div class="sn-site">Psicólogos Brasil</div><div class="sn-link" id="sn-link"></div></div></div>
+                        <div class="sn-titulo" id="sn-titulo"></div>
+                        <div class="sn-desc" id="sn-desc"></div>
+                      </div>
+                      <div class="botoes" style="margin-top:10px"><button class="btn pequeno" type="button" id="a-snippet-editar">Editar título e resumo do Google</button></div>
+                    </div>
+                    <div>
+                      <span class="seo-rot">Palavras-chave <span class="aj">— digite e aperte Enter. A primeira (★) é a principal; clique em outra para torná-la principal.</span></span>
+                      <div class="tags" id="a-tags"><input id="a-tag-input" placeholder="Ex.: ansiedade" aria-label="Adicionar palavra-chave"></div>
+                    </div>
+                    <div>
+                      <span class="seo-rot">Análise</span>
+                      <ul class="seo-checks" id="a-checks"></ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="seo-box">
+                    <div class="seo-topo"><b>Schema (dados estruturados)</b><span class="seo-nota bom" id="a-schema-status">BlogPosting</span></div>
+                    <p class="schema-intro">O schema do artigo (título, autor, data, imagem) e a trilha Início › Artigos já são criados automaticamente. Aqui você acrescenta mais.</p>
+                    <div>
+                      <span class="seo-rot">Perguntas frequentes (FAQ) <span class="aj">— aparecem no fim do artigo e viram schema FAQPage</span></span>
+                      <div id="a-faq"></div>
+                      <div class="botoes" style="margin-top:8px"><button type="button" class="btn pequeno" id="a-faq-add">+ Adicionar pergunta</button></div>
+                    </div>
+                    <div>
+                      <span class="seo-rot">Schema personalizado (JSON-LD) <span class="aj">— cole o código; pode ser com ou sem a tag &lt;script&gt;, um ou vários</span></span>
+                      <textarea class="codigo" id="a-schema" spellcheck="false" placeholder='{&#10;  "@context": "https://schema.org",&#10;  "@type": "HowTo",&#10;  "name": "..."&#10;}'></textarea>
+                      <div class="contador" id="a-schema-c" style="text-align:left"></div>
+                    </div>
+                    <details id="a-schema-ver" class="schema-ver">
+                      <summary>Ver o schema completo que vai na página</summary>
+                      <textarea class="codigo" id="a-schema-final" readonly spellcheck="false"></textarea>
+                    </details>
+                    <div class="botoes" style="margin-top:0">
+                      <button type="button" class="btn pequeno" id="a-schema-copiar">Copiar schema completo</button>
+                      <a class="btn pequeno" href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Testar no Google ↗</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <label>Imagem de capa</label>
+                  <div class="imagem-campo">
+                    <div class="imagem-prev" id="a-capa-prev">Sem imagem</div>
+                    <div class="imagem-acoes">
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="btn pequeno" type="button" id="a-capa-btn">Escolher imagem</button>
+                        <button class="btn pequeno perigo" type="button" id="a-capa-rem">Remover</button>
+                      </div>
+                      <input type="text" id="a-capa-alt" placeholder="Descreva a imagem (ajuda no Google e na acessibilidade)">
+                      <input type="file" id="a-capa-file" accept="image/*" hidden>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <label>Texto do artigo <span class="aj">— editor de blocos, como no WordPress. Pode colar do Word ou Google Docs.</span></label>
+                  <div>
+                    <div class="ed-barra">
+                      <button type="button" class="eb-add ico" id="eb-add" title="Adicionar bloco" data-ico="mais"></button>
+                      <button type="button" class="ico" id="eb-desfazer" title="Desfazer (Ctrl+Z)" data-ico="desfazer"></button>
+                      <button type="button" class="ico" id="eb-refazer" title="Refazer (Ctrl+Y)" data-ico="refazer"></button>
+                      <div class="bt" id="a-bt" hidden>
+                        <button type="button" class="bt-tipo" data-bt="tipo" title="Mudar tipo de bloco"><span id="a-bt-tipo">¶</span></button>
+                        <span class="bt-mover"><button type="button" class="ico" data-bt="cima" data-ico="cima" title="Mover para cima"></button><button type="button" class="ico" data-bt="baixo" data-ico="baixo" title="Mover para baixo"></button></span>
+                        <span class="bt-sep" data-para="p h2 h3 h4 blockquote img botao"></span>
+                        <button type="button" class="ico" id="a-bt-alinhar" data-bt="alinhar" title="Alinhamento" data-para="p h2 h3 h4 blockquote img botao"></button>
+                        <span class="bt-sep" data-para="p h2 h3 h4 ul ol blockquote img botao"></span>
+                        <button type="button" data-bt="bold" title="Negrito (Ctrl+B)" data-para="p h2 h3 h4 ul ol blockquote"><b style="font-size:16px">B</b></button>
+                        <button type="button" data-bt="italic" title="Itálico (Ctrl+I)" data-para="p h2 h3 h4 ul ol blockquote"><i style="font-size:16px;font-family:Georgia,serif">I</i></button>
+                        <button type="button" class="ico" data-bt="link" data-ico="link" title="Link" data-para="p h2 h3 h4 ul ol blockquote botao"></button>
+                        <button type="button" class="ico" data-bt="mais" data-ico="seta" title="Mais formatação" data-para="p h2 h3 h4 ul ol blockquote"></button>
+                        <button type="button" data-bt="alt" title="Descrição da imagem" data-para="img">Texto alt</button>
+                        <span class="bt-sep"></span>
+                        <button type="button" class="ico" data-bt="opcoes" data-ico="pontos" title="Opções"></button>
+                      </div>
+                      <div class="pop" id="a-pop" hidden></div>
+                      <span class="eb-dica" id="eb-dica">Digite <kbd>/</kbd> numa linha vazia para escolher um bloco</span>
+                    </div>
+                    <div class="ed-wrap" id="a-ed-wrap">
+                      <div class="editor" id="a-texto" contenteditable="true"></div>
+                      <button type="button" class="ins ico" id="a-ins" data-ico="mais" title="Adicionar bloco" hidden></button>
+                      <div class="menu-blocos" id="a-menu" hidden>
+                        <input type="text" id="a-menu-busca" placeholder="Procurar um bloco…">
+                        <div class="mb-lista" id="a-menu-lista"></div>
+                      </div>
+                    </div>
+                    <input type="file" id="a-img-file" accept="image/*" hidden>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="aba-painel" data-aba="previa">
+              <div class="disp">
+                <button class="btn pequeno" data-larg="100%">🖥 Computador</button>
+                <button class="btn pequeno" data-larg="390px">📱 Celular</button>
+              </div>
+              <iframe class="previa-frame" id="a-previa" sandbox="allow-same-origin" title="Prévia do artigo"></iframe>
+            </div>
+            <div class="aba-painel" data-aba="html">
+              <p class="sub" style="margin:0 0 10px">Este é o arquivo <b id="a-html-caminho"></b> completo. Você normalmente não precisa mexer aqui: o botão “Salvar” já cria tudo.</p>
+              <textarea class="codigo html-saida" id="a-html" readonly></textarea>
+              <div class="botoes"><button class="btn pequeno" id="a-copiar">Copiar HTML</button></div>
+            </div>
+            <div class="rodape-ed">
+              <div class="info" id="a-info"></div>
+              <div class="acoes">
+                <button class="btn perigo" id="a-excluir">Excluir</button>
+                <button class="btn" id="a-zip">Baixar .zip</button>
+                <button class="btn primario" id="a-gerar">Salvar na pasta do site</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PSICÓLOGOS ================= -->
+    <section class="view" id="view-psicologos">
+      <header class="topbar">
+        <div>
+          <h1>Psicólogos</h1>
+          <p class="sub">Cada cadastro gera um perfil próprio e entra na lista do site.</p>
+        </div>
+        <button class="btn primario" id="novoPsicologo">+ Novo psicólogo</button>
+      </header>
+      <div class="duas">
+        <div class="lista" id="listaPsicologos"></div>
+        <div class="cartao">
+          <div class="ed-vazio" id="psiVazio">
+            <h2>Nenhum psicólogo aberto</h2>
+            <p>Clique em “+ Novo psicólogo” ou escolha um da lista.</p>
+          </div>
+          <div id="psiEd" hidden>
+            <div class="abas" data-tipo="psi">
+              <button data-aba="editar" class="ativo">Cadastro</button>
+              <button data-aba="previa">Prévia do perfil</button>
+              <button data-aba="html">Código HTML</button>
+            </div>
+            <div class="aba-painel ativo" data-aba="editar">
+              <div class="grade">
+                <div class="campo cheio">
+                  <label>Foto</label>
+                  <div class="imagem-campo">
+                    <div class="imagem-prev retrato" id="p-foto-prev">Sem foto</div>
+                    <div class="imagem-acoes">
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="btn pequeno" type="button" id="p-foto-btn">Escolher foto</button>
+                        <button class="btn pequeno perigo" type="button" id="p-foto-rem">Remover</button>
+                      </div>
+                      <span class="aj" style="font-size:12px;color:var(--suave)">A foto é cortada em retrato (4:5) e convertida para WebP automaticamente.</span>
+                      <input type="file" id="p-foto-file" accept="image/*" hidden>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo">
+                  <label for="p-nome">Nome completo</label>
+                  <input type="text" id="p-nome" placeholder="Ex.: Maria Silva">
+                </div>
+                <div class="campo">
+                  <label for="p-tratamento">Exibir como</label>
+                  <select id="p-tratamento"><option>Psicóloga</option><option>Psicólogo</option><option>Psicólogue</option></select>
+                </div>
+                <div class="campo">
+                  <label for="p-crp">CRP</label>
+                  <input type="text" id="p-crp" placeholder="Ex.: 11/12345">
+                </div>
+                <div class="campo">
+                  <label for="p-slug">Link do perfil</label>
+                  <div class="slug-pre"><span>/psicologo/</span><input type="text" id="p-slug" placeholder="maria-silva"></div>
+                </div>
+                <div class="campo cheio">
+                  <label>Abordagens</label>
+                  <div class="checks" id="p-abordagens"></div>
+                </div>
+                <div class="campo cheio">
+                  <label>Com experiência em <span class="aj">— temas que aparecem no filtro do site · <b id="p-temas-n">0</b> marcados</span></label>
+                  <input type="text" id="p-temas-busca" placeholder="Procurar tema…" autocomplete="off" style="max-width:280px">
+                  <div class="checks checks-temas" id="p-temas"></div>
+                </div>
+                <div class="campo cheio">
+                  <label for="p-especialidades">Outros temas <span class="aj">— opcional, se não estiver na lista; separe por vírgula</span></label>
+                  <input type="text" id="p-especialidades" placeholder="Ex.: Vida acadêmica, Atletas">
+                </div>
+                <div class="campo cheio">
+                  <label>Atendimento por idade</label>
+                  <div class="checks" id="p-publico"></div>
+                </div>
+                <div class="campo">
+                  <label>Idiomas das sessões</label>
+                  <div class="checks" id="p-idiomas"></div>
+                </div>
+                <div class="campo">
+                  <label>Acessibilidade</label>
+                  <div class="checks" id="p-acess"></div>
+                </div>
+                <div class="campo">
+                  <label for="p-valor">Valor da sessão (R$) <span class="aj">— opcional</span></label>
+                  <input type="number" id="p-valor" min="0" step="1" placeholder="Ex.: 120">
+                </div>
+                <div class="campo">
+                  <label for="p-duracao">Duração (minutos)</label>
+                  <input type="number" id="p-duracao" min="10" step="5" placeholder="50">
+                </div>
+                <div class="campo cheio">
+                  <label for="p-bio">Sobre o profissional <span class="aj">— deixe uma linha em branco entre parágrafos</span></label>
+                  <textarea id="p-bio" rows="6" placeholder="Formação, experiência, como trabalha…"></textarea>
+                </div>
+                <div class="campo">
+                  <label for="p-whats">WhatsApp de agendamento <span class="aj">— vazio = número geral</span></label>
+                  <input type="text" id="p-whats" placeholder="5588999999999">
+                </div>
+                <div class="campo" style="justify-content:flex-end">
+                  <label class="linha-check"><input type="checkbox" id="p-ativo"> Aparece na lista do site</label>
+                </div>
+                <div class="campo cheio">
+                  <div class="verif-box" id="p-verif-box">
+                    <label class="linha-check"><input type="checkbox" id="p-verificado"> <svg class="selo-ok" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5l2.6 1.9 3.2-.1 1 3 2.6 1.9-1 3 1 3-2.6 1.9-1 3-3.2-.1L12 22.5l-2.6-1.9-3.2.1-1-3L2.6 15.8l1-3-1-3 2.6-1.9 1-3 3.2.1z"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Perfil verificado</label>
+                    <p>Mostra o selo azul ✓ ao lado do nome, no perfil e na lista. Só marque depois de conferir o CRP no <a href="https://cadastro.cfp.org.br/" target="_blank" rel="noopener">Cadastro Nacional do CFP</a>.</p>
+                    <label class="verif-data" id="p-verif-data-l" hidden>Conferido em <input type="date" id="p-verif-data"></label>
+                  </div>
+                </div>
+                <div class="campo cheio sec-sep"><b>Página do psicólogo</b><span class="aj">Textos do perfil. Os campos vazios usam um texto padrão.</span></div>
+                <div class="campo cheio">
+                  <label for="p-titulo">Frase principal do topo</label>
+                  <input type="text" id="p-titulo" placeholder="Ex.: Um espaço seguro para você se reencontrar">
+                </div>
+                <div class="campo cheio">
+                  <label for="p-citacao">Frase de destaque <span class="aj">— aparece grande, entre aspas</span></label>
+                  <textarea id="p-citacao" rows="2" placeholder="Ex.: Estou aqui para ouvir, acolher e caminhar com você, no seu tempo."></textarea>
+                </div>
+                <div class="campo cheio">
+                  <label>Os 3 passos</label>
+                  <div class="passos-ed" id="p-passos"></div>
+                </div>
+                <div class="campo cheio">
+                  <label for="p-esperar">O que esperar? <span class="aj">— um item por linha</span></label>
+                  <textarea id="p-esperar" rows="4"></textarea>
+                </div>
+                <div class="campo cheio">
+                  <label>Foto do consultório ou ambiente <span class="aj">— opcional, aparece ao lado do “O que esperar?”</span></label>
+                  <div class="imagem-campo">
+                    <div class="imagem-prev" id="p-amb-prev">Sem imagem</div>
+                    <div class="imagem-acoes">
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="btn pequeno" type="button" id="p-amb-btn">Escolher imagem</button>
+                        <button class="btn pequeno perigo" type="button" id="p-amb-rem">Remover</button>
+                      </div>
+                      <input type="file" id="p-amb-file" accept="image/*" hidden>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="aba-painel" data-aba="previa">
+              <div class="disp">
+                <button class="btn pequeno" data-larg="100%">🖥 Computador</button>
+                <button class="btn pequeno" data-larg="390px">📱 Celular</button>
+              </div>
+              <iframe class="previa-frame" id="p-previa" sandbox="allow-same-origin" title="Prévia do perfil"></iframe>
+            </div>
+            <div class="aba-painel" data-aba="html">
+              <p class="sub" style="margin:0 0 10px">Arquivo <b id="p-html-caminho"></b> completo.</p>
+              <textarea class="codigo html-saida" id="p-html" readonly></textarea>
+              <div class="botoes"><button class="btn pequeno" id="p-copiar">Copiar HTML</button></div>
+            </div>
+            <div class="rodape-ed">
+              <div class="info" id="p-info"></div>
+              <div class="acoes">
+                <button class="btn perigo" id="p-excluir">Excluir</button>
+                <button class="btn" id="p-zip">Baixar .zip</button>
+                <button class="btn primario" id="p-gerar">Salvar na pasta do site</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CONFIGURAÇÕES ================= -->
+    <section class="view" id="view-config">
+      <header class="topbar">
+        <div>
+          <h1>Configurações</h1>
+          <p class="sub">Valem para todas as páginas que o painel gera.</p>
+        </div>
+      </header>
+      <div class="cartao">
+        <div class="cfg-grupo">
+          <h2>Site</h2>
+          <p>Usados nos links para o Google e nos botões de agendamento.</p>
+          <div class="grade">
+            <div class="campo"><label for="cfg-siteUrl">Endereço do site</label><input type="url" id="cfg-siteUrl"></div>
+            <div class="campo"><label for="cfg-whatsapp">WhatsApp geral (com 55 + DDD)</label><input type="text" id="cfg-whatsapp"></div>
+            <div class="campo"><label for="cfg-autor">Autor padrão dos artigos</label><input type="text" id="cfg-autor"></div>
+          </div>
+        </div>
+        <div class="cfg-grupo">
+          <h2>Listas</h2>
+          <p>Uma por linha.</p>
+          <div class="grade">
+            <div class="campo"><label for="cfg-categorias">Categorias dos artigos</label><textarea id="cfg-categorias" rows="6"></textarea></div>
+            <div class="campo"><label for="cfg-abordagens">Abordagens dos psicólogos</label><textarea id="cfg-abordagens" rows="6"></textarea></div>
+          </div>
+        </div>
+        <div class="cfg-grupo">
+          <h2>Fontes, topo, rodapé e scripts do site</h2>
+          <p>Cole aqui o <code>&lt;header&gt;</code> e o <code>&lt;footer&gt;</code> do seu site uma vez só. Todas as páginas geradas usam o que estiver aqui. Use links começando com “/” (ex.: <code>/quem-somos/</code>), porque as páginas ficam dentro de pastas.</p>
+          <div class="grade">
+            <div class="campo cheio"><label for="cfg-head">Código extra no &lt;head&gt; <span class="aj">— fontes do Google, Google Analytics, pixel etc.</span></label><textarea class="codigo" id="cfg-head" style="min-height:90px"></textarea></div>
+            <div class="campo cheio"><label for="cfg-header">Topo (header + menu do celular)</label><textarea class="codigo" id="cfg-header"></textarea></div>
+            <div class="campo cheio"><label for="cfg-footer">Rodapé (footer + botão flutuante)</label><textarea class="codigo" id="cfg-footer"></textarea></div>
+            <div class="campo cheio"><label for="cfg-scripts">Scripts no fim da página</label><textarea class="codigo" id="cfg-scripts" style="min-height:80px"></textarea></div>
+          </div>
+          <div class="botoes"><button class="btn pequeno" id="cfg-restaurar">Restaurar topo e rodapé de exemplo</button></div>
+        </div>
+        <div class="cfg-grupo">
+          <h2>SEO: sitemap e listas</h2>
+          <p>Toda vez que você salva um artigo ou psicólogo, o painel atualiza <code>sitemap.xml</code>, <code>data/artigos.json</code> e <code>data/psicologos.json</code>. As páginas fixas abaixo também entram no sitemap.</p>
+          <div class="campo"><label for="cfg-paginasFixas">Páginas fixas do site</label><textarea id="cfg-paginasFixas" rows="7"></textarea></div>
+          <div class="botoes"><button class="btn pequeno" id="cfg-sitemap">Atualizar sitemap e listas agora</button></div>
+        </div>
+        <div class="cfg-grupo">
+          <h2>Backup do painel</h2>
+          <p>O painel guarda tudo neste navegador, neste computador. Exporte um backup de vez em quando, ou para usar em outro computador.</p>
+          <div class="botoes">
+            <button class="btn pequeno" id="cfg-exportar">Exportar backup (.json)</button>
+            <button class="btn pequeno" id="cfg-importar">Importar backup</button>
+            <input type="file" id="cfg-importar-file" accept="application/json,.json" hidden>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================
+   Painel Psicólogos Brasil
+   Roda 100% no navegador. Nada é enviado para a internet.
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const CHAVE = 'pb-painel-v1';
+
+const HEADER_PADRAO = `<!-- Cole aqui o <header> do seu site (links começando com /) -->
+<header class="topo">
+  <div class="wrap">
+    <a href="/" class="logo"><img class="logo-img" src="/assets/imagens/logo.svg" alt="Psicólogos Brasil"></a>
+    <nav class="menu">
+      <a href="/">Início</a>
+      <a href="/blog/">Artigos</a>
+      <a href="/psicologos/">Psicólogos</a>
+      <a href="/quem-somos/">Quem somos</a>
+      <a href="/contato/">Contato</a>
+    </nav>
+  </div>
+</header>`;
+const FOOTER_PADRAO = `<!-- Cole aqui o <footer> do seu site -->
+<footer class="rodape">
+  <div class="wrap">
+    <p>Psicólogos Brasil © 2026 · <a href="/politica-de-privacidade/">Política de privacidade</a> · <a href="/termos-de-uso/">Termos de uso</a></p>
+    <p>Em caso de crise, ligue 188 (CVV) ou 192 (SAMU).</p>
+  </div>
+</footer>`;
+
+const CONFIG_PADRAO = {
+  siteUrl: 'https://psicologosbrasil.com.br',
+  whatsapp: '5588996997631',
+  autor: 'Fábio Medeiros',
+  categorias: 'Terapia online\nAnsiedade\nDepressão\nRelacionamentos\nAutoconhecimento\nLuto',
+  abordagens: 'TCC\nPsicanálise\nAbordagem Centrada na Pessoa\nFenomenológico-Existencial\nGestalt-terapia',
+  paginasFixas: '/\n/quem-somos/\n/psicologos/\n/blog/\n/contato/\n/ansiedade/\n/politica-de-privacidade/\n/termos-de-uso/',
+  head: '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<!-- Cole aqui o <link> das fontes do Google que está no <head> das suas páginas -->',
+  header: HEADER_PADRAO,
+  footer: FOOTER_PADRAO,
+  scripts: '<script src="/js/main.js"><\/script>\n<script src="/js/menu.js"><\/script>'
+};
+const RESERVADOS = ['blog','psicologos','psicologo','contato','quem-somos','ansiedade','servicos','agendamento','terapia-brasileiros-eua','painel','css','js','assets','data','politica-de-privacidade','termos-de-uso','admin','404'];
+
+let state = { artigos: [], psicologos: [], config: { ...CONFIG_PADRAO } };
+let atualA = null, atualP = null, pasta = null, pastaGuardada = null;
+
+/* ---------- utilidades ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slugify = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+const hojeISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const dataBR = iso => { try { return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso; } };
+const quando = ts => new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const linhas = t => String(t || '').split('\n').map(s => s.trim()).filter(Boolean);
+const base = () => state.config.siteUrl.replace(/\/+$/, '');
+const textoPuro = html => { const d = document.createElement('div'); d.innerHTML = html || ''; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
+const contarPalavras = html => { const t = textoPuro(html); return t ? t.split(' ').length : 0; };
+const extDe = d => { const m = (d.match(/^data:image\/(\w+)/) || [])[1] || 'jpg'; return m === 'jpeg' ? 'jpg' : m; };
+function dataParaBlob(d) {
+  const [cab, b64] = d.split(',');
+  const mime = (cab.match(/data:(.*?);/) || [])[1] || 'application/octet-stream';
+  const bin = atob(b64); const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Blob([u], { type: mime });
+}
+function toast(msg, tipo = '') {
+  const el = document.createElement('div'); el.className = 'toast ' + tipo; el.textContent = msg;
+  $('#toast').appendChild(el); setTimeout(() => el.remove(), tipo === 'erro' ? 7000 : 4200);
+}
+function baixar(blob, nome) {
+  const u = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = u; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 3000);
+}
+function waLink(numero, texto) {
+  return `https://api.whatsapp.com/send?phone=${String(numero || state.config.whatsapp).replace(/\D/g, '')}&text=${encodeURIComponent(texto)}`;
+}
+
+/* ---------- imagens: redimensiona e converte para WebP ---------- */
+function processarImagem(file, max = 1600, quadrado = false, proporcao = 0) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = rej;
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rej(new Error('Imagem inválida'));
+      img.onload = () => {
+        let sx = 0, sy = 0, sw = img.width, sh = img.height;
+        if (quadrado) proporcao = 1;
+        if (proporcao) { if (sw / sh > proporcao) { const n = sh * proporcao; sx = (sw - n) / 2; sw = n; } else { const n = sw / proporcao; sy = (sh - n) / 2; sh = n; } }
+        const esc_ = Math.min(1, max / Math.max(sw, sh));
+        const w = Math.round(sw * esc_), h = Math.round(sh * esc_);
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+        let data = cv.toDataURL('image/webp', 0.82);
+        if (!data.startsWith('data:image/webp')) data = cv.toDataURL('image/jpeg', 0.85);
+        res({ data, w, h });
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ---------- limpeza do HTML do editor ---------- */
+const CLASSES_OK = ['centro', 'botao'];
+const PERM = { P: ['class'], H2: ['class'], H3: ['class'], H4: ['class'], STRONG: [], EM: [], U: [], S: [], CODE: [], A: ['href'], UL: [], OL: [], LI: [], BLOCKQUOTE: ['class'], BR: [], HR: [], IMG: ['src', 'alt', 'data-w', 'data-h'], FIGURE: [], FIGCAPTION: [] };
+function limparNo(n) {
+  if (n.nodeType === 8) { n.remove(); return; }
+  if (n.nodeType !== 1) return;
+  let tag = n.tagName;
+  if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'META', 'LINK', 'TITLE', 'svg', 'SVG'].includes(tag)) { n.remove(); return; }
+  const troca = { B: 'strong', I: 'em', STRIKE: 's', DEL: 's', DIV: 'p', H1: 'h2', H5: 'h4', H6: 'h4' }[tag];
+  if (troca) { const novo = document.createElement(troca); while (n.firstChild) novo.appendChild(n.firstChild); n.replaceWith(novo); n = novo; tag = novo.tagName; }
+  if (!PERM[tag]) { const filhos = [...n.childNodes]; n.replaceWith(...filhos); filhos.forEach(limparNo); return; }
+  [...n.attributes].forEach(a => { if (!PERM[tag].includes(a.name)) n.removeAttribute(a.name); });
+  if (n.hasAttribute('class')) { const ok = n.className.split(/\s+/).filter(c => CLASSES_OK.includes(c)); if (ok.length) n.setAttribute('class', ok.join(' ')); else n.removeAttribute('class'); }
+  if (tag === 'A') {
+    const h = (n.getAttribute('href') || '').trim();
+    if (!h || /^(javascript|data|vbscript):/i.test(h)) n.removeAttribute('href');
+    else if (/^https?:\/\//i.test(h) && !h.includes(new URL(state.config.siteUrl).host)) { n.setAttribute('target', '_blank'); n.setAttribute('rel', 'noopener'); }
+  }
+  [...n.childNodes].forEach(limparNo);
+}
+function limpar(html) {
+  const t = document.createElement('template'); t.innerHTML = html || '';
+  [...t.content.childNodes].forEach(limparNo);
+  // texto solto vira parágrafo
+  [...t.content.childNodes].forEach(n => {
+    if ((n.nodeType === 3 && n.textContent.trim()) || (n.nodeType === 1 && ['STRONG', 'EM', 'A', 'U', 'S', 'CODE', 'IMG'].includes(n.tagName))) {
+      const p = document.createElement('p'); n.replaceWith(p); p.appendChild(n);
+    } else if (n.nodeType === 3) n.remove();
+  });
+  t.content.querySelectorAll('p,h2,h3,h4,li,blockquote').forEach(el => { if (!el.textContent.trim() && !el.querySelector('img')) el.remove(); });
+  t.content.querySelectorAll('br').forEach(br => { if (!br.nextSibling && br.parentNode && br.parentNode !== t.content) br.remove(); });
+  return t.innerHTML.trim();
+}
+
+/* ---------- armazenamento ---------- */
+function carregar() {
+  try {
+    const s = JSON.parse(localStorage.getItem(CHAVE));
+    if (s) { state.artigos = s.artigos || []; state.psicologos = s.psicologos || []; state.config = { ...CONFIG_PADRAO, ...(s.config || {}) }; }
+  } catch (e) { /* começa vazio */ }
+}
+let tSalvar;
+function salvar() { clearTimeout(tSalvar); tSalvar = setTimeout(salvarAgora, 400); }
+function salvarAgora() {
+  clearTimeout(tSalvar);
+  try { localStorage.setItem(CHAVE, JSON.stringify(state)); }
+  catch (e) { toast('O navegador ficou sem espaço para guardar tudo (as imagens ocupam muito). Exporte um backup em Configurações.', 'erro'); }
+}
+
+/* ---------- pasta do site (Chrome / Edge) ---------- */
+function abrirDB() {
+  return new Promise((res, rej) => { const r = indexedDB.open('pb-painel', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function guardarHandle(h) { try { const db = await abrirDB(); db.transaction('h', 'readwrite').objectStore('h').put(h, 'pasta'); } catch (e) {} }
+async function lerHandle() {
+  try { const db = await abrirDB(); return await new Promise(res => { const q = db.transaction('h').objectStore('h').get('pasta'); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+  catch (e) { return null; }
+}
+async function escrever(raiz, caminho, conteudo) {
+  const partes = caminho.split('/'); const nome = partes.pop(); let d = raiz;
+  for (const p of partes) d = await d.getDirectoryHandle(p, { create: true });
+  const fh = await d.getFileHandle(nome, { create: true });
+  const w = await fh.createWritable(); await w.write(conteudo); await w.close();
+}
+async function existe(raiz, caminho) {
+  try { const partes = caminho.split('/'); const nome = partes.pop(); let d = raiz; for (const p of partes) d = await d.getDirectoryHandle(p); await d.getFileHandle(nome); return true; }
+  catch (e) { return false; }
+}
+async function conectarPasta() {
+  if (pastaGuardada && !pasta) {
+    try { if ((await pastaGuardada.requestPermission({ mode: 'readwrite' })) === 'granted') { pasta = pastaGuardada; atualizarPasta(); toast(`Pasta “${pasta.name}” conectada.`, 'ok'); return; } } catch (e) {}
+  }
+  if (!('showDirectoryPicker' in window)) { toast('Este navegador não deixa salvar direto na pasta. Use o Chrome ou o Edge, ou use “Baixar .zip”.', 'erro'); return; }
+  try {
+    const h = await window.showDirectoryPicker({ mode: 'readwrite', id: 'site-pb' });
+    pasta = h; pastaGuardada = h; await guardarHandle(h); atualizarPasta();
+    if (await existe(h, 'index.html')) toast(`Pasta “${h.name}” conectada.`, 'ok');
+    else toast(`Pasta “${h.name}” conectada, mas não achei um index.html nela. Confira se é a pasta principal do site.`, 'aviso');
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Não consegui abrir a pasta aqui. Abra o painel.html direto no Chrome ou Edge (dois cliques no arquivo) ou use “Baixar .zip”.', 'erro');
+  }
+}
+function atualizarPasta() {
+  const nome = $('#pastaNome');
+  if (pasta) { nome.textContent = '📁 ' + pasta.name; nome.classList.remove('off'); $('#btnPasta').textContent = 'Trocar pasta'; $('#pastaDica').textContent = 'As páginas são salvas direto nesta pasta. Depois é só enviar para a Hostinger.'; }
+  else if (pastaGuardada) { nome.textContent = '📁 ' + pastaGuardada.name + ' (clique para liberar)'; nome.classList.add('off'); $('#btnPasta').textContent = 'Reconectar pasta'; }
+  else { nome.textContent = 'Não conectada'; nome.classList.add('off'); $('#btnPasta').textContent = 'Conectar pasta'; }
+  $('#a-gerar').textContent = pasta ? 'Salvar na pasta do site' : 'Gerar e baixar .zip';
+  $('#p-gerar').textContent = pasta ? 'Salvar na pasta do site' : 'Gerar e baixar .zip';
+  $('#a-zip').hidden = !pasta; $('#p-zip').hidden = !pasta;
+}
+
+/* ---------- CSS das páginas geradas ---------- */
+const CSS_ARTIGO = `/* Página de artigo, criada pelo Painel. Pode editar à vontade. */
+.artigo{padding:32px 0 72px}
+.artigo-wrap{max-width:760px;margin:0 auto;padding:0 20px}
+.trilha{font-size:.85rem;color:#6b7280;margin:0 0 20px}
+.trilha a{color:inherit;text-decoration:none}
+.trilha a:hover{color:var(--sea,#1f35b5)}
+.artigo-cat{display:inline-block;background:#eef1fc;color:var(--sea,#1f35b5);font-weight:600;font-size:.8rem;padding:5px 12px;border-radius:999px;margin-bottom:14px;text-decoration:none}
+.artigo-topo h1{font-size:clamp(1.8rem,4.2vw,2.6rem);line-height:1.15;margin:0 0 14px}
+.artigo-resumo{font-size:1.15rem;line-height:1.55;color:#4b5563;margin:0 0 14px}
+.artigo-meta{font-size:.9rem;color:#6b7280;margin:0 0 26px}
+.artigo-capa{margin:0 0 34px}
+.artigo-capa img{width:100%;height:auto;border-radius:18px;display:block}
+.artigo-texto{font-size:1.08rem;line-height:1.8;color:#1f2937}
+.artigo-texto h2{font-size:1.6rem;line-height:1.25;margin:2em 0 .6em}
+.artigo-texto h3{font-size:1.25rem;margin:1.6em 0 .5em}
+.artigo-texto p{margin:0 0 1.15em}
+.artigo-texto img{max-width:100%;height:auto;border-radius:14px;margin:1.2em 0;display:block}
+.artigo-texto a{color:var(--sea,#1f35b5)}
+.artigo-texto blockquote{border-left:4px solid var(--sea,#1f35b5);background:#f6f8fe;margin:1.6em 0;padding:16px 20px;border-radius:0 12px 12px 0;color:#374151}
+.artigo-texto ul,.artigo-texto ol{padding-left:1.4em;margin:0 0 1.15em}
+.artigo-texto li{margin-bottom:.45em}
+.artigo-texto h4{font-size:1.1rem;margin:1.4em 0 .5em}
+.artigo-texto .centro{text-align:center}
+.artigo-texto .centro img{margin-left:auto;margin-right:auto}
+.artigo-texto hr{border:0;border-top:1px solid #e5e7eb;margin:2.4em auto;width:40%}
+.artigo-texto code{background:#f1f3f8;padding:.1em .35em;border-radius:5px;font-size:.92em}
+.artigo-texto .botao{text-align:center;margin:1.8em 0}
+.artigo-texto .botao a{display:inline-block;background:var(--sea,#1f35b5);color:#fff;font-weight:700;padding:14px 28px;border-radius:999px;text-decoration:none}
+.faq{margin-top:48px}
+.faq h2{font-size:1.6rem;margin:0 0 16px}
+.faq details{border:1px solid #e5e7eb;border-radius:14px;margin-bottom:10px;background:#fff}
+.faq summary{cursor:pointer;padding:16px 20px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';font-size:1.3rem;line-height:1;color:var(--sea,#1f35b5)}
+.faq details[open] summary::after{content:'−'}
+.faq-resp{padding:0 20px 16px;line-height:1.7;color:#374151}
+.faq-resp p{margin:0 0 .8em}
+.cta{margin-top:52px;background:var(--sea,#1f35b5);color:#fff;border-radius:22px;padding:34px 28px;text-align:center}
+.cta h2{margin:0 0 8px;color:#fff;font-size:1.5rem}
+.cta p{margin:0 0 22px;opacity:.9}
+.cta-btn{display:inline-block;background:var(--sun,#ffd84d);color:#111;font-weight:700;padding:14px 28px;border-radius:999px;text-decoration:none}
+.cta-btn:hover{filter:brightness(.95)}
+`;
+const CSS_PERFIL = `/* Página do psicólogo, criada pelo Painel. Usa as cores e fontes do global.css. Pode editar à vontade. */
+.pf section{padding:0}
+.pf h1,.pf h2,.pf h3{font-family:"Bricolage Grotesque",Georgia,serif;letter-spacing:-.02em}
+
+/* Topo */
+.pf-hero{padding:48px 0 64px!important;background:var(--surface,#fff);border-bottom:1px solid var(--line,#dbe1f3)}
+.pf-hero-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:center}
+.pf-foto{margin:0;aspect-ratio:4/5;border-radius:32px;overflow:hidden;background:var(--mist,#e9edfb);box-shadow:var(--sh)}
+.pf-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.pf-foto-vazia{display:grid;place-items:center;height:100%;font:700 5rem "Bricolage Grotesque",serif;color:var(--sea,#1f35b5)}
+.pf-trilha{font-size:.85rem;color:var(--muted,#4b4b4b);margin:0 0 22px}
+.pf-trilha a{color:inherit;text-decoration:none}
+.pf-trilha a:hover{color:var(--sea,#1f35b5)}
+.pf-nome{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--sea,#1f35b5);margin:0 0 10px;font-size:1.05rem}
+.pf-selo{width:24px;height:24px;color:var(--sea,#1f35b5);flex:none}
+.pf-verif{display:inline-flex}
+.pf-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pf-hero h1{font-size:clamp(2.1rem,4.6vw,3.6rem);line-height:1.05;margin:0 0 16px}
+.pf-sub{text-transform:uppercase;letter-spacing:.1em;font-size:.82rem;font-weight:700;color:var(--muted,#4b4b4b);margin:0 0 14px}
+.pf-verif-txt{display:inline-flex;align-items:center;gap:8px;background:var(--mist,#e9edfb);color:var(--sea-d,#162a8f);font-weight:600;font-size:.88rem;padding:7px 14px 7px 8px;border-radius:999px;margin:0 0 16px}
+.pf-verif-txt .pf-selo{width:20px;height:20px}
+.pf-tags{list-style:none;padding:0;margin:0 0 26px;display:flex;flex-wrap:wrap;gap:8px}
+.pf-tags li{border:1px solid var(--line,#dbe1f3);background:var(--bg,#f5f7fd);border-radius:999px;padding:6px 14px;font-size:.9rem;font-weight:500}
+.pf-cta{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px}
+.pf-cta span{color:var(--muted,#4b4b4b);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* Frase */
+.pf-quote{padding:80px 0!important;text-align:center}
+.pf-quote blockquote{margin:0 auto;max-width:860px;background:none;padding:0;border:0}
+.pf-quote p{font:500 clamp(1.5rem,3.2vw,2.35rem)/1.3 "Bricolage Grotesque",Georgia,serif;letter-spacing:-.02em;color:var(--ink,#101a4f);margin:0}
+.pf-quote footer{margin-top:18px;color:var(--muted,#4b4b4b);font:600 .95rem Figtree,sans-serif}
+
+/* 3 passos */
+.pf-passos{padding:0 0 80px!important}
+.pf-cards{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.pf-card{border-radius:24px;padding:30px 26px;border:1px solid var(--line,#dbe1f3)}
+.pf-card-1{background:var(--mist,#e9edfb)}
+.pf-card-2{background:#fff6dd;border-color:#f6e2a6}
+.pf-card-3{background:var(--surface,#fff);box-shadow:var(--sh)}
+.pf-card h2{font-size:1.45rem;line-height:1.2;margin:0 0 12px}
+.pf-card h2 span{color:var(--sea,#1f35b5)}
+.pf-card p{color:var(--muted,#4b4b4b);line-height:1.65;margin:0}
+
+/* Sobre */
+.pf-sobre{padding:0 0 80px!important}
+.pf-sobre-grid{display:grid;grid-template-columns:1.4fr .8fr;gap:48px;align-items:start}
+.pf-bio h2{font-size:clamp(1.7rem,3.4vw,2.4rem);margin:0 0 18px}
+.pf-bio p{color:var(--muted,#4b4b4b);font-size:1.06rem;line-height:1.75;margin:0 0 14px;max-width:62ch}
+.pf-esp{background:var(--surface,#fff);border:1px solid var(--line,#dbe1f3);border-radius:22px;padding:24px}
+.pf-esp h3{font-size:1.05rem;margin:0 0 12px}
+.pf-esp h3:not(:first-child){margin-top:20px}
+.pf-esp p{margin:0;color:var(--muted,#4b4b4b);font-size:.95rem}
+.pf-esp ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.pf-esp li{background:var(--mist,#e9edfb);color:var(--sea-d,#162a8f);border-radius:999px;padding:6px 14px;font-size:.9rem;font-weight:600}
+
+/* O que esperar */
+.pf-esperar{padding:0 0 96px!important}
+.pf-esperar-box{display:grid;grid-template-columns:1.1fr .9fr;align-items:center}
+.pf-amb{margin:0;border-radius:32px;overflow:hidden;aspect-ratio:4/3;grid-column:1/3;grid-row:1;width:72%}
+.pf-amb img{width:100%;height:100%;object-fit:cover;display:block}
+.pf-esperar-card{grid-column:2;grid-row:1;position:relative;background:var(--night,#0f1c66);color:#eef1ff;border-radius:28px;padding:40px 36px;box-shadow:var(--sh)}
+.pf-esperar-box.sem-img{grid-template-columns:1fr}
+.pf-esperar-box.sem-img .pf-esperar-card{grid-column:1;max-width:760px;margin:0 auto;width:100%}
+.pf-esperar-card h2{color:#fff;font-size:clamp(1.8rem,3.4vw,2.5rem);margin:0 0 20px}
+.pf-esperar-card ul{list-style:none;margin:0 0 28px;padding:0}
+.pf-esperar-card li{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid rgba(255,255,255,.14);color:#dde3fa;line-height:1.5}
+.pf-esperar-card li:last-child{border-bottom:1px solid rgba(255,255,255,.14)}
+.pf-esperar-card li::before{content:"→";color:var(--sun,#ffc83d);font-weight:700;flex:none}
+.pf-esperar-card .btn{background:var(--sun,#ffc83d);color:#101a4f}
+
+/* Celular */
+@media (max-width:860px){
+  .pf-hero{padding:28px 0 48px!important}
+  .pf-hero-grid,.pf-sobre-grid{grid-template-columns:1fr;gap:28px}
+  .pf-foto{max-width:360px;width:100%;margin:0 auto}
+  .pf-hero-txt{text-align:center}
+  .pf-nome,.pf-tags,.pf-cta{justify-content:center}
+  .pf-quote{padding:56px 0!important}
+  .pf-cards{grid-template-columns:1fr;gap:14px}
+  .pf-passos,.pf-sobre{padding-bottom:56px!important}
+  .pf-esperar-box{grid-template-columns:1fr}
+  .pf-amb{grid-column:1;width:100%;aspect-ratio:16/10}
+  .pf-esperar-card{grid-column:1;grid-row:2;margin:-48px 14px 0;padding:30px 22px}
+  .pf-esperar{padding-bottom:64px!important}
+}
+`;
+const CSS_PREVIA = `:root{--bg:#f5f7fd;--surface:#fff;--ink:#101a4f;--muted:#4b4b4b;--sea:#1f35b5;--sea-d:#162a8f;--on-sea:#fff;--mist:#e9edfb;--sun:#ffc83d;--line:#dbe1f3;--night:#0f1c66;--sh:0 1px 2px rgba(16,26,79,.06),0 14px 28px -14px rgba(16,26,79,.3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 Figtree,system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",Georgia,serif;line-height:1.1;margin:0;letter-spacing:-.025em}
+p{margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+section{padding:56px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:14px 26px;font:600 1rem Figtree,sans-serif;text-decoration:none;background:var(--sea);color:var(--on-sea)}
+.btn.lg{padding:16px 32px;font-size:1.05rem}
+.previa-topo{background:#fff;border-bottom:1px solid var(--line);padding:14px 20px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px}
+.previa-topo span{color:#98a2b3;font-size:12px}
+`;
+
+/* ---------- página completa ---------- */
+function pagina({ titulo, descricao, url, imagem, tipo, css, corpo, jsonld }) {
+  const c = state.config;
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(titulo)}</title>
+<meta name="description" content="${esc(descricao)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:type" content="${tipo}">
+<meta property="og:site_name" content="Psicólogos Brasil">
+<meta property="og:title" content="${esc(titulo)}">
+<meta property="og:description" content="${esc(descricao)}">
+<meta property="og:url" content="${url}">
+${imagem ? `<meta property="og:image" content="${imagem}">\n` : ''}<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icones/favicon.svg" type="image/svg+xml">
+${c.head || ''}
+<link rel="stylesheet" href="/css/global.css">
+<link rel="stylesheet" href="/css/header.css">
+<link rel="stylesheet" href="/css/footer.css">
+<link rel="stylesheet" href="/css/${css}">
+${(Array.isArray(jsonld) ? jsonld : [jsonld]).map(j => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}<\/script>`).join('\n')}
+</head>
+<body>
+${c.header}
+
+<main id="conteudo">
+${corpo}
+</main>
+
+${c.footer}
+${c.scripts}
+</body>
+</html>
+`;
+}
+function docPrevia(corpo) {
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>${CSS_PREVIA}${CSS_ARTIGO}${CSS_PERFIL}</style></head><body>
+<div class="previa-topo"><b>Psicólogos Brasil</b><span>Prévia · no site entram o seu topo, rodapé e CSS</span></div>
+<main>${corpo}</main></body></html>`;
+}
+
+/* =============== ARTIGOS =============== */
+function novoArtigo() {
+  const a = { id: 'a' + Date.now(), titulo: '', slug: '', slugManual: false, categoria: linhas(state.config.categorias)[0] || '', data: hojeISO(), autor: state.config.autor, tituloSeo: '', descricao: '', palavras: [], faq: [], schemaExtra: '', capa: null, html: '', criado: Date.now(), atualizado: Date.now(), geradoEm: null, alterado: false };
+  state.artigos.unshift(a); salvarAgora(); abrirArtigo(a.id); renderListaArtigos();
+  setTimeout(() => $('#a-titulo').focus(), 30);
+}
+function artigoAtual() { return state.artigos.find(x => x.id === atualA); }
+function minutos(html) { return Math.max(1, Math.round(contarPalavras(html) / 200)); }
+
+function corpoArtigo(a, textoHtml, capaSrc) {
+  const cat = a.categoria ? `<span class="artigo-cat">${esc(a.categoria)}</span>` : '';
+  const capa = capaSrc ? `<figure class="artigo-capa"><img src="${capaSrc}" alt="${esc((a.capa && a.capa.alt) || a.titulo)}"${a.capa && a.capa.w ? ` width="${a.capa.w}" height="${a.capa.h}"` : ''} fetchpriority="high"></figure>` : '';
+  return `<article class="artigo">
+  <div class="artigo-wrap">
+    <nav class="trilha" aria-label="Você está em"><a href="/">Início</a> › <a href="/blog/">Artigos</a>${a.categoria ? ` › <span>${esc(a.categoria)}</span>` : ''}</nav>
+    <header class="artigo-topo">
+      ${cat}
+      <h1>${esc(a.titulo || 'Sem título')}</h1>
+      ${a.descricao ? `<p class="artigo-resumo">${esc(a.descricao)}</p>` : ''}
+      <p class="artigo-meta">Por ${esc(a.autor || state.config.autor)} · ${dataBR(a.data)} · ${minutos(a.html)} min de leitura</p>
+    </header>
+    ${capa}
+    <div class="artigo-texto">
+${textoHtml}
+    </div>
+${faqHtml(a)}
+    <aside class="cta">
+      <h2>Quer conversar com um psicólogo?</h2>
+      <p>Atendimento online, com sigilo, de onde você estiver.</p>
+      <a class="cta-btn" href="${waLink(null, 'Olá! Li o artigo "' + a.titulo + '" e quero agendar uma consulta.')}">Agendar pelo WhatsApp</a>
+    </aside>
+  </div>
+</article>`;
+}
+
+/* ---------- Schema (dados estruturados) ---------- */
+const faqValidas = a => (a.faq || []).filter(f => (f.p || '').trim() && (f.r || '').trim());
+const respostaHtml = t => String(t || '').trim().split(/\n\s*\n/).map(x => `<p>${esc(x.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+function faqHtml(a) {
+  const L = faqValidas(a); if (!L.length) return '';
+  return `    <section class="faq" id="perguntas-frequentes">
+      <h2>Perguntas frequentes</h2>
+${L.map(f => `      <details>
+        <summary>${esc(f.p.trim())}</summary>
+        <div class="faq-resp">${respostaHtml(f.r)}</div>
+      </details>`).join('\n')}
+    </section>`;
+}
+function lerSchemaExtra(txt) {
+  let t = String(txt || '').trim();
+  if (!t) return { ok: true, itens: [] };
+  t = t.replace(/<script[^>]*>/gi, '\n').replace(/<\/script>/gi, '\n').trim();
+  // vários blocos colados um depois do outro
+  const pedacos = []; let nivel = 0, ini = -1, emStr = false, esc_ = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (emStr) { if (esc_) esc_ = false; else if (c === '\\') esc_ = true; else if (c === '"') emStr = false; continue; }
+    if (c === '"') { emStr = true; continue; }
+    if (c === '{' || c === '[') { if (nivel === 0) ini = i; nivel++; }
+    else if (c === '}' || c === ']') { nivel--; if (nivel === 0 && ini > -1) { pedacos.push(t.slice(ini, i + 1)); ini = -1; } }
+  }
+  if (!pedacos.length || nivel !== 0) return { ok: false, erro: 'O código parece incompleto: confira se todas as chaves { } fecham.' };
+  const itens = [];
+  for (const p of pedacos) {
+    let j; try { j = JSON.parse(p); } catch (e) { return { ok: false, erro: 'Código inválido: ' + e.message.replace(/^JSON\.parse: /, '') }; }
+    (Array.isArray(j) ? j : [j]).forEach(o => itens.push(o));
+  }
+  for (const o of itens) {
+    if (!o || typeof o !== 'object') return { ok: false, erro: 'Cada schema precisa ser um objeto { }.' };
+    if (!o['@type'] && !o['@graph']) return { ok: false, erro: 'Falta o "@type" em um dos schemas (ex.: "@type": "HowTo").' };
+    if (!o['@context']) o['@context'] = 'https://schema.org';
+  }
+  return { ok: true, itens };
+}
+function schemasArtigo(a, capaUrl) {
+  const url = `${base()}/${a.slug}/`;
+  const artigo = {
+    '@context': 'https://schema.org', '@type': 'BlogPosting',
+    headline: a.titulo, description: a.descricao, inLanguage: 'pt-BR',
+    datePublished: a.data, dateModified: hojeISO(),
+    author: { '@type': 'Person', name: a.autor || state.config.autor },
+    publisher: { '@type': 'Organization', name: 'Psicólogos Brasil', url: base() + '/' },
+    mainEntityOfPage: url, articleSection: a.categoria, wordCount: contarPalavras(a.html)
+  };
+  if (capaUrl) artigo.image = base() + capaUrl;
+  if ((a.palavras || []).length) artigo.keywords = a.palavras.join(', ');
+  const trilha = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: base() + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Artigos', item: base() + '/blog/' },
+      { '@type': 'ListItem', position: 3, name: a.titulo, item: url }
+    ]
+  };
+  const L = [artigo, trilha];
+  const faq = faqValidas(a);
+  if (faq.length) L.push({
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faq.map(f => ({ '@type': 'Question', name: f.p.trim(), acceptedAnswer: { '@type': 'Answer', text: textoPuro(respostaHtml(f.r)) } }))
+  });
+  const extra = lerSchemaExtra(a.schemaExtra);
+  if (extra.ok) L.push(...extra.itens);
+  return L;
+}
+function capaUrlDe(a) { return a.capa && a.capa.data ? `/assets/imagens/artigos/${slugify(a.slug) || 'link-do-artigo'}-capa.${extDe(a.capa.data)}` : ''; }
+function renderFaq(a) {
+  const L = a.faq || [];
+  $('#a-faq').innerHTML = L.map((f, i) => `
+    <div class="faq-item" data-i="${i}">
+      <div class="faq-cab"><span>Pergunta ${i + 1}</span><button type="button" class="btn pequeno perigo" data-rem="${i}">Remover</button></div>
+      <input type="text" data-c="p" value="${esc(f.p)}" placeholder="Ex.: Terapia online funciona para ansiedade?">
+      <textarea data-c="r" rows="3" placeholder="Resposta curta e direta, de 2 a 4 frases.">${esc(f.r)}</textarea>
+    </div>`).join('') || '<p class="faq-vazio">Nenhuma pergunta ainda.</p>';
+}
+function renderSchema(a) {
+  const ex = lerSchemaExtra(a.schemaExtra), c = $('#a-schema-c');
+  if (!String(a.schemaExtra || '').trim()) { c.textContent = ''; c.className = 'contador'; }
+  else if (ex.ok) { c.textContent = `✓ Código válido · ${ex.itens.length} schema(s): ${ex.itens.map(o => o['@type'] || '@graph').join(', ')}`; c.className = 'contador bom'; }
+  else { c.textContent = '✗ ' + ex.erro; c.className = 'contador ruim'; }
+  const tipos = schemasArtigo(a, capaUrlDe(a)).map(o => o['@type'] || '@graph');
+  const st = $('#a-schema-status');
+  st.textContent = ex.ok ? tipos.join(' · ') : 'Erro no schema personalizado';
+  st.className = 'seo-nota ' + (ex.ok ? 'bom' : 'ruim');
+  if ($('#a-schema-ver').open) atualizarSchemaFinal(a);
+}
+function atualizarSchemaFinal(a) {
+  $('#a-schema-final').value = schemasArtigo({ ...a, slug: slugify(a.slug) || 'link-do-artigo' }, capaUrlDe(a))
+    .map(j => `<script type="application/ld+json">\n${JSON.stringify(j, null, 2)}\n<\/script>`).join('\n\n');
+}
+
+function montarArtigo(a) {
+  const slug = a.slug, arquivos = [];
+  const t = document.createElement('template'); t.innerHTML = limpar(a.html);
+  let n = 0;
+  t.content.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    const w = img.getAttribute('data-w'), h = img.getAttribute('data-h');
+    if (src.startsWith('data:')) {
+      n++; const nome = `${slug}-${n}.${extDe(src)}`;
+      arquivos.push({ caminho: `assets/imagens/artigos/${nome}`, blob: dataParaBlob(src) });
+      img.setAttribute('src', `/assets/imagens/artigos/${nome}`);
+    }
+    img.removeAttribute('data-w'); img.removeAttribute('data-h');
+    if (!img.hasAttribute('alt')) img.setAttribute('alt', '');
+    if (w && h) { img.setAttribute('width', w); img.setAttribute('height', h); }
+    img.setAttribute('loading', 'lazy'); img.setAttribute('decoding', 'async');
+  });
+  let capaUrl = '';
+  if (a.capa && a.capa.data) {
+    const nome = `${slug}-capa.${extDe(a.capa.data)}`;
+    arquivos.push({ caminho: `assets/imagens/artigos/${nome}`, blob: dataParaBlob(a.capa.data) });
+    capaUrl = `/assets/imagens/artigos/${nome}`;
+  }
+  const url = `${base()}/${slug}/`;
+  const titulo = (a.tituloSeo || a.titulo) + ' | Psicólogos Brasil';
+  const jsonld = schemasArtigo(a, capaUrl);
+  const html = pagina({ titulo, descricao: a.descricao, url, imagem: capaUrl ? base() + capaUrl : '', tipo: 'article', css: 'artigo.css', corpo: corpoArtigo(a, t.innerHTML, capaUrl), jsonld });
+  arquivos.unshift({ caminho: `blog/${slug}/index.html`, texto: html });
+  return { html, arquivos, capaUrl };
+}
+
+function preencherArtigo(a) {
+  $('#a-titulo').value = a.titulo; $('#a-slug').value = a.slug; $('#a-data').value = a.data;
+  $('#a-autor').value = a.autor; $('#a-tituloSeo').value = a.tituloSeo; $('#a-descricao').value = a.descricao;
+  preencherCategorias(a.categoria);
+  $('#a-capa-alt').value = a.capa ? (a.capa.alt || '') : '';
+  mostrarCapa(a);
+  $('#a-texto').innerHTML = a.html || '';
+  $('#a-schema').value = a.schemaExtra || ''; renderFaq(a);
+  prepararEditor();
+  contadores(); infoArtigo();
+}
+function mostrarCapa(a) {
+  const p = $('#a-capa-prev');
+  if (a.capa && a.capa.data) { p.style.backgroundImage = `url("${a.capa.data}")`; p.textContent = ''; }
+  else { p.style.backgroundImage = ''; p.textContent = 'Sem imagem'; }
+}
+function preencherCategorias(sel) {
+  const cats = linhas(state.config.categorias);
+  if (sel && !cats.includes(sel)) cats.push(sel);
+  $('#a-categoria').innerHTML = cats.map(c => `<option ${c === sel ? 'selected' : ''}>${esc(c)}</option>`).join('');
+}
+function abrirArtigo(id) {
+  atualA = id; const a = artigoAtual();
+  $('#artigoVazio').hidden = !!a; $('#artigoEd').hidden = !a;
+  if (a) { trocarAba('artigo', 'editar'); preencherArtigo(a); }
+  renderListaArtigos();
+}
+function marcarAlterado(o) { o.atualizado = Date.now(); if (o.geradoEm) o.alterado = true; }
+function contadores() {
+  const d = $('#a-descricao').value.length, cd = $('#a-descricao-c');
+  cd.textContent = `${d} caracteres · ideal entre 120 e 160`; cd.className = 'contador ' + (d === 0 ? '' : d >= 120 && d <= 160 ? 'bom' : d > 160 ? 'ruim' : '');
+  const ts = ($('#a-tituloSeo').value || $('#a-titulo').value).length + 21, ct = $('#a-tituloSeo-c');
+  ct.textContent = `${ts} caracteres no Google · ideal até 60`; ct.className = 'contador ' + (ts > 65 ? 'ruim' : 'bom');
+}
+function statusSelo(o) {
+  if (!o.geradoEm) return '<span class="selo rasc">Rascunho</span>';
+  if (o.alterado) return '<span class="selo alt">Alterado</span>';
+  return '<span class="selo ok">Salvo no site</span>';
+}
+function infoArtigo() {
+  const a = artigoAtual(); if (!a) return;
+  const pal = contarPalavras(a.html);
+  renderSeo(a); renderSchema(a);
+  $('#a-info').innerHTML = `${pal.toLocaleString('pt-BR')} palavras · ${minutos(a.html)} min de leitura · ${statusSelo(a)}${a.geradoEm ? ` <span>em ${quando(a.geradoEm)}</span>` : ''}`;
+}
+function renderListaArtigos() {
+  const el = $('#listaArtigos');
+  $('#qtdArtigos').textContent = state.artigos.length;
+  if (!state.artigos.length) { el.innerHTML = '<div class="vazio-lista">Nenhum artigo ainda.<br>Comece pelo botão “+ Novo artigo”.</div>'; return; }
+  el.innerHTML = [...state.artigos].sort((x, y) => y.atualizado - x.atualizado).map(a => `
+    <button class="item ${a.id === atualA ? 'sel' : ''}" data-id="${a.id}">
+      ${a.capa && a.capa.data ? `<img src="${a.capa.data}" alt="">` : '<span class="ph">A</span>'}
+      <span style="min-width:0"><span class="t">${esc(a.titulo || 'Sem título')}</span>
+      <span class="m">${esc(a.categoria || '')} ${statusSelo(a)} ${seloSeo(a)}</span></span>
+    </button>`).join('');
+}
+
+/* editor de texto */
+let rangeSalvo = null;
+function guardarSelecao() {
+  const s = window.getSelection();
+  if (s.rangeCount && $('#a-texto').contains(s.getRangeAt(0).commonAncestorContainer)) rangeSalvo = s.getRangeAt(0).cloneRange();
+}
+function restaurarSelecao() {
+  const ed = $('#a-texto'); ed.focus();
+  const s = window.getSelection(); s.removeAllRanges();
+  if (rangeSalvo) s.addRange(rangeSalvo);
+  else { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); s.addRange(r); }
+}
+function editorMudou() {
+  const a = artigoAtual(); if (!a) return;
+  a.html = $('#a-texto').innerHTML; marcarAlterado(a); salvar(); infoArtigo(); renderListaArtigosDebounce();
+}
+let tLista; function renderListaArtigosDebounce() { clearTimeout(tLista); tLista = setTimeout(renderListaArtigos, 600); }
+async function inserirImagemNoTexto(file) {
+  try {
+    const r = await processarImagem(file, 1400);
+    const alt = window.prompt('Descreva a imagem em poucas palavras (ajuda no Google e na acessibilidade):', '') || '';
+    const ed = ED(); const b = rangeSalvo ? blocoDe(rangeSalvo.startContainer) : null;
+    const bl = document.createElement('p');
+    bl.innerHTML = `<img src="${r.data}" alt="${esc(alt)}" data-w="${r.w}" data-h="${r.h}">`;
+    if (b && blocoVazio(b)) b.replaceWith(bl); else if (b) b.after(bl); else ed.appendChild(bl);
+    let prox = bl.nextElementSibling;
+    if (!prox || !blocoVazio(prox)) { prox = novoP(); bl.after(prox); }
+    caretEm(prox); editorMudou();
+  } catch (e) { toast('Não consegui ler essa imagem.', 'erro'); }
+}
+
+/* =============== EDITOR DE BLOCOS (estilo Gutenberg) =============== */
+const ICO = {
+  cima: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  baixo: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  esq: '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>',
+  centro: '<svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M5 18h14"/></svg>',
+  link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>',
+  seta: '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg>',
+  pontos: '<svg viewBox="0 0 24 24" class="cheio"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
+  mais: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  desfazer: '<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
+  refazer: '<svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>'
+};
+const BLOCOS = [
+  { id: 'p', nome: 'Parágrafo', desc: 'Texto normal', ico: '¶', kw: 'paragrafo texto' },
+  { id: 'h2', nome: 'Título', desc: 'Título de seção (H2)', ico: 'H2', kw: 'titulo heading cabecalho' },
+  { id: 'h3', nome: 'Subtítulo', desc: 'Dentro de uma seção (H3)', ico: 'H3', kw: 'subtitulo heading' },
+  { id: 'h4', nome: 'Título menor', desc: 'Nível H4', ico: 'H4', kw: 'titulo menor heading' },
+  { id: 'ul', nome: 'Lista', desc: 'Lista com marcadores', ico: '•', kw: 'lista marcadores topicos' },
+  { id: 'ol', nome: 'Lista numerada', desc: '1, 2, 3…', ico: '1.', kw: 'lista numerada passos' },
+  { id: 'blockquote', nome: 'Citação', desc: 'Destaque ou citação', ico: '❝', kw: 'citacao destaque quote' },
+  { id: 'img', nome: 'Imagem', desc: 'Enviar uma imagem', ico: '🖼', kw: 'imagem foto figura' },
+  { id: 'hr', nome: 'Separador', desc: 'Linha entre seções', ico: '—', kw: 'separador linha divisor' },
+  { id: 'botao', nome: 'Botão de agendamento', desc: 'Botão para o WhatsApp', ico: '▶', kw: 'botao whatsapp agendar cta' }
+];
+const TIPOS_TEXTO = ['p', 'h2', 'h3', 'h4', 'ul', 'ol', 'blockquote'];
+const NOME_TIPO = { p: '¶', h2: 'H2', h3: 'H3', h4: 'H4', ul: '• Lista', ol: '1. Lista', blockquote: '❝', img: '🖼', hr: '—', botao: 'Botão' };
+const ED = () => $('#a-texto');
+let blocoAtual = null, menuB = { aberto: false }, edFocado = false, fixarAte = 0;
+
+function tipoBloco(b) {
+  if (!b || b.nodeType !== 1) return '';
+  if (b.tagName === 'HR') return 'hr';
+  if (b.classList.contains('botao')) return 'botao';
+  if (b.tagName === 'P' && b.querySelector('img') && !b.textContent.trim()) return 'img';
+  return b.tagName.toLowerCase();
+}
+function blocoDe(n) {
+  const ed = ED();
+  if (!n || n === ed || !ed.contains(n)) return null;
+  while (n.parentNode !== ed) n = n.parentNode;
+  if (n.nodeType === 3) { const p = document.createElement('p'); n.replaceWith(p); p.appendChild(n); return p; }
+  return n;
+}
+const blocoVazio = b => !!b && b.tagName === 'P' && !b.classList.contains('botao') && !b.textContent.trim() && !b.querySelector('img');
+function novoP() { const p = document.createElement('p'); p.innerHTML = '<br>'; return p; }
+function caretEm(el, inicio) {
+  if (!el) return;
+  if (tipoBloco(el) === 'hr') { fixarAte = Date.now() + 300; edFocado = true; setAtual(el); return; }
+  const ed = ED(); ed.focus({ preventScroll: true });
+  const r = document.createRange(); r.selectNodeContents(el); r.collapse(!!inicio);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  rangeSalvo = r.cloneRange(); edFocado = true; setAtual(el);
+}
+function normalizarEditor() {
+  const ed = ED(); let ultimo = null;
+  [...ed.childNodes].forEach(n => {
+    if (n.nodeType === 8 || (n.nodeType === 3 && !n.textContent.trim())) { n.remove(); return; }
+    if (n.nodeType === 1 && n.tagName === 'BR') { n.remove(); return; }
+    if (n.nodeType === 1 && n.tagName === 'DIV') { const p = document.createElement('p'); while (n.firstChild) p.appendChild(n.firstChild); n.replaceWith(p); ultimo = p; return; }
+    if (n.nodeType === 3 || !/^(P|H2|H3|H4|UL|OL|BLOCKQUOTE|HR|FIGURE)$/.test(n.tagName)) { const p = document.createElement('p'); n.replaceWith(p); p.appendChild(n); ultimo = p; }
+  });
+  if (!ed.firstElementChild) { ultimo = novoP(); ed.appendChild(ultimo); }
+  return ultimo;
+}
+function blocoDaSelecao() {
+  const s = getSelection(), ed = ED();
+  if (s.rangeCount && s.anchorNode && s.anchorNode !== ed && ed.contains(s.anchorNode)) {
+    const b = blocoDe(s.anchorNode);
+    if (b && b !== blocoAtual) setAtual(b);
+    return b;
+  }
+  return blocoAtual;
+}
+function setAtual(b) {
+  const ed = ED();
+  if (blocoAtual && blocoAtual !== b) blocoAtual.classList.remove('b-sel', 'b-vazio');
+  blocoAtual = b && b.parentNode === ed ? b : null;
+  if (blocoAtual) { blocoAtual.classList.add('b-sel'); blocoAtual.classList.toggle('b-vazio', blocoVazio(blocoAtual)); }
+  posicionarUI();
+}
+function posicionarUI() {
+  const bt = $('#a-bt'), ins = $('#a-ins'), b = blocoAtual;
+  if (!b || !b.isConnected || !edFocado) { bt.hidden = true; ins.hidden = true; $('#eb-dica').hidden = false; fecharPop(); return; }
+  const tipo = tipoBloco(b);
+  bt.querySelectorAll('[data-para]').forEach(el => { el.hidden = !el.dataset.para.split(' ').includes(tipo); });
+  $('#a-bt-tipo').textContent = NOME_TIPO[tipo] || 'Bloco';
+  $('#a-bt-alinhar').innerHTML = b.classList.contains('centro') ? ICO.centro : ICO.esq;
+  bt.hidden = false; $('#eb-dica').hidden = true;
+  if (blocoVazio(b)) { ins.hidden = false; ins.style.top = (b.offsetTop + (b.offsetHeight - 28) / 2) + 'px'; ins.style.left = (b.offsetLeft + b.offsetWidth - 28) + 'px'; }
+  else ins.hidden = true;
+}
+
+/* menus suspensos da barra */
+function abrirPop(btn, itens) {
+  const pop = $('#a-pop');
+  if (!pop.hidden && pop.dataset.dono === btn.dataset.bt) { fecharPop(); return; }
+  pop.dataset.dono = btn.dataset.bt; pop._itens = itens;
+  pop.innerHTML = itens.map((it, i) => it === '-' ? '<hr>' : `<button type="button" data-i="${i}" class="${it.on ? 'on' : ''} ${it.perigo ? 'perigo' : ''}">${it.ico ? `<span class="pop-ico">${it.ico}</span>` : ''}${esc(it.nome)}</button>`).join('');
+  pop.hidden = false;
+  const barra = pop.parentNode.getBoundingClientRect(), r = btn.getBoundingClientRect();
+  pop.style.left = Math.max(0, Math.min(r.left - barra.left, barra.width - pop.offsetWidth)) + 'px';
+}
+function fecharPop() { const pop = $('#a-pop'); pop.hidden = true; pop.dataset.dono = ''; }
+function fmt(c) { restaurarSelecao(); document.execCommand(c, false, null); editorMudou(); }
+function codigoInline() {
+  restaurarSelecao(); const t = getSelection().toString();
+  if (!t) { toast('Selecione o texto primeiro.', 'aviso'); return; }
+  document.execCommand('insertHTML', false, `<code>${esc(t)}</code>`); editorMudou();
+}
+function depoisMover(b) { caretEm(b); editorMudou(); b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+function excluirBloco(b) {
+  const ed = ED(); const alvo = b.previousElementSibling || b.nextElementSibling;
+  b.remove(); if (!ed.firstElementChild) ed.appendChild(novoP());
+  caretEm(alvo && alvo.isConnected ? alvo : ed.firstElementChild); editorMudou();
+}
+function transformar(b, tipo) {
+  const atual = tipoBloco(b);
+  if (atual === tipo) { caretEm(b); return; }
+  let partes;
+  if (atual === 'ul' || atual === 'ol') partes = [...b.children].map(li => li.innerHTML);
+  else if (atual === 'blockquote') { const f = [...b.children].filter(c => c.tagName === 'P'); partes = f.length ? f.map(c => c.innerHTML) : [b.innerHTML]; }
+  else partes = [b.innerHTML];
+  partes = partes.map(h => h.replace(/^(\s*<br\s*\/?>\s*)+$/i, ''));
+  const centro = b.classList.contains('centro');
+  let novos;
+  if (tipo === 'ul' || tipo === 'ol') {
+    const l = document.createElement(tipo);
+    partes.forEach(h => { const li = document.createElement('li'); li.innerHTML = h || '<br>'; l.appendChild(li); });
+    novos = [l];
+  } else if (tipo === 'p' && partes.length > 1) {
+    novos = partes.map(h => { const p = document.createElement('p'); p.innerHTML = h || '<br>'; return p; });
+  } else {
+    const el = document.createElement(tipo); el.innerHTML = partes.filter(Boolean).join('<br>') || '<br>'; novos = [el];
+  }
+  if (centro && tipo !== 'ul' && tipo !== 'ol') novos.forEach(n => n.classList.add('centro'));
+  b.replaceWith(...novos);
+  caretEm(novos[novos.length - 1]); editorMudou();
+}
+function acaoBt(acao, btn) {
+  const b = blocoAtual; if (!b) return; const tipo = tipoBloco(b);
+  if (acao !== 'tipo' && acao !== 'alinhar' && acao !== 'mais' && acao !== 'opcoes') fecharPop();
+  switch (acao) {
+    case 'tipo':
+      if (!TIPOS_TEXTO.includes(tipo)) return;
+      abrirPop(btn, BLOCOS.filter(x => TIPOS_TEXTO.includes(x.id)).map(x => ({ nome: x.nome, ico: `<b>${x.ico}</b>`, on: x.id === tipo, fn: () => transformar(b, x.id) })));
+      break;
+    case 'cima': if (b.previousElementSibling) { b.previousElementSibling.before(b); depoisMover(b); } break;
+    case 'baixo': if (b.nextElementSibling) { b.nextElementSibling.after(b); depoisMover(b); } break;
+    case 'alinhar': {
+      const c = b.classList.contains('centro');
+      abrirPop(btn, [
+        { nome: 'Alinhar à esquerda', ico: ICO.esq, on: !c, fn: () => { b.classList.remove('centro'); editorMudou(); posicionarUI(); } },
+        { nome: 'Centralizar', ico: ICO.centro, on: c, fn: () => { b.classList.add('centro'); editorMudou(); posicionarUI(); } }
+      ]);
+      break;
+    }
+    case 'bold': case 'italic': fmt(acao); break;
+    case 'link':
+      if (tipo === 'botao') {
+        const a = b.querySelector('a'); const u = prompt('Endereço do botão:', a ? a.getAttribute('href') : '');
+        if (u && a) { a.setAttribute('href', u.trim()); editorMudou(); }
+      } else {
+        restaurarSelecao();
+        if (!getSelection().toString()) { toast('Selecione primeiro o texto que vai virar link.', 'aviso'); return; }
+        const u = prompt('Endereço do link (ex.: /ansiedade/ ou https://...):', '/');
+        if (u) { restaurarSelecao(); document.execCommand('createLink', false, u.trim()); editorMudou(); }
+      }
+      break;
+    case 'mais':
+      abrirPop(btn, [
+        { nome: 'Sublinhado', ico: '<u>U</u>', fn: () => fmt('underline') },
+        { nome: 'Tachado', ico: '<s>S</s>', fn: () => fmt('strikeThrough') },
+        { nome: 'Código', ico: '&lt;/&gt;', fn: codigoInline },
+        '-',
+        { nome: 'Limpar formatação', ico: '⌫', fn: () => fmt('removeFormat') }
+      ]);
+      break;
+    case 'alt': {
+      const img = b.querySelector('img');
+      const v = prompt('Descreva a imagem (ajuda no Google e na acessibilidade):', img.getAttribute('alt') || '');
+      if (v !== null) { img.setAttribute('alt', v.trim()); editorMudou(); }
+      break;
+    }
+    case 'opcoes':
+      abrirPop(btn, [
+        { nome: 'Duplicar', fn: () => { const c = b.cloneNode(true); c.classList.remove('b-sel', 'b-vazio'); b.after(c); caretEm(c); editorMudou(); } },
+        { nome: 'Adicionar bloco antes', fn: () => { const p = novoP(); b.before(p); caretEm(p); editorMudou(); } },
+        { nome: 'Adicionar bloco depois', fn: () => { const p = novoP(); b.after(p); caretEm(p); editorMudou(); } },
+        '-',
+        { nome: 'Excluir bloco', perigo: true, fn: () => excluirBloco(b) }
+      ]);
+      break;
+  }
+}
+
+/* menu de blocos ( + e / ) */
+function filtrados() { const q = norm(menuB.q || ''); return BLOCOS.filter(x => !q || norm(x.nome + ' ' + x.kw + ' ' + x.id).includes(q)); }
+function renderMenu() {
+  const L = filtrados(); if (menuB.idx >= L.length) menuB.idx = 0;
+  $('#a-menu-lista').innerHTML = L.length
+    ? L.map((x, i) => `<button type="button" data-id="${x.id}" class="${i === menuB.idx ? 'ativo' : ''}"><span class="mb-ico">${x.ico}</span><span><b>${esc(x.nome)}</b><small>${esc(x.desc)}</small></span></button>`).join('')
+    : '<p class="mb-vazio">Nenhum bloco encontrado</p>';
+  const at = $('#a-menu-lista .ativo'); if (at) at.scrollIntoView({ block: 'nearest' });
+}
+function abrirMenu(origem, alvo, q) {
+  const m = $('#a-menu'), busca = $('#a-menu-busca');
+  menuB = { aberto: true, origem, alvo, q: q || '', idx: 0 };
+  busca.hidden = origem === 'slash'; busca.value = '';
+  renderMenu(); m.hidden = false; fecharPop();
+  const larg = $('#a-ed-wrap').clientWidth;
+  if (origem === 'topo' || !alvo || !alvo.isConnected) { m.style.top = '8px'; m.style.left = '8px'; }
+  else {
+    m.style.top = (alvo.offsetTop + alvo.offsetHeight + 8) + 'px';
+    const esq = origem === 'ins' ? alvo.offsetLeft + alvo.offsetWidth - m.offsetWidth : alvo.offsetLeft;
+    m.style.left = Math.max(6, Math.min(esq, larg - m.offsetWidth - 6)) + 'px';
+  }
+  if (origem !== 'slash') setTimeout(() => busca.focus(), 0);
+}
+function fecharMenu() { $('#a-menu').hidden = true; menuB = { aberto: false }; }
+function navMenu(e) {
+  if (!menuB.aberto) return false;
+  const L = filtrados(), n = Math.max(1, L.length);
+  if (e.key === 'ArrowDown') { menuB.idx = (menuB.idx + 1) % n; renderMenu(); }
+  else if (e.key === 'ArrowUp') { menuB.idx = (menuB.idx - 1 + n) % n; renderMenu(); }
+  else if (e.key === 'Enter') { if (L[menuB.idx]) escolherBloco(L[menuB.idx].id); else fecharMenu(); }
+  else if (e.key === 'Escape') { const o = menuB.origem, alvo = menuB.alvo; fecharMenu(); if (o !== 'slash' && alvo) caretEm(alvo); }
+  else return false;
+  e.preventDefault(); return true;
+}
+function escolherBloco(id) {
+  const ed = ED(); let alvo = menuB.alvo; const origem = menuB.origem; fecharMenu();
+  if (!alvo || !alvo.isConnected) alvo = blocoAtual && blocoAtual.isConnected ? blocoAtual : ed.lastElementChild;
+  if (origem === 'slash' && alvo) alvo.innerHTML = '<br>';
+  if (!blocoVazio(alvo)) { const p = novoP(); if (alvo && alvo.parentNode === ed) alvo.after(p); else ed.appendChild(p); alvo = p; }
+  if (TIPOS_TEXTO.includes(id)) { if (id === 'p') { caretEm(alvo); editorMudou(); } else transformar(alvo, id); }
+  else if (id === 'img') { caretEm(alvo); $('#a-img-file').click(); }
+  else if (id === 'hr') { alvo.before(document.createElement('hr')); caretEm(alvo); editorMudou(); }
+  else if (id === 'botao') {
+    const p = document.createElement('p'); p.className = 'botao';
+    p.innerHTML = `<a href="${esc(waLink(null, 'Olá! Quero agendar uma consulta.'))}">Agendar consulta pelo WhatsApp</a>`;
+    alvo.before(p); caretEm(alvo); editorMudou();
+  }
+}
+function prepararEditor() {
+  const ed = ED();
+  ed.querySelectorAll('.b-sel, .b-vazio').forEach(x => x.classList.remove('b-sel', 'b-vazio'));
+  normalizarEditor(); blocoAtual = null; edFocado = false; fecharMenu(); fecharPop(); posicionarUI();
+}
+function iniciarEditorBlocos() {
+  const ed = ED(), wrap = $('#a-ed-wrap'), bt = $('#a-bt'), pop = $('#a-pop'), menu = $('#a-menu'), ins = $('#a-ins');
+  $$('[data-ico]').forEach(el => { el.innerHTML = ICO[el.dataset.ico]; });
+
+  document.addEventListener('selectionchange', () => {
+    const s = getSelection(); if (!s.rangeCount) return;
+    const n = s.anchorNode; if (!n || n === ed || !ed.contains(n)) return;
+    if (Date.now() < fixarAte) return;
+    const b = blocoDe(n); if (!b) return;
+    rangeSalvo = s.getRangeAt(0).cloneRange();
+    if (b !== blocoAtual) setAtual(b); else { b.classList.toggle('b-vazio', blocoVazio(b)); posicionarUI(); }
+  });
+  ed.addEventListener('focus', () => { edFocado = true; posicionarUI(); });
+  wrap.addEventListener('focusout', () => setTimeout(() => {
+    const at = document.activeElement;
+    if (at !== ed) { edFocado = false; posicionarUI(); }
+    if (!wrap.contains(at)) fecharMenu();
+  }, 150));
+  ed.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'HR') { e.preventDefault(); ed.focus({ preventScroll: true }); fixarAte = Date.now() + 300; edFocado = true; setAtual(e.target); }
+  });
+  ed.addEventListener('keydown', e => {
+    if (navMenu(e)) return;
+    const b = Date.now() < fixarAte ? blocoAtual : blocoDaSelecao();
+    if (b && tipoBloco(b) === 'hr' && (e.key === 'Backspace' || e.key === 'Delete')) { e.preventDefault(); excluirBloco(b); return; }
+    if (b && tipoBloco(b) === 'hr' && e.key === 'Enter') { e.preventDefault(); const p = novoP(); b.after(p); caretEm(p); editorMudou(); return; }
+    if (e.key === 'Enter' && !e.shiftKey && b && b.classList.contains('botao')) { e.preventDefault(); const p = novoP(); b.after(p); caretEm(p); editorMudou(); return; }
+    if (e.key === 'Escape') fecharPop();
+  });
+  ed.addEventListener('input', () => {
+    const criado = normalizarEditor();
+    if (criado) caretEm(criado);
+    const b = blocoDaSelecao();
+    if (b && b.tagName === 'P' && !b.classList.contains('botao')) {
+      const m = b.textContent.match(/^\/([^\s/]{0,24})$/);
+      if (m) { if (menuB.aberto && menuB.origem === 'slash' && menuB.alvo === b) { menuB.q = m[1]; menuB.idx = 0; renderMenu(); } else abrirMenu('slash', b, m[1]); }
+      else if (menuB.aberto && menuB.origem === 'slash') fecharMenu();
+    }
+    posicionarUI();
+  });
+
+  bt.addEventListener('mousedown', e => e.preventDefault());
+  bt.addEventListener('click', e => { const btn = e.target.closest('button[data-bt]'); if (btn) acaoBt(btn.dataset.bt, btn); });
+  pop.addEventListener('mousedown', e => e.preventDefault());
+  pop.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-i]'); if (!btn) return;
+    const it = pop._itens[+btn.dataset.i]; fecharPop(); if (it && it.fn) it.fn();
+  });
+  ins.addEventListener('mousedown', e => e.preventDefault());
+  ins.addEventListener('click', () => abrirMenu('ins', blocoAtual));
+  menu.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
+  menu.addEventListener('click', e => { const btn = e.target.closest('button[data-id]'); if (btn) escolherBloco(btn.dataset.id); });
+  $('#a-menu-busca').addEventListener('input', e => { menuB.q = e.target.value; menuB.idx = 0; renderMenu(); });
+  $('#a-menu-busca').addEventListener('keydown', navMenu);
+
+  $('#eb-add').addEventListener('mousedown', e => e.preventDefault());
+  $('#eb-add').addEventListener('click', () => { if (menuB.aberto) fecharMenu(); else abrirMenu('topo', blocoAtual); });
+  $('#eb-desfazer').addEventListener('mousedown', e => e.preventDefault());
+  $('#eb-refazer').addEventListener('mousedown', e => e.preventDefault());
+  $('#eb-desfazer').addEventListener('click', () => { ed.focus(); document.execCommand('undo'); editorMudou(); posicionarUI(); });
+  $('#eb-refazer').addEventListener('click', () => { ed.focus(); document.execCommand('redo'); editorMudou(); posicionarUI(); });
+
+  document.addEventListener('mousedown', e => {
+    const t = e.target;
+    if (!pop.hidden && !pop.contains(t) && !bt.contains(t)) fecharPop();
+    if (menuB.aberto && !menu.contains(t) && !ins.contains(t) && !$('#eb-add').contains(t)) fecharMenu();
+  });
+  window.addEventListener('resize', posicionarUI);
+}
+
+/* ---------- SEO (estilo Rank Math) ---------- */
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const SUFIXO = ' | Psicólogos Brasil';
+function analisarSeo(a) {
+  const k = (a.palavras || [])[0] || '', kn = norm(k);
+  const tituloG = a.tituloSeo || a.titulo || '', tg = norm(tituloG);
+  const tmp = document.createElement('div'); tmp.innerHTML = a.html || '';
+  const tn = norm(tmp.textContent), pal = contarPalavras(a.html);
+  const subt = [...tmp.querySelectorAll('h2,h3,h4')].map(h => norm(h.textContent));
+  const alts = [...tmp.querySelectorAll('img')].map(i => norm(i.getAttribute('alt'))).concat(a.capa ? [norm(a.capa.alt)] : []);
+  const links = [...tmp.querySelectorAll('a[href]')].map(x => x.getAttribute('href') || '');
+  let host = ''; try { host = new URL(state.config.siteUrl).host; } catch (e) {}
+  const internos = links.filter(h => h.startsWith('/') || (host && h.includes(host))).length;
+  const externos = links.filter(h => /^https?:/i.test(h) && !(host && h.includes(host)) && !/whatsapp\.com|wa\.me/i.test(h)).length;
+  const d = (a.descricao || '').length, tl = (tituloG + SUFIXO).length;
+  const L = [], add = (ok, sim, nao) => L.push({ ok, txt: ok ? sim : nao });
+  if (!kn) L.push({ ok: false, txt: 'Adicione a palavra-chave principal para ver a análise completa.' });
+  else {
+    const ocorr = tn.split(kn).length - 1;
+    const dens = pal ? ocorr * kn.split(' ').length / pal * 100 : 0;
+    const inicio = tn.slice(0, Math.max(250, Math.floor(tn.length * 0.1)));
+    const pos = tg.indexOf(kn);
+    const repetida = state.artigos.some(x => x.id !== a.id && norm((x.palavras || [])[0]) === kn);
+    add(pos > -1, 'Palavra-chave no título do Google', 'Coloque a palavra-chave no título');
+    add(pos > -1 && pos <= tg.length / 2, 'Palavra-chave no começo do título', 'Coloque a palavra-chave mais no começo do título');
+    add(norm(a.descricao).includes(kn), 'Palavra-chave no resumo do Google', 'Use a palavra-chave no resumo para o Google');
+    add((a.slug || '').includes(slugify(k)), 'Palavra-chave no link', 'Coloque a palavra-chave no link do artigo');
+    add(inicio.includes(kn), 'Palavra-chave no início do texto', 'Use a palavra-chave logo no primeiro parágrafo');
+    add(subt.some(x => x.includes(kn)), 'Palavra-chave em um Título/Subtítulo do texto', 'Use a palavra-chave em pelo menos um Título ou Subtítulo');
+    add(alts.some(x => x.includes(kn)), 'Palavra-chave na descrição de uma imagem', 'Use a palavra-chave na descrição (alt) da capa ou de outra imagem');
+    add(dens >= 0.5 && dens <= 2.5, `Palavra-chave aparece ${ocorr}x (${dens.toFixed(1).replace('.', ',')}% do texto)`,
+      dens < 0.5 ? `Palavra-chave aparece pouco: ${ocorr}x (${dens.toFixed(1).replace('.', ',')}%). Ideal entre 0,5% e 2,5%` : `Palavra-chave repetida demais: ${dens.toFixed(1).replace('.', ',')}%. Ideal até 2,5%`);
+    add(!repetida, 'Palavra-chave principal não é usada em outro artigo', 'Outro artigo já usa essa palavra-chave principal. Os dois vão competir no Google');
+  }
+  add(pal >= 600, `Texto com ${pal} palavras`, `Texto curto: ${pal} palavras. Recomendado 600 ou mais`);
+  add(tl <= 60, `Título do Google com ${tl} caracteres`, `Título do Google com ${tl} caracteres. O Google corta depois de uns 60`);
+  add(d >= 120 && d <= 160, `Resumo do Google com ${d} caracteres`, d === 0 ? 'Escreva o resumo para o Google' : `Resumo do Google com ${d} caracteres. Ideal entre 120 e 160`);
+  add(internos > 0, `${internos} link(s) para páginas do site`, 'Adicione links para outras páginas do site (ex.: /psicologos/ ou outro artigo)');
+  add(externos > 0, `${externos} link(s) para fontes externas`, 'Adicione um link para uma fonte confiável (estudo, órgão oficial)');
+  add(!!(a.capa && a.capa.data), 'Tem imagem de capa', 'Adicione uma imagem de capa');
+  const nota = Math.round(L.filter(x => x.ok).length / L.length * 100);
+  return { L, nota };
+}
+const classeNota = n => n >= 80 ? 'bom' : n >= 50 ? 'medio' : 'ruim';
+function seloSeo(a) { const n = analisarSeo(a).nota; return `<span class="selo seo-${classeNota(n)}">SEO ${n}</span>`; }
+function renderTags(a) {
+  const box = $('#a-tags'), inp = $('#a-tag-input');
+  box.querySelectorAll('.tag').forEach(t => t.remove());
+  (a.palavras || []).forEach((k, i) => {
+    const t = document.createElement('span');
+    t.className = 'tag' + (i === 0 ? ' principal' : ''); t.dataset.i = i;
+    t.title = i === 0 ? 'Palavra-chave principal' : 'Clique para tornar principal';
+    t.innerHTML = `<button type="button" class="tag-x" data-x="${i}" aria-label="Remover ${esc(k)}">×</button>${i === 0 ? '★ ' : ''}${esc(k)}`;
+    box.insertBefore(t, inp);
+  });
+  inp.placeholder = (a.palavras || []).length ? 'Outra palavra-chave…' : 'Ex.: ansiedade';
+}
+function renderSeo(a) {
+  const tituloG = (a.tituloSeo || a.titulo || 'Título do artigo') + SUFIXO;
+  $('#sn-titulo').textContent = tituloG.length > 62 ? tituloG.slice(0, 60).trim() + '…' : tituloG;
+  $('#sn-link').textContent = state.config.siteUrl.replace(/\/+$/, '') + ' › ' + (slugify(a.slug) || 'link-do-artigo');
+  const desc = a.descricao || '', sd = $('#sn-desc');
+  sd.textContent = desc ? (desc.length > 160 ? desc.slice(0, 157).trim() + '…' : desc) : 'Sem resumo: o Google vai pegar um trecho qualquer do texto. Escreva o resumo acima.';
+  sd.classList.toggle('vazio', !desc);
+  renderTags(a);
+  const { L, nota } = analisarSeo(a);
+  const el = $('#a-seo-nota'); el.textContent = `${nota} / 100`; el.className = 'seo-nota ' + classeNota(nota);
+  $('#a-checks').innerHTML = [...L].sort((x, y) => x.ok - y.ok).map(c => `<li class="${c.ok ? 'ok' : 'no'}"><span class="i">${c.ok ? '✓' : '!'}</span><span>${esc(c.txt)}</span></li>`).join('');
+}
+function addPalavra(txt) {
+  const a = artigoAtual(); if (!a) return;
+  a.palavras = a.palavras || [];
+  txt.split(',').map(t => t.trim()).filter(Boolean).forEach(t => { if (!a.palavras.some(x => norm(x) === norm(t))) a.palavras.push(t); });
+  marcarAlterado(a); salvar(); infoArtigo(); renderListaArtigosDebounce();
+}
+
+function validarArtigo(a) {
+  if (!a.titulo.trim()) { toast('Coloque um título no artigo.', 'erro'); return false; }
+  if (!a.slug) { toast('O link do artigo está vazio.', 'erro'); return false; }
+  if (RESERVADOS.includes(a.slug)) { toast(`O link “${a.slug}” já é usado por uma página do site. Escolha outro.`, 'erro'); return false; }
+  if (state.artigos.some(x => x.id !== a.id && x.slug === a.slug)) { toast('Já existe outro artigo com esse link.', 'erro'); return false; }
+  if (!textoPuro(a.html)) { toast('O artigo ainda não tem texto.', 'erro'); return false; }
+  const ex = lerSchemaExtra(a.schemaExtra);
+  if (!ex.ok) { toast('Corrija o schema personalizado antes de salvar: ' + ex.erro, 'erro'); return false; }
+  if ((a.faq || []).some(f => (f.p || '').trim() && !(f.r || '').trim())) { toast('Tem pergunta do FAQ sem resposta.', 'erro'); return false; }
+  if (!a.descricao.trim() && !confirm('O resumo para o Google está vazio. Ele ajuda bastante no SEO. Salvar mesmo assim?')) return false;
+  return true;
+}
+
+/* =============== PSICÓLOGOS =============== */
+function novoPsicologo() {
+  const p = { id: 'p' + Date.now(), nome: '', tratamento: 'Psicóloga', crp: '', slug: '', slugManual: false, foto: null, abordagens: [], especialidades: '', valor: '', duracao: 50, bio: '', whats: '', ativo: true, verificado: false, verificadoEm: '', temas: [], publico: ['Adultos'], idiomas: ['Português'], acessibilidade: [], titulo: '', citacao: '', passos: [], esperar: '', ambiente: null, criado: Date.now(), atualizado: Date.now(), geradoEm: null, alterado: false };
+  state.psicologos.unshift(p); salvarAgora(); abrirPsicologo(p.id); renderListaPsicologos();
+  setTimeout(() => $('#p-nome').focus(), 30);
+}
+function psiAtual() { return state.psicologos.find(x => x.id === atualP); }
+const especialidadesDe = p => [...new Set([...(p.temas || []), ...String(p.especialidades || '').split(',').map(s => s.trim()).filter(Boolean)])];
+const bioHtml = t => String(t || '').split(/\n\s*\n/).map(s => s.trim()).filter(Boolean).map(s => `<p>${esc(s).replace(/\n/g, '<br>')}</p>`).join('\n');
+const primeiroNome = n => String(n || '').trim().split(/\s+/)[0] || '';
+
+const SELO_PAINEL = '<svg class="selo-ok" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5l2.6 1.9 3.2-.1 1 3 2.6 1.9-1 3 1 3-2.6 1.9-1 3-3.2-.1L12 22.5l-2.6-1.9-3.2.1-1-3L2.6 15.8l1-3-1-3 2.6-1.9 1-3 3.2.1z"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const TEMAS = [
+  'Abuso físico ou emocional', 'Abuso sexual', 'Adolescência', 'Adoção de filho', 'Agressividade', 'Alcoolismo',
+  'Ansiedade', 'Aposentadoria', 'Assédio moral', 'Assédio sexual', 'Autismo (TEA)', 'Autoconhecimento', 'Autoestima',
+  'Bullying', 'Burnout', 'Carreira', 'Ciúmes', 'Compulsão alimentar', 'Conflitos familiares', 'Crise existencial',
+  'Dependência química', 'Depressão', 'Dificuldades de aprendizagem', 'Divórcio e separação', 'Dor crônica', 'Estresse',
+  'Fobias', 'Gestação e pós-parto', 'Identidade de gênero', 'Insônia', 'LGBTQIA+', 'Luto', 'Maternidade e paternidade',
+  'Medos', 'Morar fora do Brasil', 'Orientação profissional', 'Pânico', 'Perfeccionismo', 'Procrastinação', 'Racismo',
+  'Relacionamentos', 'Saúde da mulher', 'Sexualidade', 'Síndrome do impostor', 'Solidão', 'TDAH', 'Terapia de casal',
+  'TOC', 'Transtorno alimentar', 'Transtorno bipolar', 'Trauma e estresse pós-traumático', 'Violência doméstica'
+];
+const PUBLICO = ['Crianças', 'Adolescentes', 'Adultos', 'Idosos', 'Casais', 'Famílias'];
+const IDIOMAS = ['Português', 'Inglês', 'Espanhol', 'Francês', 'Italiano', 'Alemão'];
+const ACESS = ['Atendimento em Libras', 'Sessão por texto (chat)', 'Experiência com pessoas com deficiência'];
+function renderChecks(el, itens, sel) {
+  const todos = [...itens, ...(sel || []).filter(x => !itens.includes(x))];
+  el.innerHTML = todos.map(x => `<label><input type="checkbox" value="${esc(x)}" ${(sel || []).includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('');
+}
+const PASSOS_PADRAO = [
+  { t: 'Fale comigo', x: 'Clique em agendar e mande uma mensagem pelo WhatsApp. A equipe confirma o melhor dia e horário para você.' },
+  { t: 'Comece no seu ritmo', x: 'A primeira sessão é para nos conhecermos. Você conta o que está vivendo, sem pressa e sem julgamentos.' },
+  { t: 'Cuide de você', x: 'Com encontros regulares por vídeo, construímos juntos caminhos para você se sentir melhor no dia a dia.' }
+];
+const ESPERAR_PADRAO = 'Sessões de 50 minutos por videochamada, de onde você estiver\nSigilo total, seguindo o Código de Ética do Conselho Federal de Psicologia\nUm espaço acolhedor e sem julgamentos para falar do que sente\nRecibo para pedir reembolso ao seu plano de saúde';
+const SVG_SELO = '<svg class="pf-selo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5l2.6 1.9 3.2-.1 1 3 2.6 1.9-1 3 1 3-2.6 1.9-1 3-3.2-.1L12 22.5l-2.6-1.9-3.2.1-1-3L2.6 15.8l1-3-1-3 2.6-1.9 1-3 3.2.1z"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const passosDe = p => PASSOS_PADRAO.map((d, i) => { const x = (p.passos || [])[i] || {}; return { t: (x.t || '').trim() || d.t, x: (x.x || '').trim() || d.x }; });
+const esperarDe = p => linhas(p.esperar || ESPERAR_PADRAO);
+
+function corpoPerfil(p, fotoSrc, ambSrc) {
+  const esp = especialidadesDe(p), pn = esc(primeiroNome(p.nome)), nome = esc(p.nome || 'Nome do profissional');
+  const prof = esc(p.tratamento) + (p.crp ? ` · CRP ${esc(p.crp)}` : '');
+  const agendar = waLink(p.whats, `Olá! Quero agendar uma consulta com ${p.nome}.`);
+  const valor = `Sessão de ${esc(p.duracao || 50)} min${p.valor ? ` · R$ ${Number(p.valor).toLocaleString('pt-BR')}` : ''}`;
+  const selo = p.verificado ? `<span class="pf-verif" title="Perfil verificado: CRP conferido pela equipe Psicólogos Brasil">${SVG_SELO}<span class="pf-sr">Perfil verificado</span></span>` : '';
+  const titulo = esc((p.titulo || '').trim() || `${p.tratamento} online para cuidar de você`);
+  const citacao = esc((p.citacao || '').trim() || 'Estou aqui para ouvir, acolher e caminhar com você, para que a sua jornada fique mais leve e mais clara.');
+  return `<div class="pf">
+  <section class="pf-hero">
+    <div class="wrap pf-hero-grid">
+      <figure class="pf-foto">${fotoSrc ? `<img src="${fotoSrc}" alt="Foto de ${nome}" width="${p.foto.w}" height="${p.foto.h}" fetchpriority="high">` : `<span class="pf-foto-vazia">${esc((p.nome || '?')[0].toUpperCase())}</span>`}</figure>
+      <div class="pf-hero-txt">
+        <nav class="pf-trilha" aria-label="Você está em"><a href="/">Início</a> › <a href="/psicologos/">Psicólogos</a> › <span>${nome}</span></nav>
+        <p class="pf-nome">${nome}${selo}</p>
+        <h1>${titulo}</h1>
+        <p class="pf-sub">${prof} · Atendimento online</p>
+        ${p.verificado ? `<p class="pf-verif-txt">${SVG_SELO} CRP conferido pela equipe Psicólogos Brasil</p>` : ''}
+        ${p.abordagens.length ? `<ul class="pf-tags">${p.abordagens.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+        <div class="pf-cta"><a class="btn lg" href="${agendar}">Agendar com ${pn}</a><span>${valor}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pf-quote">
+    <div class="wrap"><blockquote><p>“${citacao}”</p><footer>— ${nome}</footer></blockquote></div>
+  </section>
+
+  <section class="pf-passos">
+    <div class="wrap">
+      <ol class="pf-cards">
+${passosDe(p).map((x, i) => `        <li class="pf-card pf-card-${i + 1}"><h2><span>${i + 1}.</span> ${esc(x.t)}</h2><p>${esc(x.x)}</p></li>`).join('\n')}
+      </ol>
+    </div>
+  </section>
+${p.bio || esp.length || (p.publico || []).length ? `
+  <section class="pf-sobre">
+    <div class="wrap pf-sobre-grid">
+      ${p.bio ? `<div class="pf-bio"><h2>Sobre ${pn}</h2>\n${bioHtml(p.bio)}</div>` : '<div></div>'}
+      <aside class="pf-esp">
+        ${esp.length ? `<h3>Com experiência em</h3><ul>${esp.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+        ${(p.publico || []).length ? `<h3>Atende</h3><p>${esc(p.publico.join(', '))}</p>` : ''}
+        ${(p.idiomas || []).length ? `<h3>Idiomas</h3><p>${esc(p.idiomas.join(', '))}</p>` : ''}
+        ${(p.acessibilidade || []).length ? `<h3>Acessibilidade</h3><p>${esc(p.acessibilidade.join(' · '))}</p>` : ''}
+      </aside>
+    </div>
+  </section>
+` : ''}
+  <section class="pf-esperar">
+    <div class="wrap">
+      <div class="pf-esperar-box${ambSrc ? '' : ' sem-img'}">
+        ${ambSrc ? `<figure class="pf-amb"><img src="${ambSrc}" alt="Ambiente de atendimento de ${nome}" width="${p.ambiente.w}" height="${p.ambiente.h}" loading="lazy"></figure>` : ''}
+        <div class="pf-esperar-card">
+          <h2>O que esperar?</h2>
+          <ul>${esperarDe(p).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+          <a class="btn" href="${agendar}">Agendar minha sessão</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>`;
+}
+function montarPerfil(p) {
+  const arquivos = []; let fotoUrl = '';
+  if (p.foto && p.foto.data) {
+    const nome = `${p.slug}.${extDe(p.foto.data)}`;
+    arquivos.push({ caminho: `assets/imagens/psicologos/${nome}`, blob: dataParaBlob(p.foto.data) });
+    fotoUrl = `/assets/imagens/psicologos/${nome}`;
+  }
+  let ambUrl = '';
+  if (p.ambiente && p.ambiente.data) {
+    const nome = `${p.slug}-ambiente.${extDe(p.ambiente.data)}`;
+    arquivos.push({ caminho: `assets/imagens/psicologos/${nome}`, blob: dataParaBlob(p.ambiente.data) });
+    ambUrl = `/assets/imagens/psicologos/${nome}`;
+  }
+  const url = `${base()}/psicologo/${p.slug}/`;
+  const titulo = `${p.nome}, ${p.tratamento} Online${p.crp ? ` (CRP ${p.crp})` : ''} | Psicólogos Brasil`;
+  const resumo = textoPuro(bioHtml(p.bio)).slice(0, 155);
+  const descricao = resumo || `${p.tratamento} online${p.abordagens.length ? ' em ' + p.abordagens.join(', ') : ''}. Agende sua sessão pela Psicólogos Brasil.`;
+  const jsonld = { '@context': 'https://schema.org', '@type': 'Person', name: p.nome, jobTitle: p.tratamento, url, worksFor: { '@type': 'Organization', name: 'Psicólogos Brasil', url: base() + '/' } };
+  if (fotoUrl) jsonld.image = base() + fotoUrl;
+  if (especialidadesDe(p).length) jsonld.knowsAbout = especialidadesDe(p);
+  if (p.crp) jsonld.hasCredential = { '@type': 'EducationalOccupationalCredential', credentialCategory: 'Registro profissional', name: `CRP ${p.crp}`, recognizedBy: { '@type': 'Organization', name: 'Conselho Federal de Psicologia' } };
+  const html = pagina({ titulo, descricao, url, imagem: fotoUrl ? base() + fotoUrl : '', tipo: 'profile', css: 'perfil.css', corpo: corpoPerfil(p, fotoUrl, ambUrl), jsonld });
+  arquivos.unshift({ caminho: `psicologo/${p.slug}/index.html`, texto: html });
+  return { html, arquivos, fotoUrl };
+}
+function preencherAbordagens(sel) {
+  const ab = linhas(state.config.abordagens); sel.forEach(s => { if (!ab.includes(s)) ab.push(s); });
+  $('#p-abordagens').innerHTML = ab.map(x => `<label><input type="checkbox" value="${esc(x)}" ${sel.includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('');
+}
+function mostrarFoto(p) {
+  const el = $('#p-foto-prev');
+  if (p.foto && p.foto.data) { el.style.backgroundImage = `url("${p.foto.data}")`; el.textContent = ''; }
+  else { el.style.backgroundImage = ''; el.textContent = 'Sem foto'; }
+}
+function mostrarAmb(p) {
+  const el = $('#p-amb-prev');
+  if (p.ambiente && p.ambiente.data) { el.style.backgroundImage = `url("${p.ambiente.data}")`; el.textContent = ''; }
+  else { el.style.backgroundImage = ''; el.textContent = 'Sem imagem'; }
+}
+function preencherPsi(p) {
+  $('#p-nome').value = p.nome; $('#p-tratamento').value = p.tratamento; $('#p-crp').value = p.crp; $('#p-slug').value = p.slug;
+  $('#p-especialidades').value = p.especialidades; $('#p-valor').value = p.valor; $('#p-duracao').value = p.duracao;
+  renderChecks($('#p-temas'), TEMAS, p.temas || []); $('#p-temas-busca').value = ''; $('#p-temas-n').textContent = (p.temas || []).length;
+  renderChecks($('#p-publico'), PUBLICO, p.publico || []); renderChecks($('#p-idiomas'), IDIOMAS, p.idiomas || ['Português']); renderChecks($('#p-acess'), ACESS, p.acessibilidade || []);
+  $('#p-bio').value = p.bio; $('#p-whats').value = p.whats; $('#p-ativo').checked = p.ativo;
+  $('#p-verificado').checked = !!p.verificado; $('#p-verif-data').value = p.verificadoEm || '';
+  $('#p-verif-data-l').hidden = !p.verificado; $('#p-verif-box').classList.toggle('on', !!p.verificado);
+  $('#p-titulo').value = p.titulo || ''; $('#p-citacao').value = p.citacao || ''; $('#p-esperar').value = p.esperar || '';
+  $('#p-esperar').placeholder = ESPERAR_PADRAO;
+  $('#p-passos').innerHTML = PASSOS_PADRAO.map((d, i) => { const x = (p.passos || [])[i] || {}; return `<div data-i="${i}"><span>Passo ${i + 1}</span><input type="text" data-c="t" value="${esc(x.t || '')}" placeholder="${esc(d.t)}"><textarea data-c="x" placeholder="${esc(d.x)}">${esc(x.x || '')}</textarea></div>`; }).join('');
+  mostrarAmb(p);
+  preencherAbordagens(p.abordagens); mostrarFoto(p); infoPsi();
+}
+function abrirPsicologo(id) {
+  atualP = id; const p = psiAtual();
+  $('#psiVazio').hidden = !!p; $('#psiEd').hidden = !p;
+  if (p) { trocarAba('psi', 'editar'); preencherPsi(p); }
+  renderListaPsicologos();
+}
+function infoPsi() {
+  const p = psiAtual(); if (!p) return;
+  $('#p-info').innerHTML = `${p.verificado ? SELO_PAINEL + ' Verificado · ' : ''}${p.ativo ? 'Aparece na lista' : 'Oculto da lista'} · ${statusSelo(p)}${p.geradoEm ? ` <span>em ${quando(p.geradoEm)}</span>` : ''}`;
+}
+function renderListaPsicologos() {
+  const el = $('#listaPsicologos');
+  $('#qtdPsicologos').textContent = state.psicologos.length;
+  if (!state.psicologos.length) { el.innerHTML = '<div class="vazio-lista">Nenhum psicólogo ainda.<br>Comece pelo botão “+ Novo psicólogo”.</div>'; return; }
+  el.innerHTML = [...state.psicologos].sort((x, y) => (x.nome || '').localeCompare(y.nome || '', 'pt-BR')).map(p => `
+    <button class="item ${p.id === atualP ? 'sel' : ''}" data-id="${p.id}">
+      ${p.foto && p.foto.data ? `<img src="${p.foto.data}" alt="" style="border-radius:50%">` : `<span class="ph" style="border-radius:50%">${esc((p.nome || '?')[0].toUpperCase())}</span>`}
+      <span style="min-width:0"><span class="t">${esc(p.nome || 'Sem nome')} ${p.verificado ? SELO_PAINEL : ''}</span>
+      <span class="m">${p.crp ? 'CRP ' + esc(p.crp) : ''} ${statusSelo(p)} ${p.ativo ? '' : '<span class="selo rasc">Oculto</span>'}</span></span>
+    </button>`).join('');
+}
+function validarPsi(p) {
+  if (!p.nome.trim()) { toast('Coloque o nome do psicólogo.', 'erro'); return false; }
+  if (!p.slug) { toast('O link do perfil está vazio.', 'erro'); return false; }
+  if (state.psicologos.some(x => x.id !== p.id && x.slug === p.slug)) { toast('Já existe outro psicólogo com esse link. Mude o final, ex.: maria-silva-2.', 'erro'); return false; }
+  if (p.verificado && !p.crp.trim()) { toast('Um perfil verificado precisa do CRP preenchido.', 'erro'); return false; }
+  if (!p.crp.trim() && !confirm('O CRP está vazio. Salvar mesmo assim?')) return false;
+  return true;
+}
+
+/* =============== arquivos gerais: listas e sitemap =============== */
+function arquivosGerais() {
+  const artigos = state.artigos.filter(a => a.geradoEm).sort((x, y) => (y.data || '').localeCompare(x.data || '')).map(a => ({
+    titulo: a.titulo, url: `/${a.slug}/`, categoria: a.categoria, data: a.data, autor: a.autor, resumo: a.descricao, capa: a.capaUrl || '', minutos: minutos(a.html)
+  }));
+  const psis = state.psicologos.filter(p => p.geradoEm).map(p => ({
+    nome: p.nome, tratamento: p.tratamento, crp: p.crp, url: `/psicologo/${p.slug}/`, foto: p.fotoUrl || '', abordagens: p.abordagens,
+    especialidades: especialidadesDe(p), temas: especialidadesDe(p), publico: p.publico || [], idiomas: (p.idiomas && p.idiomas.length) ? p.idiomas : ['Português'], acessibilidade: p.acessibilidade || [],
+    genero: p.tratamento === 'Psicólogo' ? 'Homem' : p.tratamento === 'Psicóloga' ? 'Mulher' : 'Não binário', valor: p.valor ? Number(p.valor) : null, duracao: Number(p.duracao) || 50,
+    verificado: !!p.verificado, resumo: textoPuro(bioHtml(p.bio)).slice(0, 160), whatsapp: (p.whats || state.config.whatsapp).replace(/\D/g, ''), ativo: p.ativo
+  }));
+  const hoje = hojeISO();
+  const urls = [
+    ...linhas(state.config.paginasFixas).map(u => ({ loc: base() + u, mod: hoje })),
+    ...state.artigos.filter(a => a.geradoEm).map(a => ({ loc: `${base()}/${a.slug}/`, mod: new Date(a.geradoEm).toISOString().slice(0, 10) })),
+    ...state.psicologos.filter(p => p.geradoEm && p.ativo).map(p => ({ loc: `${base()}/psicologo/${p.slug}/`, mod: new Date(p.geradoEm).toISOString().slice(0, 10) }))
+  ];
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `  <url><loc>${esc(u.loc)}</loc><lastmod>${u.mod}</lastmod></url>`).join('\n')}
+</urlset>
+`;
+  return [
+    { caminho: 'data/artigos.json', texto: JSON.stringify(artigos, null, 2) },
+    { caminho: 'data/psicologos.json', texto: JSON.stringify(psis, null, 2) },
+    { caminho: 'sitemap.xml', texto: sitemap }
+  ];
+}
+async function gravarNaPasta(arquivos, cssCaminho, cssTexto) {
+  for (const f of arquivos) await escrever(pasta, f.caminho, f.blob || f.texto);
+  if (cssCaminho && !(await existe(pasta, cssCaminho))) await escrever(pasta, cssCaminho, cssTexto);
+  for (const f of arquivosGerais()) await escrever(pasta, f.caminho, f.texto);
+}
+async function baixarZip(arquivos, nomeZip) {
+  if (!window.JSZip) { toast('Para baixar o .zip o computador precisa estar com internet. Outra opção: conectar a pasta do site, ou copiar o código na aba “Código HTML”.', 'erro'); return false; }
+  const z = new JSZip(); arquivos.forEach(f => z.file(f.caminho, f.blob || f.texto));
+  baixar(await z.generateAsync({ type: 'blob' }), nomeZip); return true;
+}
+
+async function gerarArtigo(forcarZip) {
+  const a = artigoAtual(); if (!a) return;
+  a.slug = slugify(a.slug); $('#a-slug').value = a.slug;
+  if (!validarArtigo(a)) return;
+  const antes = { g: a.geradoEm, al: a.alterado };
+  a.geradoEm = Date.now(); a.alterado = false;
+  const r = montarArtigo(a); a.capaUrl = r.capaUrl;
+  try {
+    if (pasta && !forcarZip) {
+      await gravarNaPasta(r.arquivos, 'css/artigo.css', CSS_ARTIGO);
+      toast(`Pronto! O artigo foi salvo em ${pasta.name}/blog/${a.slug}/. Agora é só enviar os arquivos para o site.`, 'ok');
+    } else {
+      const ok = await baixarZip([...r.arquivos, { caminho: 'css/artigo.css', texto: CSS_ARTIGO }, ...arquivosGerais()], `artigo-${a.slug}.zip`);
+      if (!ok) { a.geradoEm = antes.g; a.alterado = antes.al; return; }
+      toast('Arquivo .zip baixado. Extraia dentro da pasta do site, mantendo as pastas.', 'ok');
+    }
+  } catch (e) {
+    a.geradoEm = antes.g; a.alterado = antes.al;
+    toast('Não consegui salvar: ' + (e.message || e), 'erro');
+  }
+  salvarAgora(); renderListaArtigos(); infoArtigo();
+}
+async function gerarPsi(forcarZip) {
+  const p = psiAtual(); if (!p) return;
+  p.slug = slugify(p.slug); $('#p-slug').value = p.slug;
+  if (!validarPsi(p)) return;
+  const antes = { g: p.geradoEm, al: p.alterado };
+  p.geradoEm = Date.now(); p.alterado = false;
+  const r = montarPerfil(p); p.fotoUrl = r.fotoUrl;
+  try {
+    if (pasta && !forcarZip) {
+      await gravarNaPasta(r.arquivos, 'css/perfil.css', CSS_PERFIL);
+      toast(`Pronto! Perfil salvo em ${pasta.name}/psicologo/${p.slug}/ e a lista data/psicologos.json foi atualizada.`, 'ok');
+    } else {
+      const ok = await baixarZip([...r.arquivos, { caminho: 'css/perfil.css', texto: CSS_PERFIL }, ...arquivosGerais()], `psicologo-${p.slug}.zip`);
+      if (!ok) { p.geradoEm = antes.g; p.alterado = antes.al; return; }
+      toast('Arquivo .zip baixado. Extraia dentro da pasta do site, mantendo as pastas.', 'ok');
+    }
+  } catch (e) {
+    p.geradoEm = antes.g; p.alterado = antes.al;
+    toast('Não consegui salvar: ' + (e.message || e), 'erro');
+  }
+  salvarAgora(); renderListaPsicologos(); infoPsi();
+}
+async function atualizarGerais() {
+  try {
+    if (pasta) { for (const f of arquivosGerais()) await escrever(pasta, f.caminho, f.texto); toast('sitemap.xml e listas atualizados na pasta.', 'ok'); }
+    else if (await baixarZip(arquivosGerais(), 'sitemap-e-listas.zip')) toast('Baixado. Extraia na pasta do site.', 'ok');
+  } catch (e) { toast('Não consegui salvar: ' + (e.message || e), 'erro'); }
+}
+async function excluir(tipo) {
+  const lista = tipo === 'artigo' ? state.artigos : state.psicologos;
+  const id = tipo === 'artigo' ? atualA : atualP;
+  const o = lista.find(x => x.id === id); if (!o) return;
+  const nome = tipo === 'artigo' ? (o.titulo || 'Sem título') : (o.nome || 'Sem nome');
+  const pastaItem = tipo === 'artigo' ? `blog/${o.slug}/` : `psicologo/${o.slug}/`;
+  if (!confirm(`Excluir “${nome}” do painel?${o.geradoEm ? `\n\nA página já foi gerada. Depois apague a pasta ${pastaItem} do site e da Hostinger.` : ''}`)) return;
+  lista.splice(lista.indexOf(o), 1);
+  salvarAgora();
+  if (tipo === 'artigo') { atualA = null; abrirArtigo(null); } else { atualP = null; abrirPsicologo(null); }
+  if (o.geradoEm && pasta) { try { for (const f of arquivosGerais()) await escrever(pasta, f.caminho, f.texto); } catch (e) {} }
+  toast(o.geradoEm ? `Removido do painel. Lembre de apagar a pasta ${pastaItem}.` : 'Removido.', o.geradoEm ? 'aviso' : 'ok');
+}
+
+/* =============== abas e prévia =============== */
+function trocarAba(tipo, aba) {
+  const raiz = tipo === 'artigo' ? $('#artigoEd') : $('#psiEd');
+  raiz.querySelectorAll('.abas button').forEach(b => b.classList.toggle('ativo', b.dataset.aba === aba));
+  raiz.querySelectorAll('.aba-painel').forEach(p => p.classList.toggle('ativo', p.dataset.aba === aba));
+  if (tipo === 'artigo') {
+    const a = artigoAtual(); if (!a) return;
+    if (aba === 'previa') $('#a-previa').srcdoc = docPrevia(corpoArtigo(a, limpar(a.html), a.capa && a.capa.data));
+    if (aba === 'html') { const s = slugify(a.slug) || 'link-do-artigo'; $('#a-html-caminho').textContent = `blog/${s}/index.html`; $('#a-html').value = montarArtigo({ ...a, slug: s }).html; }
+  } else {
+    const p = psiAtual(); if (!p) return;
+    if (aba === 'previa') $('#p-previa').srcdoc = docPrevia(corpoPerfil(p, p.foto && p.foto.data, p.ambiente && p.ambiente.data));
+    if (aba === 'html') { const s = slugify(p.slug) || 'nome'; $('#p-html-caminho').textContent = `psicologo/${s}/index.html`; $('#p-html').value = montarPerfil({ ...p, slug: s }).html; }
+  }
+}
+
+/* =============== configurações =============== */
+const CFG = ['head', 'siteUrl', 'whatsapp', 'autor', 'categorias', 'abordagens', 'paginasFixas', 'header', 'footer', 'scripts'];
+function preencherConfig() { CFG.forEach(k => { $('#cfg-' + k).value = state.config[k]; }); $('#a-dominio').textContent = state.config.siteUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '') + '/blog/'; }
+
+/* =============== eventos =============== */
+function ligar() {
+  // navegação
+  $$('.nav button').forEach(b => b.addEventListener('click', () => {
+    $$('.nav button').forEach(x => x.classList.toggle('ativo', x === b));
+    $$('.view').forEach(v => v.classList.toggle('ativa', v.id === 'view-' + b.dataset.view));
+    if (b.dataset.view === 'artigos' && atualA) preencherCategorias(artigoAtual().categoria);
+    if (b.dataset.view === 'psicologos' && atualP) preencherAbordagens(psiAtual().abordagens);
+  }));
+  $('#btnPasta').addEventListener('click', conectarPasta);
+  $$('.abas').forEach(ab => ab.addEventListener('click', e => { const b = e.target.closest('button'); if (b) trocarAba(ab.dataset.tipo, b.dataset.aba); }));
+  $$('.disp').forEach(d => d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) d.nextElementSibling.style.width = b.dataset.larg; }));
+
+  // artigos
+  $('#novoArtigo').addEventListener('click', novoArtigo);
+  $('#listaArtigos').addEventListener('click', e => { const b = e.target.closest('.item'); if (b) abrirArtigo(b.dataset.id); });
+  const camposA = { 'a-titulo': 'titulo', 'a-data': 'data', 'a-autor': 'autor', 'a-tituloSeo': 'tituloSeo', 'a-descricao': 'descricao', 'a-categoria': 'categoria' };
+  Object.entries(camposA).forEach(([id, k]) => $('#' + id).addEventListener('input', e => {
+    const a = artigoAtual(); if (!a) return;
+    a[k] = e.target.value;
+    if (k === 'titulo' && !a.slugManual) { a.slug = slugify(a.titulo); $('#a-slug').value = a.slug; }
+    marcarAlterado(a); salvar(); contadores(); infoArtigo(); renderListaArtigosDebounce();
+  }));
+  $('#a-slug').addEventListener('input', e => { const a = artigoAtual(); a.slug = e.target.value.toLowerCase().replace(/\s+/g, '-'); a.slugManual = !!a.slug; marcarAlterado(a); salvar(); });
+  $('#a-slug').addEventListener('blur', e => { const a = artigoAtual(); if (!a) return; a.slug = slugify(a.slug); e.target.value = a.slug; salvar(); });
+  $('#a-capa-btn').addEventListener('click', () => $('#a-capa-file').click());
+  $('#a-capa-file').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const r = await processarImagem(f, 1600); const a = artigoAtual(); a.capa = { ...r, alt: $('#a-capa-alt').value }; marcarAlterado(a); salvarAgora(); mostrarCapa(a); renderListaArtigos(); infoArtigo(); }
+    catch (err) { toast('Não consegui ler essa imagem.', 'erro'); }
+  });
+  $('#a-capa-rem').addEventListener('click', () => { const a = artigoAtual(); a.capa = null; marcarAlterado(a); salvarAgora(); mostrarCapa(a); renderListaArtigos(); });
+  $('#a-capa-alt').addEventListener('input', e => { const a = artigoAtual(); if (a.capa) { a.capa.alt = e.target.value; marcarAlterado(a); salvar(); infoArtigo(); } });
+  $('#a-faq-add').addEventListener('click', () => {
+    const a = artigoAtual(); a.faq = a.faq || []; a.faq.push({ p: '', r: '' });
+    renderFaq(a); marcarAlterado(a); salvar(); infoArtigo();
+    const ult = $$('#a-faq .faq-item input'); if (ult.length) ult[ult.length - 1].focus();
+  });
+  $('#a-faq').addEventListener('input', e => {
+    const it = e.target.closest('.faq-item'); if (!it) return; const a = artigoAtual();
+    a.faq[+it.dataset.i][e.target.dataset.c] = e.target.value; marcarAlterado(a); salvar(); infoArtigo();
+  });
+  $('#a-faq').addEventListener('click', e => {
+    const b = e.target.closest('[data-rem]'); if (!b) return; const a = artigoAtual();
+    a.faq.splice(+b.dataset.rem, 1); renderFaq(a); marcarAlterado(a); salvar(); infoArtigo();
+  });
+  $('#a-schema').addEventListener('input', e => { const a = artigoAtual(); a.schemaExtra = e.target.value; marcarAlterado(a); salvar(); renderSchema(a); });
+  $('#a-schema-ver').addEventListener('toggle', () => { const a = artigoAtual(); if (a && $('#a-schema-ver').open) atualizarSchemaFinal(a); });
+  $('#a-schema-copiar').addEventListener('click', () => { const a = artigoAtual(); atualizarSchemaFinal(a); copiar('#a-schema-final'); });
+  $('#a-snippet-editar').addEventListener('click', () => { const t = $('#a-tituloSeo'); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.focus(); });
+  const tagIn = $('#a-tag-input');
+  tagIn.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ',') && tagIn.value.trim()) { e.preventDefault(); addPalavra(tagIn.value); tagIn.value = ''; }
+    else if (e.key === 'Enter') e.preventDefault();
+    else if (e.key === 'Backspace' && !tagIn.value) { const a = artigoAtual(); if (a && (a.palavras || []).length) { a.palavras.pop(); marcarAlterado(a); salvar(); infoArtigo(); } }
+  });
+  tagIn.addEventListener('blur', () => { if (tagIn.value.trim()) { addPalavra(tagIn.value); tagIn.value = ''; } });
+  $('#a-tags').addEventListener('click', e => {
+    const a = artigoAtual(); if (!a) return;
+    const x = e.target.closest('.tag-x'), t = e.target.closest('.tag');
+    if (x) { a.palavras.splice(+x.dataset.x, 1); }
+    else if (t && +t.dataset.i > 0) { const [k] = a.palavras.splice(+t.dataset.i, 1); a.palavras.unshift(k); }
+    else { tagIn.focus(); return; }
+    marcarAlterado(a); salvar(); infoArtigo(); renderListaArtigosDebounce();
+  });
+
+  const ed = $('#a-texto');
+  try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
+  ed.addEventListener('input', editorMudou);
+  ed.addEventListener('keyup', guardarSelecao); ed.addEventListener('mouseup', guardarSelecao);
+  ed.addEventListener('paste', e => {
+    const cd = e.clipboardData; if (!cd) return;
+    const img = [...(cd.files || [])].find(f => f.type.startsWith('image/'));
+    e.preventDefault();
+    if (img) { guardarSelecao(); inserirImagemNoTexto(img); return; }
+    const html = cd.getData('text/html'), txt = cd.getData('text/plain');
+    if (html) document.execCommand('insertHTML', false, limpar(html));
+    else document.execCommand('insertHTML', false, txt.split(/\n\s*\n/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join(''));
+    normalizarEditor(); editorMudou();
+  });
+  ed.addEventListener('drop', e => {
+    const f = [...(e.dataTransfer.files || [])].find(x => x.type.startsWith('image/'));
+    if (f) { e.preventDefault(); rangeSalvo = null; inserirImagemNoTexto(f); }
+  });
+  $('#a-img-file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) inserirImagemNoTexto(f); });
+  iniciarEditorBlocos();
+
+  $('#a-gerar').addEventListener('click', () => gerarArtigo(false));
+  $('#a-zip').addEventListener('click', () => gerarArtigo(true));
+  $('#a-excluir').addEventListener('click', () => excluir('artigo'));
+  $('#a-copiar').addEventListener('click', () => copiar('#a-html'));
+
+  // psicólogos
+  $('#novoPsicologo').addEventListener('click', novoPsicologo);
+  $('#listaPsicologos').addEventListener('click', e => { const b = e.target.closest('.item'); if (b) abrirPsicologo(b.dataset.id); });
+  const camposP = { 'p-nome': 'nome', 'p-tratamento': 'tratamento', 'p-crp': 'crp', 'p-especialidades': 'especialidades', 'p-valor': 'valor', 'p-duracao': 'duracao', 'p-bio': 'bio', 'p-whats': 'whats' };
+  Object.entries(camposP).forEach(([id, k]) => $('#' + id).addEventListener('input', e => {
+    const p = psiAtual(); if (!p) return;
+    p[k] = e.target.value;
+    if (k === 'nome' && !p.slugManual) { p.slug = slugify(p.nome); $('#p-slug').value = p.slug; }
+    marcarAlterado(p); salvar(); infoPsi(); clearTimeout(tLista); tLista = setTimeout(renderListaPsicologos, 600);
+  }));
+  $('#p-slug').addEventListener('input', e => { const p = psiAtual(); p.slug = e.target.value.toLowerCase().replace(/\s+/g, '-'); p.slugManual = !!p.slug; marcarAlterado(p); salvar(); });
+  $('#p-slug').addEventListener('blur', e => { const p = psiAtual(); if (!p) return; p.slug = slugify(p.slug); e.target.value = p.slug; salvar(); });
+  $('#p-ativo').addEventListener('change', e => { const p = psiAtual(); p.ativo = e.target.checked; marcarAlterado(p); salvarAgora(); infoPsi(); renderListaPsicologos(); });
+  [['p-temas', 'temas'], ['p-publico', 'publico'], ['p-idiomas', 'idiomas'], ['p-acess', 'acessibilidade']].forEach(([id, k]) =>
+    $('#' + id).addEventListener('change', () => {
+      const p = psiAtual(); p[k] = $$('#' + id + ' input:checked').map(i => i.value);
+      if (k === 'temas') $('#p-temas-n').textContent = p.temas.length;
+      marcarAlterado(p); salvarAgora(); infoPsi();
+    }));
+  $('#p-temas-busca').addEventListener('input', e => {
+    const q = norm(e.target.value);
+    $$('#p-temas label').forEach(l => { l.hidden = !!q && !norm(l.textContent).includes(q); });
+  });
+  $('#p-abordagens').addEventListener('change', () => { const p = psiAtual(); p.abordagens = $$('#p-abordagens input:checked').map(i => i.value); marcarAlterado(p); salvarAgora(); infoPsi(); });
+  $('#p-foto-btn').addEventListener('click', () => $('#p-foto-file').click());
+  $('#p-foto-file').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const r = await processarImagem(f, 900, false, 0.8); const p = psiAtual(); p.foto = r; marcarAlterado(p); salvarAgora(); mostrarFoto(p); renderListaPsicologos(); infoPsi(); }
+    catch (err) { toast('Não consegui ler essa imagem.', 'erro'); }
+  });
+  $('#p-foto-rem').addEventListener('click', () => { const p = psiAtual(); p.foto = null; marcarAlterado(p); salvarAgora(); mostrarFoto(p); renderListaPsicologos(); });
+  const camposP2 = { 'p-titulo': 'titulo', 'p-citacao': 'citacao', 'p-esperar': 'esperar', 'p-verif-data': 'verificadoEm' };
+  Object.entries(camposP2).forEach(([id, k]) => $('#' + id).addEventListener('input', e => { const p = psiAtual(); if (!p) return; p[k] = e.target.value; marcarAlterado(p); salvar(); infoPsi(); }));
+  $('#p-verificado').addEventListener('change', e => {
+    const p = psiAtual(); p.verificado = e.target.checked;
+    if (p.verificado && !p.verificadoEm) { p.verificadoEm = hojeISO(); $('#p-verif-data').value = p.verificadoEm; }
+    if (p.verificado && !p.crp.trim()) toast('Preencha o CRP: o selo indica que ele foi conferido.', 'aviso');
+    $('#p-verif-data-l').hidden = !p.verificado; $('#p-verif-box').classList.toggle('on', p.verificado);
+    marcarAlterado(p); salvarAgora(); infoPsi(); renderListaPsicologos();
+  });
+  $('#p-passos').addEventListener('input', e => {
+    const c = e.target.closest('[data-i]'); if (!c) return; const p = psiAtual();
+    p.passos = p.passos || []; const i = +c.dataset.i; p.passos[i] = p.passos[i] || {};
+    p.passos[i][e.target.dataset.c] = e.target.value; marcarAlterado(p); salvar(); infoPsi();
+  });
+  $('#p-amb-btn').addEventListener('click', () => $('#p-amb-file').click());
+  $('#p-amb-file').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const r = await processarImagem(f, 1400); const p = psiAtual(); p.ambiente = r; marcarAlterado(p); salvarAgora(); mostrarAmb(p); infoPsi(); }
+    catch (err) { toast('Não consegui ler essa imagem.', 'erro'); }
+  });
+  $('#p-amb-rem').addEventListener('click', () => { const p = psiAtual(); p.ambiente = null; marcarAlterado(p); salvarAgora(); mostrarAmb(p); });
+  $('#p-gerar').addEventListener('click', () => gerarPsi(false));
+  $('#p-zip').addEventListener('click', () => gerarPsi(true));
+  $('#p-excluir').addEventListener('click', () => excluir('psi'));
+  $('#p-copiar').addEventListener('click', () => copiar('#p-html'));
+
+  // configurações
+  CFG.forEach(k => $('#cfg-' + k).addEventListener('input', e => {
+    state.config[k] = e.target.value; salvar();
+    if (k === 'siteUrl') $('#a-dominio').textContent = e.target.value.replace(/^https?:\/\//, '').replace(/\/+$/, '') + '/';
+    if (['head', 'header', 'footer', 'scripts', 'siteUrl', 'whatsapp'].includes(k)) {
+      [...state.artigos, ...state.psicologos].forEach(o => { if (o.geradoEm) o.alterado = true; });
+      renderListaArtigos(); renderListaPsicologos();
+    }
+  }));
+  $('#cfg-restaurar').addEventListener('click', () => {
+    if (!confirm('Trocar o topo e o rodapé pelo exemplo? O que você colou será perdido.')) return;
+    state.config.header = HEADER_PADRAO; state.config.footer = FOOTER_PADRAO; salvarAgora(); preencherConfig();
+  });
+  $('#cfg-sitemap').addEventListener('click', atualizarGerais);
+  $('#cfg-exportar').addEventListener('click', () => {
+    baixar(new Blob([JSON.stringify(state)], { type: 'application/json' }), `painel-backup-${hojeISO()}.json`);
+    toast('Backup baixado. Guarde em um lugar seguro.', 'ok');
+  });
+  $('#cfg-importar').addEventListener('click', () => $('#cfg-importar-file').click());
+  $('#cfg-importar-file').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const s = JSON.parse(await f.text());
+      if (!Array.isArray(s.artigos) || !Array.isArray(s.psicologos)) throw new Error('arquivo inválido');
+      if (!confirm(`Importar ${s.artigos.length} artigos e ${s.psicologos.length} psicólogos? Isso substitui o que está no painel agora.`)) return;
+      state = { artigos: s.artigos, psicologos: s.psicologos, config: { ...CONFIG_PADRAO, ...(s.config || {}) } };
+      salvarAgora(); atualA = atualP = null; iniciarTelas(); toast('Backup importado.', 'ok');
+    } catch (err) { toast('Esse arquivo não é um backup do painel.', 'erro'); }
+  });
+}
+async function copiar(sel) {
+  const t = $(sel);
+  try { await navigator.clipboard.writeText(t.value); }
+  catch (e) { t.select(); document.execCommand('copy'); }
+  toast('HTML copiado.', 'ok');
+}
+function iniciarTelas() {
+  preencherConfig(); renderListaArtigos(); renderListaPsicologos();
+  abrirArtigo(atualA); abrirPsicologo(atualP);
+}
+
+</script>
+<script>
+/* =========================================================
+   PAINEL ONLINE — login + botão "Publicar no site"
+   ---------------------------------------------------------
+   MODO TESTE (js/firebase-config.js vazio):
+     usuário "admin", senha "psicologos2026".
+     Tudo fica guardado SÓ neste navegador; o site mostra o que foi
+     publicado apenas neste mesmo navegador. Serve para testar o fluxo.
+   MODO FIREBASE (chaves coladas em js/firebase-config.js):
+     login com e-mail e senha criados no Firebase; rascunhos e
+     publicações ficam na nuvem e todo visitante vê o que foi publicado.
+   ========================================================= */
+const ONLINE = { modo: NUVEM.modo, email: '', nome: '', authMod: null, auth: null };
+const LOGIN_TESTE = { usuario: 'admin', senha: 'psicologos2026' };
+const SITE_REL = '../'; // o painel fica em /painel/; o site está uma pasta acima
+const linkArtigo = slug => `${SITE_REL}${encodeURIComponent(slug)}/`;
+const linkPerfil = slug => `${SITE_REL}psicologos/perfil/?p=${encodeURIComponent(slug)}`;
+
+/* ---------- imagens: guardadas à parte, cada uma com um código ---------- */
+function cyrb53(str, seed = 0) {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+const idImagem = d => cyrb53(d, 1).toString(36) + cyrb53(d, 7).toString(36);
+const RE_DATA = /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g;
+const LIMITE_IMG = 900000; // o Firebase aceita até ~1 MB por item
+const imgsNaNuvem = new Set();
+
+function reduzirImagem(d, fator) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const w = Math.max(1, Math.round(img.width * fator)), h = Math.max(1, Math.round(img.height * fator));
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      let r = cv.toDataURL('image/webp', 0.75);
+      if (!r.startsWith('data:image/webp')) r = cv.toDataURL('image/jpeg', 0.75);
+      res(r);
+    };
+    img.onerror = () => res(d);
+    img.src = d;
+  });
+}
+async function caber(d) { let r = d, f = 0.8; while (r.length > LIMITE_IMG && f > 0.1) { r = await reduzirImagem(d, f); f -= 0.15; } return r; }
+
+/* Troca as imagens dentro de um objeto por "pbimg:código" e devolve as imagens separadas. */
+async function desidratar(obj) {
+  const imagens = {};
+  async function texto(s) {
+    const achados = s.match(RE_DATA); if (!achados) return s;
+    for (const d of new Set(achados)) {
+      const id = idImagem(d);
+      if (!imagens[id]) imagens[id] = await caber(d);
+      s = s.split(d).join(NUVEM.PREFIXO + id);
+    }
+    return s;
+  }
+  async function andar(v) {
+    if (typeof v === 'string') return texto(v);
+    if (Array.isArray(v)) { const r = []; for (const x of v) r.push(await andar(x)); return r; }
+    if (v && typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) if (v[k] !== undefined) o[k] = await andar(v[k]); return o; }
+    return v === undefined ? null : v;
+  }
+  return { obj: await andar(obj), imagens };
+}
+/* O contrário: troca "pbimg:código" pela imagem de verdade. */
+async function hidratar(v) {
+  if (typeof v === 'string') { (v.match(NUVEM.RE) || []).forEach(r => imgsNaNuvem.add(r.slice(NUVEM.PREFIXO.length))); return NUVEM.resolverTexto(v); }
+  if (Array.isArray(v)) return Promise.all(v.map(hidratar));
+  if (v && typeof v === 'object') { const o = {}; await Promise.all(Object.keys(v).map(async k => { o[k] = await hidratar(v[k]); })); return o; }
+  return v;
+}
+async function gravarImagens(imagens) {
+  const ids = Object.keys(imagens); if (!ids.length) return;
+  if (ONLINE.modo === 'firebase') {
+    const { fs, db } = await NUVEM.firebase();
+    for (const id of ids) {
+      if (imgsNaNuvem.has(id)) continue;
+      await fs.setDoc(fs.doc(db, 'imagens', id), { data: imagens[id] });
+      imgsNaNuvem.add(id);
+    }
+  } else {
+    const pub = NUVEM.lerLocal(); ids.forEach(id => { pub.imagens[id] = imagens[id]; }); NUVEM.gravarLocal(pub);
+  }
+}
+
+/* ---------- rascunhos na nuvem (modo Firebase) ---------- */
+const ultimo = {}; // o que já está salvo na nuvem, para só enviar o que mudou
+let tNuvem = null, sincronizando = false, pendente = false;
+function chavesAtuais() {
+  const m = {};
+  state.artigos.forEach(o => { m['painel_artigos/' + o.id] = o; });
+  state.psicologos.forEach(o => { m['painel_psicologos/' + o.id] = o; });
+  m['painel_config/geral'] = state.config;
+  return m;
+}
+const precisaSalvar = () => { const a = chavesAtuais(); return Object.keys(a).some(k => ultimo[k] !== JSON.stringify(a[k])) || Object.keys(ultimo).some(k => !(k in a)); };
+function statusNuvem(txt, tipo) { const el = $('#nuvemStatus'); if (el) { el.textContent = txt; el.className = 'nuvem-status ' + (tipo || ''); } }
+function agendarNuvem() { clearTimeout(tNuvem); statusNuvem('Salvando…'); tNuvem = setTimeout(sincronizar, 1000); }
+async function sincronizar() {
+  tNuvem = null;
+  if (sincronizando) { pendente = true; return; }
+  sincronizando = true;
+  try {
+    const { fs, db } = await NUVEM.firebase();
+    const atuais = chavesAtuais();
+    for (const [k, o] of Object.entries(atuais)) {
+      const j = JSON.stringify(o); if (ultimo[k] === j) continue;
+      const { obj, imagens } = await desidratar(o);
+      await gravarImagens(imagens);
+      const [col, id] = k.split('/');
+      await fs.setDoc(fs.doc(db, col, id), obj);
+      ultimo[k] = j;
+    }
+    for (const k of Object.keys(ultimo)) if (!(k in atuais)) { const [col, id] = k.split('/'); await fs.deleteDoc(fs.doc(db, col, id)); delete ultimo[k]; }
+    statusNuvem('✓ Tudo salvo na nuvem', 'ok');
+  } catch (e) {
+    console.error(e);
+    statusNuvem(e && e.code === 'permission-denied' ? 'Sem permissão para salvar. Entre de novo.' : 'Sem conexão. Tentando salvar de novo…', 'erro');
+    clearTimeout(tNuvem); tNuvem = setTimeout(sincronizar, 6000);
+  } finally {
+    sincronizando = false;
+    if (pendente) { pendente = false; agendarNuvem(); }
+  }
+}
+async function carregarNuvem() {
+  statusNuvem('Carregando…');
+  const { fs, db } = await NUVEM.firebase();
+  const [sa, sp, sc] = await Promise.all([
+    fs.getDocs(fs.collection(db, 'painel_artigos')),
+    fs.getDocs(fs.collection(db, 'painel_psicologos')),
+    fs.getDoc(fs.doc(db, 'painel_config', 'geral'))
+  ]);
+  state.artigos = (await Promise.all(sa.docs.map(d => hidratar(d.data())))).sort((x, y) => (y.criado || 0) - (x.criado || 0));
+  state.psicologos = (await Promise.all(sp.docs.map(d => hidratar(d.data())))).sort((x, y) => (y.criado || 0) - (x.criado || 0));
+  state.config = { ...CONFIG_PADRAO, ...(sc.exists() ? sc.data() : {}) };
+  Object.entries(chavesAtuais()).forEach(([k, o]) => { ultimo[k] = JSON.stringify(o); });
+  if (!sc.exists()) delete ultimo['painel_config/geral'];
+  statusNuvem('✓ Tudo salvo na nuvem', 'ok');
+}
+window.addEventListener('beforeunload', e => {
+  if (ONLINE.modo === 'firebase' && document.body.classList.contains('logado') && precisaSalvar()) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ---------- publicar no site ---------- */
+function artigoPublico(a) {
+  const t = document.createElement('template'); t.innerHTML = limpar(a.html);
+  t.content.querySelectorAll('img').forEach(img => {
+    const w = img.getAttribute('data-w'), h = img.getAttribute('data-h');
+    img.removeAttribute('data-w'); img.removeAttribute('data-h');
+    if (!img.hasAttribute('alt')) img.setAttribute('alt', '');
+    if (w && h) { img.setAttribute('width', w); img.setAttribute('height', h); }
+    img.setAttribute('loading', 'lazy'); img.setAttribute('decoding', 'async');
+  });
+  const c = a.capa || {};
+  return {
+    slug: a.slug, titulo: a.titulo.trim(), tituloSeo: (a.tituloSeo || '').trim(), descricao: (a.descricao || '').trim(),
+    categoria: a.categoria || '', data: a.data || hojeISO(), autor: a.autor || state.config.autor, palavras: a.palavras || [],
+    minutos: minutos(a.html), html: t.innerHTML, capa: c.data || '', capaAlt: c.alt || '', capaW: c.w || 0, capaH: c.h || 0,
+    faq: faqValidas(a).map(f => ({ p: f.p.trim(), r: f.r.trim() })), atualizado: Date.now()
+  };
+}
+function psiPublico(p) {
+  return {
+    slug: p.slug, nome: p.nome.trim(), tratamento: p.tratamento, crp: (p.crp || '').trim(), verificado: !!p.verificado,
+    foto: (p.foto && p.foto.data) || '', abordagens: p.abordagens || [], temas: especialidadesDe(p), publico: p.publico || [],
+    idiomas: (p.idiomas && p.idiomas.length) ? p.idiomas : ['Português'], acessibilidade: p.acessibilidade || [],
+    valor: p.valor ? Number(p.valor) : null, duracao: Number(p.duracao) || 50,
+    resumo: textoPuro(bioHtml(p.bio)).slice(0, 160), bio: p.bio || '', whatsapp: String(p.whats || '').replace(/\D/g, ''),
+    ativo: p.ativo !== false, genero: p.tratamento === 'Psicólogo' ? 'Homem' : p.tratamento === 'Psicóloga' ? 'Mulher' : 'Não binário',
+    atualizado: Date.now()
+  };
+}
+/* indice/artigos e indice/psicologos: as listas que o site lê (uma leitura só por visita). */
+async function atualizarIndice(tipo, tirar, item) {
+  const { fs, db } = await NUVEM.firebase();
+  const ref = fs.doc(db, 'indice', tipo);
+  const s = await fs.getDoc(ref);
+  let itens = s.exists() ? (s.data().itens || []) : [];
+  itens = itens.filter(x => !tirar.includes(x.slug));
+  if (item) itens.push(item);
+  if (tipo === 'artigos') NUVEM.ordenar(itens);
+  await fs.setDoc(ref, { itens, atualizado: Date.now() });
+}
+async function publicarDoc(tipo, slugNovo, slugAntigo, doc) {
+  const { obj, imagens } = await desidratar(doc);
+  await gravarImagens(imagens);
+  if (ONLINE.modo === 'firebase') {
+    const { fs, db } = await NUVEM.firebase();
+    if (tipo === 'artigos') {
+      await fs.setDoc(fs.doc(db, 'artigos', slugNovo), obj);
+      if (slugAntigo && slugAntigo !== slugNovo) await fs.deleteDoc(fs.doc(db, 'artigos', slugAntigo));
+    }
+    await atualizarIndice(tipo, [slugAntigo, slugNovo].filter(Boolean), tipo === 'artigos' ? NUVEM.resumoArtigo(obj) : obj);
+  } else {
+    const pub = NUVEM.lerLocal();
+    if (slugAntigo) delete pub[tipo][slugAntigo];
+    pub[tipo][slugNovo] = obj;
+    NUVEM.gravarLocal(pub);
+  }
+}
+async function despublicar(tipo, slug) {
+  if (!slug) return;
+  if (ONLINE.modo === 'firebase') {
+    const { fs, db } = await NUVEM.firebase();
+    if (tipo === 'artigos') await fs.deleteDoc(fs.doc(db, 'artigos', slug));
+    await atualizarIndice(tipo, [slug], null);
+  } else {
+    const pub = NUVEM.lerLocal(); delete pub[tipo][slug]; NUVEM.gravarLocal(pub);
+  }
+}
+function erroAmigavel(e) {
+  const m = String((e && (e.code || e.name || e.message)) || e);
+  if (/permission/i.test(m)) return 'Sem permissão para publicar. Saia e entre de novo; se continuar, confira se o seu usuário está na lista “admins” do Firebase.';
+  if (/quota/i.test(m)) return 'O navegador ficou sem espaço (modo teste guarda tudo aqui). Use imagens menores ou ative o Firebase.';
+  if (/unavailable|network|tempo esgotado|failed to fetch/i.test(m)) return 'Sem conexão com a internet ou com o Firebase. Tente de novo em instantes.';
+  return 'Não consegui publicar: ' + ((e && e.message) || m);
+}
+const sufixoModo = () => ONLINE.modo === 'teste' ? ' (modo teste: só aparece neste navegador)' : '';
+
+/* Botões Publicar e Excluir (substituem "gerar arquivo / baixar .zip") */
+gerarArtigo = async function () {
+  const a = artigoAtual(); if (!a) return;
+  a.slug = slugify(a.slug); $('#a-slug').value = a.slug;
+  if (!validarArtigo(a)) return;
+  const btn = $('#a-gerar'); btn.disabled = true; btn.textContent = 'Publicando…';
+  try {
+    await publicarDoc('artigos', a.slug, a.pubSlug, artigoPublico(a));
+    a.pubSlug = a.slug; a.geradoEm = Date.now(); a.alterado = false;
+    salvarAgora(); renderListaArtigos(); infoArtigo();
+    toast('Publicado! O artigo já está na página Artigos' + sufixoModo() + '.', 'ok');
+  } catch (e) { console.error(e); toast(erroAmigavel(e), 'erro'); }
+  finally { btn.disabled = false; btn.textContent = 'Publicar no site'; }
+};
+gerarPsi = async function () {
+  const p = psiAtual(); if (!p) return;
+  p.slug = slugify(p.slug); $('#p-slug').value = p.slug;
+  if (!validarPsi(p)) return;
+  const btn = $('#p-gerar'); btn.disabled = true; btn.textContent = 'Publicando…';
+  try {
+    await publicarDoc('psicologos', p.slug, p.pubSlug, psiPublico(p));
+    p.pubSlug = p.slug; p.geradoEm = Date.now(); p.alterado = false;
+    salvarAgora(); renderListaPsicologos(); infoPsi();
+    toast((p.ativo ? 'Publicado! O perfil já está na lista de psicólogos' : 'Salvo no site como oculto: o perfil não aparece na lista') + sufixoModo() + '.', 'ok');
+  } catch (e) { console.error(e); toast(erroAmigavel(e), 'erro'); }
+  finally { btn.disabled = false; btn.textContent = 'Publicar no site'; }
+};
+excluir = async function (tipo) {
+  const lista = tipo === 'artigo' ? state.artigos : state.psicologos;
+  const id = tipo === 'artigo' ? atualA : atualP;
+  const o = lista.find(x => x.id === id); if (!o) return;
+  const nome = tipo === 'artigo' ? (o.titulo || 'Sem título') : (o.nome || 'Sem nome');
+  if (!confirm(`Excluir “${nome}”?${o.pubSlug ? '\n\nEle também sai do site.' : ''}\n\nDica: antes de excluir, você pode exportar um backup em Configurações.`)) return;
+  try { if (o.pubSlug) await despublicar(tipo === 'artigo' ? 'artigos' : 'psicologos', o.pubSlug); }
+  catch (e) { console.error(e); toast(erroAmigavel(e), 'erro'); return; }
+  lista.splice(lista.indexOf(o), 1); salvarAgora();
+  if (tipo === 'artigo') { atualA = null; abrirArtigo(null); renderListaArtigos(); }
+  else { atualP = null; abrirPsicologo(null); renderListaPsicologos(); }
+  toast('Excluído' + (o.pubSlug ? ' do painel e do site.' : '.'), 'ok');
+};
+
+/* ---------- ajustes do painel para o modo online ---------- */
+const salvarAgoraLocal = salvarAgora;
+salvarAgora = function () {
+  clearTimeout(tSalvar);
+  if (ONLINE.modo === 'firebase') agendarNuvem(); else salvarAgoraLocal();
+};
+statusSelo = function (o) {
+  if (!o.geradoEm || !o.pubSlug) return '<span class="selo rasc">Rascunho</span>';
+  if (o.alterado) return '<span class="selo alt">Alterado · publique de novo</span>';
+  return '<span class="selo ok">No site</span>';
+};
+const infoArtigoBase = infoArtigo;
+infoArtigo = function () {
+  infoArtigoBase(); const a = artigoAtual();
+  if (a && a.pubSlug && a.geradoEm) $('#a-info').insertAdjacentHTML('beforeend', ` · <a href="${linkArtigo(a.pubSlug)}" target="_blank" rel="noopener">Ver no site ↗</a>`);
+};
+const infoPsiBase = infoPsi;
+infoPsi = function () {
+  infoPsiBase(); const p = psiAtual();
+  if (p && p.pubSlug && p.geradoEm && p.ativo) $('#p-info').insertAdjacentHTML('beforeend', ` · <a href="${linkPerfil(p.pubSlug)}" target="_blank" rel="noopener">Ver no site ↗</a>`);
+};
+const preencherConfigBase = preencherConfig;
+preencherConfig = function () { preencherConfigBase(); $('#a-dominio').textContent = state.config.siteUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '') + '/'; };
+atualizarPasta = function () {};
+
+function prepararOnline() {
+  const box = $('.pasta-box');
+  box.innerHTML = `<div class="rot">${ONLINE.modo === 'firebase' ? 'Conectado como' : 'Modo teste'}</div>
+    <div class="pasta-nome" id="contaNome"></div>
+    <div class="nuvem-status" id="nuvemStatus"></div>
+    <button class="btn pequeno" id="btnSair" type="button">Sair</button>
+    <p class="dica">${ONLINE.modo === 'firebase'
+      ? 'Tudo é salvo na nuvem enquanto você escreve. O site só muda quando você clica em “Publicar no site”.'
+      : 'Os dados ficam só neste navegador. Para usar de verdade, ative o Firebase (veja o guia).'}</p>`;
+  $('#btnSair').addEventListener('click', sair);
+  ['#a-zip', '#p-zip'].forEach(s => { $(s).hidden = true; });
+  $('#a-gerar').textContent = 'Publicar no site'; $('#p-gerar').textContent = 'Publicar no site';
+  $$('.abas button[data-aba="html"]').forEach(b => { b.hidden = true; });
+  ['#cfg-header', '#cfg-sitemap'].forEach(s => { const g = $(s).closest('.cfg-grupo'); if (g) g.hidden = true; });
+  const subA = $('#view-artigos .sub'); if (subA) subA.textContent = 'Escreva, confira a prévia e publique direto no site.';
+  const subP = $('#view-psicologos .sub'); if (subP) subP.textContent = 'Cada cadastro publicado entra na lista do site e ganha a própria página de perfil.';
+  const subC = $('#view-config .sub'); if (subC) subC.textContent = 'Valem para todo o painel.';
+}
+
+/* ---------- login ---------- */
+function mostrarLogin(msg) {
+  document.body.classList.remove('logado');
+  $('#login').hidden = false;
+  $('#loginErro').textContent = msg || '';
+  const fb = ONLINE.modo === 'firebase';
+  $('#loginUsuarioRot').textContent = fb ? 'E-mail' : 'Usuário';
+  $('#loginUsuario').type = fb ? 'email' : 'text';
+  $('#loginUsuario').autocomplete = fb ? 'email' : 'username';
+  $('#loginModo').innerHTML = fb ? '🔒 Conexão segura com o Firebase' : '🧪 <b>Modo teste</b> · os dados ficam só neste navegador';
+  $('#loginEsqueci').hidden = !fb;
+  setTimeout(() => $('#loginUsuario').focus(), 30);
+}
+function abrirPainel() {
+  [...state.artigos, ...state.psicologos].forEach(o => { if (o.geradoEm && !o.pubSlug) { o.geradoEm = null; o.alterado = false; } });
+  $('#login').hidden = true;
+  document.body.classList.add('logado');
+  $('#contaNome').textContent = ONLINE.modo === 'firebase' ? (ONLINE.nome || ONLINE.email) : 'admin (teste)';
+  if (ONLINE.modo !== 'firebase') statusNuvem('Salvo neste navegador', 'ok');
+  iniciarTelas();
+}
+let falhas = 0, bloqueadoAte = 0;
+async function entrar(e) {
+  e.preventDefault();
+  const usuario = $('#loginUsuario').value.trim(), senha = $('#loginSenha').value;
+  const btn = $('#loginBtn'), erro = $('#loginErro');
+  if (Date.now() < bloqueadoAte) { erro.textContent = `Muitas tentativas. Aguarde ${Math.ceil((bloqueadoAte - Date.now()) / 1000)} segundos.`; return; }
+  btn.disabled = true; btn.textContent = 'Entrando…'; erro.textContent = '';
+  try {
+    if (ONLINE.modo === 'firebase') {
+      await ONLINE.authMod.signInWithEmailAndPassword(ONLINE.auth, usuario, senha);
+      return; // onAuthStateChanged abre o painel
+    }
+    await new Promise(r => setTimeout(r, 500));
+    if (usuario === LOGIN_TESTE.usuario && senha === LOGIN_TESTE.senha) {
+      falhas = 0; sessionStorage.setItem('pb-sessao', 'ok'); carregar(); abrirPainel();
+    } else throw { code: 'auth/invalid-credential' };
+  } catch (err) {
+    falhas++;
+    if (falhas >= 5) { bloqueadoAte = Date.now() + 60000; falhas = 0; }
+    const c = (err && err.code) || '';
+    erro.textContent = c === 'auth/too-many-requests' ? 'Muitas tentativas. O acesso foi bloqueado por alguns minutos.'
+      : /network/.test(c) ? 'Sem internet. Confira a conexão.'
+      : 'Usuário ou senha incorretos.';
+    $('#loginSenha').value = ''; $('#loginSenha').focus();
+  } finally { btn.disabled = false; btn.textContent = 'Entrar'; }
+}
+async function esqueciSenha(e) {
+  e.preventDefault();
+  const email = $('#loginUsuario').value.trim();
+  if (!email) { $('#loginErro').textContent = 'Digite seu e-mail acima e clique de novo em “Esqueci a senha”.'; return; }
+  try { await ONLINE.authMod.sendPasswordResetEmail(ONLINE.auth, email); } catch (err) { /* não revela se o e-mail existe */ }
+  $('#loginErro').textContent = 'Se esse e-mail tiver acesso, você vai receber um link para criar uma nova senha.';
+}
+async function sair() {
+  if (ONLINE.modo === 'firebase') {
+    if (precisaSalvar()) { statusNuvem('Salvando antes de sair…'); clearTimeout(tNuvem); await sincronizar(); }
+    try { await ONLINE.authMod.signOut(ONLINE.auth); } catch (e) {}
+  } else sessionStorage.removeItem('pb-sessao');
+  location.reload();
+}
+async function iniciarFirebase() {
+  const [{ app, fs, db }, auth] = await Promise.all([NUVEM.firebase(), import(NUVEM.SDK + 'firebase-auth.js')]);
+  ONLINE.authMod = auth; ONLINE.auth = auth.getAuth(app);
+  auth.onAuthStateChanged(ONLINE.auth, async u => {
+    if (!u) { mostrarLogin(); return; }
+    try {
+      const adm = await fs.getDoc(fs.doc(db, 'admins', u.uid));
+      if (!adm.exists()) {
+        await auth.signOut(ONLINE.auth);
+        mostrarLogin('Este usuário não tem permissão para usar o painel. Peça ao administrador para liberar o acesso.');
+        return;
+      }
+      ONLINE.email = u.email || ''; ONLINE.nome = (adm.data() || {}).nome || '';
+      await carregarNuvem(); abrirPainel();
+    } catch (e) {
+      console.error(e);
+      mostrarLogin('Não consegui abrir o painel: confira a internet e as regras do Firebase.');
+    }
+  });
+}
+
+/* ---------- início ---------- */
+(function () {
+  ligar(); prepararOnline();
+  $('#loginForm').addEventListener('submit', entrar);
+  $('#loginEsqueci').addEventListener('click', esqueciSenha);
+  if (ONLINE.modo === 'firebase') {
+    $('#loginModo').textContent = 'Conectando…';
+    iniciarFirebase().catch(e => { console.error(e); mostrarLogin('Não consegui carregar o Firebase. Confira a internet e o arquivo js/firebase-config.js.'); });
+  } else if (sessionStorage.getItem('pb-sessao') === 'ok') { carregar(); abrirPainel(); }
+  else mostrarLogin();
+})();
+</script>
+</body>
+</html>

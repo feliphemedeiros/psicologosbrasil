@@ -1,0 +1,79 @@
+/* Psicólogos Brasil — Página Artigos (artigos.html). */
+
+.arts {
+  display: grid;
+  gap: 16px;
+  max-width: none; /* mesma largura do conteúdo da home (1120px) */
+}
+
+details.post {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--sh);
+}
+
+details.post summary {
+  align-items: flex-start;
+  font-weight: 400;
+}
+
+details.post summary div {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+details.post h2 {
+  font-size: 1.45rem;
+}
+
+details.post summary p {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+details.post .body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  max-width: 72ch; /* o texto do artigo continua com linhas confortáveis de ler */
+}
+
+details.post .body p {
+  color: var(--ink);
+  margin: 0;
+}
+
+details.post .body .btn {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+/* Cartões dos artigos criados no Painel (cada um abre a página do artigo) */
+a.post-link {
+  display: grid;
+  gap: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--sh);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .2s, transform .2s;
+}
+a.post-link:hover { border-color: currentColor; transform: translateY(-2px); }
+a.post-link > div { display: grid; gap: 8px; justify-items: start; }
+a.post-link h2 { font-size: 1.45rem; }
+a.post-link p { color: var(--muted); font-size: 1rem; margin: 0; }
+a.post-link .post-meta { color: var(--muted); font-size: .9rem; }
+a.post-link .post-ler { font-weight: 600; margin-top: 4px; }
+a.post-link .post-capa { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; }
+@media (min-width: 760px) {
+  a.post-link.com-capa { grid-template-columns: 280px 1fr; align-items: center; }
+}
+@media (prefers-reduced-motion: reduce) { a.post-link { transition: none; } a.post-link:hover { transform: none; } }

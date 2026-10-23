@@ -1,0 +1,123 @@
+PAINEL ONLINE — PSICÓLOGOS BRASIL
+=================================
+
+ONDE FICA
+  Painel:  seusite/painel/            (ex.: seunome.github.io/repo/painel/)
+  Artigos: seusite/blog/              (lista)
+           seusite/nome-do-artigo/   (cada artigo, ex.: psicologosbrasil.com.br/sindrome-da-cabana/)
+  Psicólogos: seusite/psicologos/  e  seusite/psicologos/perfil/?p=nome
+
+O painel tem DOIS MODOS. Ele escolhe sozinho, olhando o arquivo js/firebase-config.js.
+
+
+-----------------------------------------------------------------
+1) MODO TESTE  (como vem agora, sem configurar nada)
+-----------------------------------------------------------------
+  Usuário: admin
+  Senha:   psicologos2026
+
+  - Serve para testar o fluxo: escrever → Publicar no site → ver na página Artigos.
+  - Tudo fica guardado SÓ no navegador de quem usou.
+    O artigo publicado aparece no site APENAS nesse mesmo navegador.
+    Outras pessoas e outros computadores não veem.
+  - Não é seguro de verdade (a senha fica no código). Por isso mesmo
+    ele não consegue mudar o site para mais ninguém.
+  - Use imagens leves: o navegador guarda no máximo uns 5 MB.
+
+
+-----------------------------------------------------------------
+2) MODO FIREBASE  (login de verdade, todo visitante vê)
+-----------------------------------------------------------------
+O Firebase é do Google e é GRATUITO no plano "Spark" (não pede cartão).
+Leva uns 15 minutos, uma vez só.
+
+PASSO 1 — Criar o projeto
+  a) Entre em https://console.firebase.google.com com uma conta Google.
+  b) "Criar um projeto" (ou "Adicionar projeto"). Nome: psicologos-brasil.
+  c) Pode desligar o Google Analytics. Clique em "Criar projeto".
+
+PASSO 2 — Criar o banco de dados
+  a) No menu da esquerda: Criação (Build) → Firestore Database → "Criar banco de dados".
+  b) Local: southamerica-east1 (São Paulo).
+  c) Escolha "Iniciar no modo de produção". Crie.
+
+PASSO 3 — Colar as regras de segurança
+  a) Ainda no Firestore, abra a aba "Regras".
+  b) Apague tudo o que estiver lá e cole TODO o conteúdo do arquivo firestore.rules
+     (está na pasta principal do site).
+  c) Clique em "Publicar".
+
+PASSO 4 — Ligar o login com e-mail e senha
+  a) Menu: Criação (Build) → Authentication → "Vamos começar".
+  b) Aba "Método de login" → "E-mail/senha" → ative a primeira chave → Salvar.
+
+PASSO 5 — Criar o usuário de cada pessoa da equipe
+  a) Authentication → aba "Usuários" → "Adicionar usuário".
+  b) Coloque o e-mail e uma senha forte (12+ caracteres, misturando letras, números e símbolos).
+  c) Na lista, copie o "UID do usuário" (um código tipo kq3XyZ...).
+
+PASSO 6 — Dar permissão de usar o painel (lista "admins")
+  Só quem está nessa lista consegue entrar e publicar.
+  a) Volte em Firestore Database → aba "Dados" → "Iniciar coleção".
+  b) ID da coleção: admins
+  c) ID do documento: cole o UID copiado no passo 5.
+  d) Adicione um campo: nome  (tipo string)  valor: o nome da pessoa (ex.: Fábio).
+  e) Salvar.
+  Para a segunda pessoa: repita o passo 5 e, dentro da coleção "admins",
+  "Adicionar documento" com o UID dela.
+  Para tirar o acesso de alguém: apague o documento dela em "admins".
+
+PASSO 7 — Pegar as chaves e colar no site
+  a) Clique na engrenagem (ao lado de "Visão geral do projeto") → "Configurações do projeto".
+  b) Em "Seus apps", clique no ícone </> (Web). Apelido: site. Não marque Hosting.
+     Clique em "Registrar app".
+  c) Vai aparecer um bloco "const firebaseConfig = { apiKey: ..., ... }".
+     Copie SÓ o que está entre as chaves { }.
+  d) Abra o arquivo js/firebase-config.js e troque a linha
+         window.FIREBASE_CONFIG = null;
+     por
+         window.FIREBASE_CONFIG = { ...o que você copiou... };
+  e) Suba o js/firebase-config.js para o GitHub.
+
+PASSO 8 — Liberar o endereço do site (recomendado)
+  Authentication → aba "Configurações" → "Domínios autorizados" → "Adicionar domínio":
+  seunome.github.io   (e depois, no lançamento, psicologosbrasil.com.br)
+
+PRONTO. Abra seusite/painel/: a tela agora pede E-MAIL e senha, e mostra
+"Conexão segura com o Firebase". Entre com o usuário do passo 5.
+
+IMPORTANTE ao trocar do modo teste para o Firebase:
+  O que foi feito no modo teste NÃO vai sozinho para o Firebase.
+  Antes de colar as chaves: no painel, Configurações → "Exportar backup".
+  Depois, já no modo Firebase: Configurações → "Importar backup".
+  Abra cada artigo e psicólogo e clique em "Publicar no site".
+
+
+-----------------------------------------------------------------
+COMO FUNCIONA NO DIA A DIA (modo Firebase)
+-----------------------------------------------------------------
+  - Enquanto você escreve, o painel salva o rascunho na nuvem sozinho
+    ("✓ Tudo salvo na nuvem", embaixo, à esquerda). Pode continuar de outro computador.
+  - O site SÓ muda quando você clica em "Publicar no site".
+  - Editou algo já publicado? Aparece "Alterado · publique de novo". Clique em Publicar.
+  - "Excluir" tira do painel E do site.
+  - A lista de Artigos sai sempre do mais novo para o mais antigo, pela DATA do artigo.
+  - Psicólogo com "Aparece na lista" desmarcado: fica oculto no site.
+
+SEGURANÇA (o que já está ativo no modo Firebase)
+  - Login com e-mail e senha do Google Firebase (senhas guardadas criptografadas).
+  - Só quem está na lista "admins" entra. Ninguém consegue se colocar nessa lista
+    pelo site: só você, pelo console do Firebase.
+  - Mesmo que alguém pegue as chaves do firebase-config.js, não consegue gravar nada:
+    quem bloqueia são as regras (firestore.rules). As chaves podem ficar públicas.
+  - O Firebase bloqueia sozinho quem erra a senha muitas vezes.
+  - O site limpa de novo o texto dos artigos antes de mostrar.
+  - Faça backup de vez em quando: Configurações → Exportar backup.
+
+LIMITES DO PLANO GRÁTIS (sobra para a fase de testes)
+  50 mil leituras e 20 mil gravações por dia, 1 GB de dados.
+  Cada visita à página Artigos usa 1 leitura + 1 por imagem de capa.
+
+QUANDO FOR PARA A HOSTINGER
+  Dá para continuar usando o Firebase do mesmo jeito: é só subir o site e
+  adicionar psicologosbrasil.com.br nos "Domínios autorizados" (passo 8).

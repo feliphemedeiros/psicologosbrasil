@@ -1,0 +1,159 @@
+/* Psicólogos Brasil — Página Psicólogos (/psicologos/): busca, filtros e cartões dos profissionais. */
+
+.ps { padding-top: 48px; }
+.ps-head { max-width: 720px; margin-bottom: 28px; }
+.ps-head .lead { margin-top: 12px; }
+
+/* ===== Barra de busca ===== */
+.busca {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr auto;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: var(--sh);
+}
+.busca-campo, .busca-tema { position: relative; min-width: 0; }
+.busca input, .busca select {
+  width: 100%;
+  height: 56px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.busca-campo svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.busca-campo input { padding: 0 16px 0 46px; }
+.busca-tema label {
+  position: absolute; left: 16px; top: 8px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--sea); pointer-events: none;
+}
+.busca-tema select {
+  padding: 22px 40px 4px 15px;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231f35b5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.btn-filtros { height: 56px; border-radius: 14px; gap: 8px; padding: 0 20px; }
+.btn-filtros[aria-expanded="true"] { background: var(--mist); border-color: var(--sea); }
+.btn-filtros .n {
+  display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 999px; background: var(--sea); color: var(--on-sea); font-size: .78rem;
+}
+
+/* ===== Painel de filtros ===== */
+.filtros {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 36px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 24px 26px;
+  box-shadow: var(--sh);
+}
+.filtros .radios { margin: 0; gap: 8px; }
+.filtros .radios legend { font-size: .95rem; }
+.filtros .radios span { padding: 8px 14px; font-size: .92rem; }
+.filtros-pe {
+  grid-column: 1 / -1;
+  display: flex; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--line); padding-top: 18px;
+}
+
+/* ===== Resultado ===== */
+.res-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 26px 0 14px; }
+.res-topo p { margin: 0; font-weight: 700; }
+.ativos { display: flex; flex-wrap: wrap; gap: 8px; }
+.ativos button {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; border-radius: 999px; padding: 6px 12px;
+  background: var(--mist); color: var(--sea-d); font: 600 .85rem Figtree, sans-serif; cursor: pointer;
+}
+.ativos button span { font-size: 1.1rem; line-height: 1; }
+.ativos button:hover { background: var(--line); }
+.aviso-demo { color: var(--muted); font-size: .88rem; margin: 0 0 16px; }
+
+/* ===== Cartões: 2 por linha no computador ===== */
+.pc-lista { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.pc {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--sh);
+  transition: transform .24s var(--out), border-color .24s var(--out);
+}
+@media (hover: hover) { .pc:hover { transform: translateY(-3px); border-color: #c6cfee; } }
+
+.pc-foto {
+  width: 128px; height: 128px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; text-decoration: none;
+  background: var(--mist); color: var(--sea);
+  font: 700 2.2rem "Bricolage Grotesque", serif;
+}
+.pc-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pc-info { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.pc-nome { display: flex; align-items: center; gap: 6px; font-size: 1.35rem; line-height: 1.2; }
+.pc-nome a { text-decoration: none; }
+.pc-nome a:hover { color: var(--sea); }
+.pc-verif { display: inline-flex; flex: none; }
+.pc-selo { width: 22px; height: 22px; color: var(--sea); }
+.pc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pc-prof { color: var(--muted); font-size: .92rem; margin-top: -4px; }
+
+.pc-temas { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-temas li { background: var(--mist); color: var(--sea-d); font-weight: 600; font-size: .8rem; padding: 4px 11px; border-radius: 999px; }
+.pc-temas li.on { background: var(--sea); color: var(--on-sea); }
+.pc-temas li.mais { background: none; border: 1px dashed var(--line); color: var(--muted); }
+
+.pc-bio {
+  color: var(--muted); font-size: .95rem; line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pc-meta { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .88rem; }
+.pc-meta li { display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+.pc-meta svg { flex: none; color: var(--sea); margin-top: 1px; }
+
+.pc-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; padding-top: 6px; }
+.pc-acoes .btn { padding: 11px 20px; font-size: .95rem; gap: 8px; }
+
+.pc-vazio {
+  grid-column: 1 / -1; text-align: center;
+  background: var(--surface); border: 1px dashed var(--line); border-radius: 24px; padding: 44px 24px;
+}
+.pc-vazio h2 { font-size: 1.5rem; margin-bottom: 8px; }
+.pc-vazio p { color: var(--muted); max-width: 52ch; margin: 0 auto 20px; }
+.pc-vazio .pc-acoes { justify-content: center; padding: 0; }
+
+/* ===== Tablet e celular ===== */
+@media (max-width: 1000px) {
+  .pc-lista { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .ps { padding-top: 28px; }
+  .busca { grid-template-columns: 1fr; }
+  .filtros { grid-template-columns: 1fr; padding: 20px; }
+  .filtros-pe .btn { flex: 1; }
+}
+@media (max-width: 560px) {
+  .pc { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 22px 18px; gap: 14px; }
+  .pc-foto { width: 112px; height: 112px; }
+  .pc-info { align-items: center; width: 100%; }
+  .pc-nome, .pc-temas, .pc-acoes { justify-content: center; }
+  .pc-meta { justify-items: center; }
+  .pc-meta li { text-align: left; }
+  .pc-acoes .btn { flex: 1 1 100%; }
+}
+
+/* ===== O cartão inteiro é clicável e abre o perfil do psicólogo ===== */
+.pc[data-url] { cursor: pointer; }
