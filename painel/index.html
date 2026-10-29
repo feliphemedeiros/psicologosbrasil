@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/icones/favicon.svg" type="image/svg+xml">
+  <title>Painel | Psicólogos Brasil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/agenda.css">
+  <link rel="stylesheet" href="css/escuro.css">
+  <script src="js/tema.js"></script>
+</head>
+<body>
+  <!-- ============ LOGIN (usuário e senha → código) ============ -->
+  <main class="login-pagina" id="tela-login" hidden>
+    <div class="login-caixa">
+      <a class="marca" href="../">
+        <span class="marca-ico">PB</span>
+        <span>Psicólogos Brasil <small>Painel</small></span>
+      </a>
+
+      <form class="login-cartao" id="form-login" novalidate>
+        <ol class="login-passos" aria-label="Etapas do login"><li class="on">Senha</li><li>Código</li></ol>
+        <h1>Entrar no painel</h1>
+        <p>Equipe e psicólogos usam o mesmo acesso. Cada um vê só a sua parte.</p>
+        <div class="campo">
+          <label for="usuario">Usuário</label>
+          <input type="text" id="usuario" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+        </div>
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" autocomplete="current-password" required>
+        </div>
+        <p class="erro-form" id="erro-login" role="alert"></p>
+        <button class="btn btn-primario" type="submit" id="btn-entrar">Continuar</button>
+        <p class="login-volta" id="esqueci-box" hidden><button type="button" class="btn-link" id="esqueci">Esqueci a senha</button></p>
+      </form>
+
+      <!-- Firebase: ativar o app autenticador (só no primeiro login de cada pessoa) -->
+      <form class="login-cartao" id="form-ativar" novalidate hidden>
+        <ol class="login-passos" aria-label="Etapas do login"><li class="feito">Senha</li><li class="on">App autenticador</li></ol>
+        <h1>Ative o app autenticador</h1>
+        <p>Só na primeira vez. No celular, abra o <strong>Google Authenticator</strong> (ou Microsoft Authenticator), toque em <strong>+</strong> e escaneie o código.</p>
+        <div class="qr-box"><div id="qr" aria-label="Código QR para o app autenticador"></div></div>
+        <p class="qr-chave">Não dá para escanear? Digite esta chave no app:<br><code id="qr-chave"></code></p>
+        <p class="qr-celular"><a class="btn-link" id="qr-link" href="#">Estou no celular: abrir no app</a></p>
+        <div class="campo">
+          <label for="codigo-ativar">Código de 6 números que aparece no app</label>
+          <input type="text" id="codigo-ativar" class="codigo-2fa" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        </div>
+        <p class="erro-form" id="erro-ativar" role="alert"></p>
+        <button class="btn btn-primario" type="submit" id="btn-ativar">Ativar e entrar</button>
+        <p class="login-volta"><button type="button" class="btn-link" data-voltar-login>Voltar</button></p>
+      </form>
+
+      <!-- Firebase: avisos (confirmar e-mail, acesso não liberado…) -->
+      <div class="login-cartao" id="aviso-login" hidden>
+        <h1 id="aviso-tit">Confirme seu e-mail</h1>
+        <p id="aviso-txt"></p>
+        <button class="btn btn-primario" type="button" data-voltar-login>Voltar para o login</button>
+      </div>
+
+      <form class="login-cartao" id="form-2fa" novalidate hidden>
+        <ol class="login-passos" aria-label="Etapas do login"><li class="feito">Senha</li><li class="on">Código</li></ol>
+        <h1>Confirme que é você</h1>
+        <p id="txt-2fa">Enviamos um código de 6 números para o seu e-mail.</p>
+        <div class="campo">
+          <label for="codigo">Código de 6 números</label>
+          <input type="text" id="codigo" class="codigo-2fa" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        </div>
+        <p class="erro-form" id="erro-2fa" role="alert"></p>
+        <button class="btn btn-primario" type="submit">Entrar</button>
+        <p class="login-volta"><button type="button" class="btn-link" id="reenviar">Mandar outro código</button> · <button type="button" class="btn-link" id="voltar-login">Voltar</button></p>
+        <div class="aviso-sim" id="aviso-codigo" hidden></div>
+      </form>
+
+      <div class="aviso-sim" id="aviso-contas">
+        <strong>Modo de teste</strong>
+        Admin: <code>admin</code> / <code>admin123</code> ·
+        Suporte: <code>suporte</code> / <code>suporte123</code><br>
+        Psicólogos: <code>helena</code> / <code>helena123</code> ·
+        <code>lucas</code> / <code>lucas123</code> · <code>beatriz</code> / <code>beatriz123</code> ·
+        <code>tiago</code> / <code>tiago123</code> · <code>aline</code> / <code>aline123</code> · <code>sam</code> / <code>sam123</code><br>
+        O código de 6 números aparece aqui na tela (simula o e-mail).
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ ESCOLHA DA ÁREA (admin e suporte) ============ -->
+  <div id="tela-areas" hidden>
+    <header class="topo">
+      <div class="topo-in">
+        <a class="marca" href="index.html">
+          <span class="marca-ico">PB</span>
+          <span>Psicólogos Brasil <small>Painel</small></span>
+        </a>
+        <div class="topo-user">
+          <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+          <button class="btn btn-secundario btn-peq" data-sair>Sair</button>
+        </div>
+      </div>
+    </header>
+    <main class="conteudo hub">
+      <h1 data-saudacao>Olá!</h1>
+      <p class="hub-sub">O que você quer fazer agora?</p>
+      <div class="hub-cartoes" id="hub-cartoes"></div>
+      <p class="hub-rodape" data-rodape-teste>Modo de teste: os dados ficam guardados neste navegador.</p>
+    </main>
+  </div>
+
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/nuvem.js"></script>
+  <script src="../js/agenda/config.js"></script>
+  <script src="../js/agenda/util.js"></script>
+  <script src="../js/agenda/db.js"></script>
+  <script src="../js/agenda/db-firebase.js"></script>
+  <script src="../js/agenda/servicos.js"></script>
+  <script src="js/sessao.js"></script>
+  <script src="js/exemplo.js"></script>
+  <script>
+  (function () {
+    const $ = U.$, esc = U.esc;
+
+    /* ================= FIREBASE: login oficial =================
+       E-mail + senha (Firebase Authentication) e depois o código do app
+       autenticador (TOTP). Na primeira vez, a pessoa confirma o e-mail e
+       ativa o app pelo código QR. O papel (admin, suporte, psicólogo) vem
+       da coleção "usuarios" do banco. */
+    if (Auth.firebase) { loginFirebase(); return; }
+
+    /* ---------------- já entrou: mostra as áreas ---------------- */
+    const s = Auth.sessao();
+    if (s) {
+      if (Auth.areas(s).length === 1) return Auth.irParaInicio(s);
+      return mostrarAreas(s);
+    }
+    $('#tela-login').hidden = false;
+    if (DB.modo !== 'local') $('#aviso-contas').hidden = true;
+    setTimeout(() => $('#usuario').focus(), 30);
+
+    /* ---------------- login: passo 1 (usuário e senha) ---------------- */
+    const f1 = $('#form-login'), f2 = $('#form-2fa');
+    let pendente = null, falhas = 0, bloqueadoAte = 0;
+
+    async function mandarCodigo(u) {
+      const codigo = await DB.gerarCodigo2FA(u.id);
+      await Servicos.enviarEmail({ para: u.email, assunto: 'Seu código de acesso ao painel', corpo: `Seu código de acesso ao painel da Psicólogos Brasil é ${codigo}. Ele vale por 5 minutos. Se não foi você, ignore este e-mail.` });
+      $('#txt-2fa').innerHTML = `Enviamos um código de 6 números para <strong>${esc(esconderEmail(u.email))}</strong>. Ele vale por 5 minutos.`;
+      if (DB.modo === 'local') {
+        const av = $('#aviso-codigo');
+        av.innerHTML = `<strong>Simulação</strong>O e-mail não é enviado de verdade. Use o código <code>${codigo}</code>.`;
+        av.hidden = false;
+      }
+    }
+    function esconderEmail(e) {
+      const [n, d] = String(e || '').split('@');
+      if (!d) return 'o seu e-mail';
+      return n.slice(0, 2) + '•••@' + d;
+    }
+
+    f1.addEventListener('submit', async e => {
+      e.preventDefault();
+      const erro = $('#erro-login');
+      erro.textContent = '';
+      if (Date.now() < bloqueadoAte) { erro.textContent = `Muitas tentativas. Aguarde ${Math.ceil((bloqueadoAte - Date.now()) / 1000)} segundos.`; return; }
+      const usuario = $('#usuario').value, senha = $('#senha').value;
+      if (!usuario || !senha) { erro.textContent = 'Preencha usuário e senha.'; return; }
+      const btn = $('#btn-entrar'); btn.disabled = true;
+      try {
+        const u = await DB.autenticar(usuario, senha);
+        if (!u) {
+          if (++falhas >= 5) { bloqueadoAte = Date.now() + 60e3; falhas = 0; }
+          erro.textContent = 'Usuário ou senha incorretos.';
+          $('#senha').value = ''; $('#senha').focus();
+          return;
+        }
+        falhas = 0;
+        pendente = u;                       /* dois fatores SEMPRE, para todos */
+        await mandarCodigo(u);
+        f1.hidden = true; f2.hidden = false;
+        $('#aviso-contas').hidden = true;
+        $('#codigo').focus();
+      } catch (err) { erro.textContent = err.message; }
+      finally { btn.disabled = false; }
+    });
+
+    /* ---------------- login: passo 2 (código) ---------------- */
+    let errosCodigo = 0;
+    f2.addEventListener('submit', async e => {
+      e.preventDefault();
+      const erro = $('#erro-2fa');
+      erro.textContent = '';
+      const ok = await DB.validarCodigo2FA(pendente.id, $('#codigo').value);
+      if (!ok) {
+        if (++errosCodigo >= 5) { voltar(); $('#erro-login').textContent = 'Código errado muitas vezes. Entre de novo.'; return; }
+        erro.textContent = 'Código incorreto ou vencido.';
+        return;
+      }
+      Auth.entrar(pendente);
+    });
+    $('#codigo').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); });
+    $('#reenviar').onclick = async () => { if (pendente) { await mandarCodigo(pendente); U.toast('Mandamos um código novo.'); } };
+    function voltar() {
+      f2.hidden = true; f1.hidden = false; $('#codigo').value = ''; $('#senha').value = ''; pendente = null; errosCodigo = 0;
+      $('#aviso-codigo').hidden = true; if (DB.modo === 'local') $('#aviso-contas').hidden = false;
+      $('#senha').focus();
+    }
+    $('#voltar-login').onclick = voltar;
+
+    /* ---------------- tela de áreas ---------------- */
+    async function mostrarAreas(s) {
+      $('#tela-areas').hidden = false;
+      $('[data-nome]').textContent = s.nome;
+      $('[data-papel]').textContent = Auth.NOMES_PAPEL[s.papel] || '';
+      $('[data-sair]').onclick = () => Auth.sair();
+      const h = new Date().getHours();
+      $('[data-saudacao]').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}, ${s.nome.split(' ')[0]}!`;
+      if (DB.modo !== 'local') $('[data-rodape-teste]').remove();
+
+      const info = await resumos();
+      $('#hub-cartoes').innerHTML = Auth.areas(s).map(k => {
+        const a = Auth.AREAS[k];
+        return `<a class="hub-cartao" href="${a.url}">
+          <span class="hub-ico">${a.ico}</span>
+          <span class="hub-txt"><strong>${a.nome}</strong><span>${a.desc}</span></span>
+          ${info[k] ? `<span class="hub-info">${info[k]}</span>` : ''}
+          <span class="hub-seta" aria-hidden="true">→</span>
+        </a>`;
+      }).join('');
+    }
+
+    /* ---------------- Firebase ---------------- */
+    async function loginFirebase() {
+      const f1 = $('#form-login'), f2 = $('#form-2fa'), fa = $('#form-ativar'), av = $('#aviso-login');
+      const telas = [f1, f2, fa, av];
+      const mostrar = el => { telas.forEach(t => { t.hidden = t !== el; }); const i = el.querySelector('input'); if (i) setTimeout(() => i.focus(), 30); };
+      $('#aviso-contas').hidden = true;
+      $('label[for="usuario"]').textContent = 'E-mail';
+      $('#usuario').type = 'email'; $('#usuario').autocomplete = 'email';
+      $('#esqueci-box').hidden = false;
+      $('#reenviar').closest('p').innerHTML = '<button type="button" class="btn-link" data-voltar-login>Voltar</button>';
+      $('#txt-2fa').textContent = 'Abra o app autenticador no celular e digite o código de 6 números de “Psicólogos Brasil”.';
+      const COM_2FA = window.PAINEL_2FA !== false;
+
+      let x;
+      try { x = await NUVEM.authPronta(); }
+      catch (e) { $('#tela-login').hidden = false; mostrar(f1); $('#erro-login').textContent = 'Não consegui conectar ao Firebase. Confira a internet e o arquivo js/firebase-config.js.'; return; }
+      const { fs, db, auth, authMod: A } = x;
+
+      /* já entrou nesta aba? */
+      const s = Auth.sessao();
+      if (x.usuario && s && s.uid === x.usuario.uid) {
+        if (Auth.areas(s).length === 1) return Auth.irParaInicio(s);
+        return mostrarAreas(s);
+      }
+      sessionStorage.removeItem('pb_painel_sessao');
+      if (x.usuario) { try { await A.signOut(auth); } catch (e) {} }
+      $('#tela-login').hidden = false; mostrar(f1);
+
+      let resolver = null, segredo = null, usuarioAtivando = null, ocupado = false;
+      const msgErro = e => {
+        const c = (e && e.code) || '';
+        if (/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c)) return 'E-mail ou senha incorretos.';
+        if (/too-many-requests/.test(c)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+        if (/user-disabled/.test(c)) return 'Este acesso foi desativado no Firebase.';
+        if (/invalid-verification-code|invalid-code|missing-code/.test(c)) return 'Código incorreto. Confira no app e digite de novo.';
+        if (/code-expired|session-expired|totp-challenge-timeout/.test(c)) return 'O tempo acabou. Entre de novo com a senha.';
+        if (/operation-not-allowed|admin-restricted/.test(c)) return 'O app autenticador ainda não foi ativado no projeto Firebase (passo 6 do guia COMO-ATIVAR-O-FIREBASE.txt).';
+        if (/network/.test(c)) return 'Sem internet. Confira a conexão.';
+        return (e && e.message) || 'Não consegui entrar. Tente de novo.';
+      };
+      async function perfil(u) {
+        const d = await fs.getDoc(fs.doc(db, 'usuarios', u.uid));
+        const p = d.exists() ? d.data() : null;
+        if (!p || !['admin', 'suporte', 'psicologo'].includes(p.papel)) throw { message: 'Este e-mail ainda não tem acesso ao painel. Peça ao administrador para liberar.' };
+        if (p.ativo === false) throw { message: 'Seu acesso está desativado. Fale com a equipe.' };
+        if (p.papel === 'psicologo' && !p.psiId) throw { message: 'Seu acesso de psicólogo está incompleto. Peça ao administrador para salvar o acesso de novo.' };
+        return p;
+      }
+      function concluir(u, p) {
+        Auth.entrar({ id: p.papel === 'psicologo' ? p.psiId : u.uid, uid: u.uid, papel: p.papel, nome: p.nome || u.email, email: u.email });
+      }
+      function aviso(titulo, texto) { $('#aviso-tit').textContent = titulo; $('#aviso-txt').innerHTML = texto; mostrar(av); }
+      async function sairDoFirebase() { try { await A.signOut(auth); } catch (e) {} }
+
+      /* depois da senha, quando a pessoa ainda não tem o app autenticador ativado */
+      async function semSegundoFator(u) {
+        const p = await perfil(u);
+        if (!COM_2FA) return concluir(u, p);
+        if (!u.emailVerified) {
+          try { await A.sendEmailVerification(u); } catch (e) { /* já enviado há pouco */ }
+          await sairDoFirebase();
+          return aviso('Confirme seu e-mail', `Mandamos um link de confirmação para <strong>${esc(u.email)}</strong>. Abra o e-mail, clique no link e depois entre de novo aqui. (Confira também a caixa de spam.)`);
+        }
+        const sessaoMfa = await A.multiFactor(u).getSession();
+        segredo = await A.TotpMultiFactorGenerator.generateSecret(sessaoMfa);
+        usuarioAtivando = u;
+        const url = segredo.generateQrCodeUrl(u.email, 'Psicólogos Brasil');
+        $('#qr-chave').textContent = segredo.secretKey.replace(/(.{4})/g, '$1 ').trim();
+        $('#qr-link').href = url;
+        await desenharQR(url);
+        mostrar(fa);
+      }
+      async function desenharQR(url) {
+        const box = $('#qr'); box.innerHTML = '';
+        try {
+          if (!window.QRCode) await new Promise((ok, erro) => { const sc = document.createElement('script'); sc.src = 'js/qrcode.min.js';   /* QRCode.js (MIT, davidshimjs) — fica no próprio painel */ sc.onload = ok; sc.onerror = erro; document.head.appendChild(sc); });
+          new QRCode(box, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+        } catch (e) { box.innerHTML = '<p class="muted">Não consegui desenhar o código QR. Use a chave abaixo.</p>'; }
+      }
+
+      f1.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (ocupado) return;
+        const erro = $('#erro-login'); erro.textContent = '';
+        const email = $('#usuario').value.trim(), senha = $('#senha').value;
+        if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; return; }
+        ocupado = true; $('#btn-entrar').disabled = true;
+        try {
+          const cred = await A.signInWithEmailAndPassword(auth, email, senha);
+          await semSegundoFator(cred.user);
+        } catch (err) {
+          if (err && err.code === 'auth/multi-factor-auth-required') {
+            resolver = A.getMultiFactorResolver(auth, err);
+            $('#codigo').value = ''; $('#erro-2fa').textContent = '';
+            mostrar(f2);
+          } else {
+            await sairDoFirebase();
+            erro.textContent = msgErro(err);
+            $('#senha').value = ''; $('#senha').focus();
+          }
+        } finally { ocupado = false; $('#btn-entrar').disabled = false; }
+      });
+
+      f2.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (ocupado || !resolver) return;
+        const erro = $('#erro-2fa'); erro.textContent = '';
+        const codigo = $('#codigo').value.trim();
+        if (codigo.length !== 6) { erro.textContent = 'Digite os 6 números do app.'; return; }
+        ocupado = true;
+        try {
+          const dica = resolver.hints.find(h => h.factorId === A.TotpMultiFactorGenerator.FACTOR_ID) || resolver.hints[0];
+          const cred = await resolver.resolveSignIn(A.TotpMultiFactorGenerator.assertionForSignIn(dica.uid, codigo));
+          concluir(cred.user, await perfil(cred.user));
+        } catch (err) {
+          erro.textContent = msgErro(err);
+          if (err && !err.code) { await sairDoFirebase(); }
+        } finally { ocupado = false; }
+      });
+
+      fa.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (ocupado || !segredo || !usuarioAtivando) return;
+        const erro = $('#erro-ativar'); erro.textContent = '';
+        const codigo = $('#codigo-ativar').value.trim();
+        if (codigo.length !== 6) { erro.textContent = 'Digite os 6 números que aparecem no app.'; return; }
+        ocupado = true; $('#btn-ativar').disabled = true;
+        try {
+          await A.multiFactor(usuarioAtivando).enroll(A.TotpMultiFactorGenerator.assertionForEnrollment(segredo, codigo), 'App autenticador');
+          /* o banco só libera os dados para quem entrou COM o segundo fator: entra de novo */
+          await sairDoFirebase();
+          segredo = null; usuarioAtivando = null;
+          $('#senha').value = '';
+          mostrar(f1);
+          $('#erro-login').innerHTML = '<span class="ok-form">✓ App autenticador ativado! Agora entre com a sua senha e o código do app.</span>';
+        } catch (err) { erro.textContent = msgErro(err); }
+        finally { ocupado = false; $('#btn-ativar').disabled = false; }
+      });
+
+      ['#codigo', '#codigo-ativar'].forEach(id => $(id).addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); }));
+      document.querySelectorAll('[data-voltar-login]').forEach(b => b.addEventListener('click', async () => {
+        resolver = null; segredo = null; usuarioAtivando = null;
+        await sairDoFirebase();
+        $('#senha').value = ''; $('#erro-login').textContent = '';
+        mostrar(f1);
+      }));
+      $('#esqueci').addEventListener('click', async () => {
+        const email = $('#usuario').value.trim();
+        const erro = $('#erro-login');
+        if (!U.emailValido(email)) { erro.textContent = 'Digite seu e-mail acima e clique de novo em “Esqueci a senha”.'; $('#usuario').focus(); return; }
+        try { await A.sendPasswordResetEmail(auth, email); } catch (err) { /* não conta se o e-mail existe */ }
+        erro.innerHTML = '<span class="ok-form">Se esse e-mail tiver acesso, você vai receber um link para criar uma nova senha.</span>';
+      });
+    }
+
+    /* números de cada área (modo de teste: lidos deste navegador) */
+    async function resumos() {
+      const r = {};
+      try {
+        const pend = await DB.listarAgendamentos({ status: 'pendente' });
+        r.agenda = pend.length ? `<b class="tag-pend">${pend.length} pré-reserva${pend.length > 1 ? 's' : ''} esperando pagamento</b>` : 'Nenhuma pré-reserva esperando';
+      } catch (e) {}
+      if (!window.FIREBASE_CONFIG) {
+        try {
+          const c = JSON.parse(localStorage.getItem('pb-painel-v1')) || {};
+          const ps = c.psicologos || [], as = c.artigos || [];
+          r.psicologos = `${ps.length} cadastrado${ps.length === 1 ? '' : 's'} · ${ps.filter(p => p.geradoEm).length} publicado${ps.filter(p => p.geradoEm).length === 1 ? '' : 's'}`;
+          const hoje = U.hojeISO();
+          const deHoje = as.some(a => a.geradoEm && a.data === hoje);
+          r.artigos = `${as.length} artigo${as.length === 1 ? '' : 's'} · ${deHoje ? '<b class="tag-ok">artigo de hoje publicado ✓</b>' : '<b class="tag-pend">artigo de hoje ainda não saiu</b>'}`;
+        } catch (e) {}
+      }
+      return r;
+    }
+  })();
+  </script>
+</body>
+</html>

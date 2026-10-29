@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/icones/favicon.svg" type="image/svg+xml">
+  <title>Minha conta · Painel Psicólogos Brasil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/agenda.css">
+  <link rel="stylesheet" href="css/escuro.css">
+  <script src="js/tema.js"></script>
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="index.html">
+        <span class="marca-ico">PB</span>
+        <span>Psicólogos Brasil <small>Minha conta</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn btn-secundario btn-peq" data-sair>Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <div class="secao-topo"><div><h1>Minha conta</h1><p>Seus dados de acesso ao painel.</p></div></div>
+    <div class="bloco conta-bloco">
+      <h2>Dados</h2>
+      <form id="form-dados" novalidate>
+        <div class="conta-grade">
+          <div class="campo"><label for="c-nome">Nome</label><input type="text" id="c-nome" autocomplete="name"></div>
+          <div class="campo"><label for="c-email">E-mail</label><input type="email" id="c-email" autocomplete="email"></div>
+          <div class="campo" id="campo-usuario"><label for="c-usuario">Usuário de acesso</label><input type="text" id="c-usuario" autocapitalize="off" spellcheck="false" autocomplete="username"></div>
+          <div class="campo"><label for="c-papel">Papel</label><input type="text" id="c-papel" readonly></div>
+        </div>
+        <p class="ajuda" id="c-ajuda"></p>
+        <button class="btn btn-primario" type="submit" id="c-salvar">Salvar alterações</button>
+      </form>
+      <p class="conta-info" id="c-2fa"></p>
+    </div>
+    <div class="bloco conta-bloco">
+      <h2>Trocar senha</h2>
+      <form id="form-senha" novalidate>
+        <div class="conta-grade">
+          <div class="campo"><label for="s-atual">Senha atual</label><input type="password" id="s-atual" autocomplete="current-password"></div>
+          <div class="campo"><label for="s-nova">Nova senha</label><input type="password" id="s-nova" autocomplete="new-password"></div>
+        </div>
+        <button class="btn btn-secundario" type="submit">Salvar nova senha</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/nuvem.js"></script>
+  <script src="../js/agenda/config.js"></script>
+  <script src="../js/agenda/util.js"></script>
+  <script src="../js/agenda/db.js"></script>
+  <script src="../js/agenda/db-firebase.js"></script>
+  <script src="js/sessao.js"></script>
+  <script src="js/conta.js"></script>
+</body>
+</html>

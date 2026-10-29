@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/icones/favicon.svg" type="image/svg+xml">
+  <title>Minha agenda | Psicólogos Brasil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/agenda.css">
+  <link rel="stylesheet" href="css/escuro.css">
+  <script src="js/tema.js"></script>
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="minha-agenda.html">
+        <span class="marca-ico">PB</span>
+        <span>Psicólogos Brasil <small>Minha agenda</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn btn-secundario btn-peq" data-sair>Sair</button>
+      </div>
+    </div>
+    <nav class="abas" role="tablist" aria-label="Seções">
+      <button class="aba" role="tab" data-aba="atendimentos">Atendimentos<span class="contador" data-cont="novos"></span></button>
+      <button class="aba" role="tab" data-aba="disponibilidade">Disponibilidade</button>
+      <button class="aba" role="tab" data-aba="resumo">Resumo do mês</button>
+      <button class="aba" role="tab" data-aba="conta">Minha conta</button>
+    </nav>
+  </header>
+
+  <main class="conteudo">
+    <!-- ATENDIMENTOS -->
+    <section data-painel="atendimentos">
+      <div class="secao-topo">
+        <div>
+          <h1 data-saudacao>Olá!</h1>
+          <p>Atendimentos em <strong style="color:var(--ok)">verde</strong> estão pagos e confirmados. Clique em “Estou ciente” para a equipe saber que você viu.</p>
+        </div>
+      </div>
+      <div id="lista-atend"></div>
+    </section>
+
+    <!-- DISPONIBILIDADE -->
+    <section data-painel="disponibilidade" hidden>
+      <div class="secao-topo">
+        <div>
+          <h1>Disponibilidade</h1>
+          <p>Os horários que você abrir aqui aparecem no seu perfil do site para os pacientes escolherem.</p>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <div class="cal-cab">
+          <div>
+            <h2>Seus horários</h2>
+            <p class="muted">1. Escolha o mês &nbsp;·&nbsp; 2. Clique nos dias &nbsp;·&nbsp; 3. Marque os horários &nbsp;·&nbsp; 4. Clique em <strong>Publicar no site</strong>, lá embaixo.</p>
+          </div>
+          <span class="salvo" id="status-salvo" aria-live="polite"></span>
+        </div>
+
+        <div class="cal-layout">
+          <div class="cal">
+            <div class="cal-mes">
+              <button type="button" class="cal-nav" id="mes-ant" aria-label="Mês anterior">‹</button>
+              <strong id="mes-nome"></strong>
+              <button type="button" class="cal-nav" id="mes-prox" aria-label="Próximo mês">›</button>
+            </div>
+            <div class="cal-grade" id="cal-grade" role="grid" aria-label="Dias do mês"></div>
+            <div class="legenda">
+              <span><i class="l-ok"></i>Com horários</span>
+              <span><i></i>Sem horários</span>
+              <span><i class="l-sel"></i>Selecionado</span>
+            </div>
+            <p class="ajuda">Dica: clique no nome do dia da semana (ex.: <strong>Seg</strong>) para selecionar todas as segundas do mês de uma vez.</p>
+          </div>
+
+          <div class="cal-horas" id="cal-horas"></div>
+        </div>
+        <div class="pub-barra" id="pub-barra" hidden role="region" aria-label="Publicar horários">
+          <span class="pub-txt"><b id="pub-qtd"></b><small>Os pacientes só veem depois de publicar.</small></span>
+          <span class="pub-acoes">
+            <button type="button" class="btn btn-secundario" id="pub-descartar">Descartar</button>
+            <button type="button" class="btn btn-primario" id="pub-ok">Publicar no site</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <h2>Folgas e dias sem atendimento</h2>
+        <p class="muted">Férias, feriado, consulta médica… Bloqueie um dia inteiro ou só um horário.</p>
+        <form class="bloqueio-form" id="form-bloq" novalidate>
+          <div class="campo"><label for="b-data">Data</label><input type="date" id="b-data"></div>
+          <div class="campo"><label for="b-hora">Horário</label><select id="b-hora"></select></div>
+          <div class="campo"><label for="b-motivo">Motivo (opcional)</label><input type="text" id="b-motivo" placeholder="Ex.: feriado"></div>
+          <button class="btn btn-primario" type="submit">Bloquear</button>
+        </form>
+        <ul class="lista-bloq" id="lista-bloq"></ul>
+      </div>
+    </section>
+
+    <!-- RESUMO -->
+    <section data-painel="resumo" hidden>
+      <div class="secao-topo">
+        <div>
+          <h1>Resumo do mês</h1>
+          <p>Sessões feitas e valor a receber. Faltas sem aviso contam como sessão realizada.</p>
+        </div>
+        <div class="campo" style="margin:0"><label for="r-mes">Mês</label><input type="month" id="r-mes"></div>
+      </div>
+      <div class="numeros" id="numeros-resumo"></div>
+    </section>
+
+    <!-- CONTA (o psicólogo abre clicando no próprio nome, lá em cima; a equipe pela aba "Conta") -->
+    <section data-painel="conta" hidden>
+      <div class="secao-topo"><div><h1 id="conta-tit">Minha conta</h1><p id="conta-sub">Seus dados de contato e de acesso.</p></div></div>
+      <div class="bloco conta-bloco">
+        <h2>Dados</h2>
+        <form id="form-dados" novalidate>
+          <div class="conta-grade">
+            <div class="campo"><label for="c-nome">Nome</label><input type="text" id="c-nome" autocomplete="name"></div>
+            <div class="campo"><label for="c-crp">CRP</label><input type="text" id="c-crp" placeholder="Ex.: 11/12345"></div>
+            <div class="campo"><label for="c-email">E-mail</label><input type="email" id="c-email" autocomplete="email"></div>
+            <div class="campo"><label for="c-whats">WhatsApp (com DDD)</label><input type="tel" id="c-whats" placeholder="(85) 99999-9999" autocomplete="tel"></div>
+            <div class="campo" id="campo-usuario"><label for="c-usuario">Usuário de acesso</label><input type="text" id="c-usuario" autocapitalize="off" spellcheck="false" autocomplete="username"></div>
+          </div>
+          <p class="ajuda" id="c-ajuda"></p>
+          <button class="btn btn-primario" type="submit" id="c-salvar">Salvar alterações</button>
+        </form>
+        <p class="conta-info" id="c-2fa"></p>
+      </div>
+      <div class="bloco conta-bloco" id="bloco-senha">
+        <h2>Trocar senha</h2>
+        <form id="form-senha" novalidate>
+          <div class="conta-grade">
+            <div class="campo"><label for="s-atual">Senha atual</label><input type="password" id="s-atual" autocomplete="current-password"></div>
+            <div class="campo"><label for="s-nova">Nova senha</label><input type="password" id="s-nova" autocomplete="new-password"></div>
+          </div>
+          <button class="btn btn-secundario" type="submit">Salvar nova senha</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/nuvem.js"></script>
+  <script src="../js/agenda/config.js"></script>
+  <script src="../js/agenda/util.js"></script>
+  <script src="../js/agenda/db.js"></script>
+  <script src="../js/agenda/db-firebase.js"></script>
+  <script src="../js/agenda/servicos.js"></script>
+  <script src="js/sessao.js"></script>
+  <script src="js/minha-agenda.js"></script>
+</body>
+</html>

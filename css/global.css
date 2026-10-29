@@ -1,0 +1,369 @@
+/* Psicólogos Brasil — Base do site: cores (:root), tipografia, container, botões, formulários e componentes usados em várias páginas. */
+
+:root {
+  --bg: #f5f7fd;
+  --surface: #fff;
+  --ink: #101a4f;
+  --muted: #4b4b4b;
+  --sea: #1f35b5;
+  --sea-d: #162a8f;
+  --on-sea: #fff;
+  --mist: #e9edfb;
+  --sun: #ffc83d;
+  --line: #dbe1f3;
+  --night: #0f1c66;
+  --sh:
+    0 1px 2px rgba(16, 26, 79, 0.06), 0 14px 28px -14px rgba(16, 26, 79, 0.3);
+  --out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  height: 100%;
+  scroll-padding-top: 80px;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font:
+    400 17px/1.6 Figtree,
+    system-ui,
+    sans-serif;
+  accent-color: var(--sea);
+  overscroll-behavior-y: none;
+}
+
+::selection {
+  background: #cdd6fb;   /* azul-claro do site (antes era amarelo) */
+  color: #101a4f;
+}
+
+input,
+select {
+  caret-color: var(--sea);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Bricolage Grotesque", Georgia, serif;
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.4rem, 6.4vw, 4.5rem);
+}
+
+h2 {
+  font-size: clamp(1.7rem, 3.6vw, 2.5rem);
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+h1:focus {
+  outline: 0;
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+section {
+  padding: 56px 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 26px;
+  font:
+    600 1rem Figtree,
+    sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--sea);
+  color: var(--on-sea);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition:
+    transform 0.16s var(--out),
+    background-color 0.16s var(--out);
+}
+
+.btn:active,
+.chip:active {
+  transform: scale(0.97);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--sea-d);
+  }
+  .btn.ghost:hover {
+    background: var(--mist);
+  }
+}
+:focus-visible {
+  outline: 3px solid rgba(31, 53, 181, .45);   /* azul do site (antes era amarelo) */
+  outline-offset: 2px;
+}
+/* campos de texto e listas: a própria borda fica azul, com um brilho azul-claro em volta */
+html input:focus, html select:focus, html textarea:focus {
+  outline: none;
+  border-color: var(--sea);
+  box-shadow: 0 0 0 3px rgba(31, 53, 181, .14);
+}
+/* em fundos azuis/escuros o contorno fica branco, para aparecer */
+.ann :focus-visible, .lp-final-box :focus-visible, .lp-esperar-card :focus-visible { outline-color: #fff; }
+
+input,
+select {
+  font-size: 16px;
+}
+
+.btn.lg {
+  padding: 16px 32px;
+  font-size: 1.05rem;
+}
+
+.facts {
+  list-style: none;
+  margin: 0;
+  padding: 22px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 18px 28px;
+  border-block: 1px solid var(--line);
+}
+
+.facts li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 2px 10px;
+}
+
+.facts svg {
+  margin-top: 4px;
+  color: var(--sea);
+}
+
+.facts strong {
+  font-weight: 600;
+}
+
+.facts span {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.4;
+}
+
+.head {
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+
+.head p {
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font:
+    500 0.95rem Figtree,
+    sans-serif;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    transform 0.16s var(--out),
+    background-color 0.16s var(--out);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.tag {
+  background: var(--mist);
+  border-radius: 8px;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  align-self: flex-start;
+}
+
+details {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.05rem;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+summary::after {
+  content: "+";
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+details[open] summary::after {
+  content: "–";
+}
+
+details p {
+  color: var(--muted);
+  margin-top: 10px;
+  max-width: 70ch;
+}
+
+.lead {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 60ch;
+  margin-top: 14px;
+}
+
+@media (max-width: 760px) {
+  body {
+    padding-bottom: 100px; /* espaço para o botão flutuante */
+  }
+}
+@media (max-width: 480px) {
+  section {
+    padding: 44px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .rv {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s var(--out), transform 0.6s var(--out);
+  }
+  .rv.in {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.slot.vazio {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 2px dashed var(--line);
+  border-radius: 32px;
+  background: var(--mist);
+}
+
+.slot.vazio img {
+  display: none;
+}
+
+.slot.vazio::after {
+  content: "Espaço para imagem\A" attr(data-src);
+  white-space: pre;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  padding: 12px;
+}
+
+:root {
+  interpolate-size:allow-keywords;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+
+/* ===== Utilitários e formulários (usados em várias páginas) ===== */
+[hidden] { display: none !important; }
+.page-title { font-size: clamp(2rem, 5vw, 3.2rem); }
+.sec-tight { padding-bottom: 24px; }
+.cta-sec { padding-top: 0; }
+.btn.sm { padding: 9px 18px; }
+.field { display: grid; gap: 6px; margin: 0 0 16px; }
+.field label, .radios legend { font-weight: 600; font-size: 0.95rem; }
+.field input, .field select, .field textarea {
+  width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px;
+  font: inherit; background: var(--surface); color: var(--ink);
+}
+.field textarea { min-height: 120px; resize: vertical; }
+.radios { display: flex; flex-wrap: wrap; gap: 10px; border: 0; padding: 0; margin: 0 0 18px; }
+.radios legend { width: 100%; margin-bottom: 8px; padding: 0; }
+.radios label { position: relative; cursor: pointer; }
+.radios input { position: absolute; opacity: 0; inset: 0; }
+.radios span { display: inline-block; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 9px 16px; font-weight: 500; }
+.radios input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.radios input:focus-visible + span { outline: 3px solid rgba(31, 53, 181, .45); outline-offset: 2px; }
+.form-msg { margin: 14px 0 0; font-weight: 600; }
+.form-msg.erro { color: #b42318; }
+.form-msg.ok { color: var(--sea-d); }
+.form-msg a { text-decoration: underline; }
+
+/* No celular o cabeçalho não é fixo, então os links de âncora precisam de pouca folga */
+@media (max-width: 760px) {
+  html { scroll-padding-top: 16px; }
+}

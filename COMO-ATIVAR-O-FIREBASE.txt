@@ -1,0 +1,238 @@
+PAINEL COM FIREBASE — PSICÓLOGOS BRASIL
+=======================================
+
+ONDE FICA
+  Painel:      seusite/painel/
+  Artigos:     seusite/blog/   e   seusite/blog/artigo/?a=nome-do-artigo
+  Psicólogos:  seusite/psicologos/   e   seusite/especialista/nome-do-psicologo/
+               (o arquivo .htaccess da pasta principal faz esse endereço curto funcionar
+                na Hostinger; no computador, com o Live Server, o painel usa ?p=nome)
+
+O site escolhe sozinho o modo, olhando o arquivo js/firebase-config.js:
+
+  - Sem as chaves (null) ...... MODO TESTE: contas de teste (admin / admin123 …),
+                                 tudo guardado só no navegador. Serve só para testar telas.
+  - Com as chaves ............. FIREBASE DE VERDADE: login oficial (e-mail + senha +
+                                 app autenticador), banco de dados, agenda e publicação.
+                                 As contas de teste deixam de existir.
+
+
+=================================================================
+ATIVAR O FIREBASE (uma vez só, uns 30 minutos)
+=================================================================
+Use o console em https://console.firebase.google.com com a conta Google da
+plataforma (a mesma do plano pago).
+
+PASSO 1 — Criar o projeto
+  a) "Criar um projeto" (ou "Adicionar projeto"). Nome: psicologos-brasil.
+  b) Pode desligar o Google Analytics. "Criar projeto".
+  c) No canto de baixo à esquerda, confira se o plano é o "Blaze" (pago por uso).
+     Se não for: "Fazer upgrade" → Blaze → escolha a conta de faturamento.
+     (O app autenticador precisa do Blaze. O uso deste site fica dentro da cota
+      grátis do Blaze na fase de testes.)
+
+PASSO 2 — Criar o banco de dados
+  a) Menu da esquerda: Criação (Build) → Firestore Database → "Criar banco de dados".
+  b) Local: southamerica-east1 (São Paulo).
+  c) "Iniciar no modo de produção" → Criar.
+
+PASSO 3 — Colar as regras de segurança
+  a) Ainda no Firestore, aba "Regras".
+  b) Apague tudo e cole TODO o conteúdo do arquivo firestore.rules (pasta principal do site).
+  c) "Publicar".
+
+PASSO 4 — Ligar o login com e-mail e senha
+  a) Criação (Build) → Authentication → "Vamos começar".
+  b) Aba "Método de login" → "E-mail/senha" → ative a PRIMEIRA chave → Salvar.
+
+PASSO 5 — Atualizar para o Identity Platform (necessário para o app autenticador)
+  a) Authentication → aba "Configurações".
+  b) Procure "Atualizar para o Firebase Authentication com Identity Platform"
+     (ou um aviso "Upgrade") → clique e confirme.
+
+PASSO 6 — Ativar o app autenticador (TOTP)
+  O console ainda não tem um botão para isso: é um comando, colado uma vez só.
+  a) Abra https://console.cloud.google.com e escolha o projeto psicologos-brasil
+     (no seletor de projeto, lá em cima).
+  b) Clique no ícone  >_  ("Ativar o Cloud Shell"), lá em cima à direita.
+     Espera abrir o terminal embaixo.
+  c) Cole o comando abaixo, TROCANDO  SEU_PROJECT_ID  pelo ID do projeto
+     (aparece no seletor de projeto; ex.: psicologos-brasil-1a2b3), e aperte Enter:
+
+curl -X PATCH "https://identitytoolkit.googleapis.com/admin/v2/projects/SEU_PROJECT_ID/config?updateMask=mfa" -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "Content-Type: application/json" -H "X-Goog-User-Project: SEU_PROJECT_ID" -d '{"mfa":{"providerConfigs":[{"state":"ENABLED","totpProviderConfig":{"adjacentIntervals":5}}]}}'
+
+  d) Se aparecer uma janela pedindo autorização, clique em "Autorizar".
+  e) Deu certo se a resposta mostrar  "state": "ENABLED"  e  "totpProviderConfig".
+
+PASSO 7 — Liberar os endereços do site
+  Authentication → aba "Configurações" → "Domínios autorizados" → "Adicionar domínio":
+    - psicologosbrasil.com.br   (e www.psicologosbrasil.com.br, se usar)
+    - o endereço onde você testa (ex.: seunome.github.io)
+    - 127.0.0.1  (se testar no computador com o Live Server; "localhost" já vem)
+
+PASSO 8 — Pegar as chaves e colar no site
+  a) Engrenagem (ao lado de "Visão geral do projeto") → "Configurações do projeto".
+  b) Em "Seus apps", ícone </> (Web). Apelido: site. NÃO marque Hosting. "Registrar app".
+  c) Aparece um bloco "const firebaseConfig = { apiKey: ..., ... }".
+     Copie SÓ o que está entre as chaves { }, incluindo as chaves.
+  d) Abra js/firebase-config.js e troque
+         window.FIREBASE_CONFIG = null;
+     por
+         window.FIREBASE_CONFIG = { ...o que você copiou... };
+  e) Suba o js/firebase-config.js para a hospedagem do site.
+  (Essas chaves podem ficar públicas: quem protege os dados são as regras do passo 3.)
+
+PASSO 9 — Criar o PRIMEIRO administrador (os próximos você cria pelo painel)
+  a) Authentication → aba "Usuários" → "Adicionar usuário".
+     E-mail: o seu. Senha: forte (12+ caracteres, letras, números e símbolos).
+  b) Na lista, copie o "UID do usuário" (um código tipo kq3XyZ...).
+  c) Firestore Database → aba "Dados" → "Iniciar coleção".
+     ID da coleção: usuarios
+     ID do documento: cole o UID
+     Campos (clique "Adicionar campo" para cada um):
+        papel   string    admin
+        nome    string    Fábio Medeiros   (o seu nome)
+        email   string    o mesmo e-mail do passo a
+        ativo   boolean   true
+        principal boolean true    (marca você como administrador principal:
+                                   ninguém consegue excluir esse acesso)
+     Salvar.
+
+PASSO 10 — Primeiro login (no celular, tenha o Google Authenticator instalado)
+  a) Abra seusite/painel/ e entre com o e-mail e a senha.
+  b) Na primeira vez o painel manda um link para CONFIRMAR O E-MAIL.
+     Abra o e-mail (veja o spam), clique no link e entre de novo.
+  c) Aparece um CÓDIGO QR. No Google Authenticator: "+" → "Ler código QR".
+     Digite os 6 números que aparecem no app → "Ativar e entrar".
+  d) O painel pede para entrar mais uma vez: senha + código do app. Pronto.
+     Daqui em diante: sempre e-mail + senha + código do app.
+
+PASSO 11 — Criar a equipe e os psicólogos (pelo painel)
+  - Suporte e outros administradores: Configurações → "Equipe e acessos" →
+    "Novo acesso da equipe". Cada pessoa recebe um e-mail para confirmar e,
+    no primeiro login, ativa o app autenticador.
+  - Psicólogos: Psicólogos → abra o psicólogo → "Acesso ao painel e agenda online"
+    → e-mail + senha inicial → "Criar acesso". Depois publique o perfil.
+  - Desligar alguém: Configurações → Equipe e acessos → "Desativar".
+  - Esqueceu a senha: na tela de login, "Esqueci a senha"; ou o admin clica
+    "Enviar link de nova senha" em Equipe e acessos.
+
+PASSO 12 — E-mails saírem sozinhos (SMTP) e exclusão de usuários
+  Sem isto, os e-mails de confirmação ficam na aba "E-mails enviados" da Agenda,
+  com o texto pronto, e você manda pelo WhatsApp/e-mail.
+  Com isto, o sistema envia sozinho, usando o e-mail que você colocar no painel.
+
+  12.1 — Preencher no painel
+    Painel → Configurações → "Configurações de SMTP":
+      Servidor, porta, e-mail remetente e senha → "Salvar configuração SMTP".
+    Gmail / Google Workspace: servidor smtp.gmail.com, porta 465, e uma SENHA DE APP
+      (myaccount.google.com → Segurança → Verificação em duas etapas → Senhas de app).
+      A senha normal do Gmail é recusada.
+    Hostinger: smtp.hostinger.com, porta 465, senha da caixa de e-mail.
+    A senha fica guardada no Firebase num lugar que o navegador não consegue ler
+    de volta: só a função de e-mail (abaixo), que roda no servidor do Google.
+
+  12.2 — Instalar a função de e-mail (uma vez só, uns 5 minutos)
+    a) No computador, faça um .zip com estes itens da pasta do site:
+         a pasta  functions   e o arquivo  firebase.json
+       (não precisa da pasta node_modules, se existir).
+       Dê o nome  funcoes-email.zip
+    b) Abra https://console.cloud.google.com, escolha o projeto psicologos-brasil
+       e abra o Cloud Shell ( >_ , lá em cima à direita).
+    c) No Cloud Shell: menu de 3 pontinhos ⋮ → "Fazer upload" → escolha funcoes-email.zip.
+    d) Cole este comando, TROCANDO SEU_PROJECT_ID, e aperte Enter:
+
+unzip -o funcoes-email.zip -d pb-email && cd pb-email && firebase deploy --only functions --project SEU_PROJECT_ID
+
+    e) Se perguntar algo (ex.: apagar imagens antigas), responda Y.
+       Se pedir login: rode  firebase login --no-localhost  e siga o link.
+       Demora uns 3 minutos. Deu certo quando aparecer "Deploy complete!".
+    f) Volte ao painel → Configurações → "Testar conexão SMTP".
+       Chega um e-mail de teste no seu e-mail de login do painel.
+
+  A mesma instalação também:
+    - troca a senha de um psicólogo quando a equipe coloca uma nova em
+      Perfis → Acesso ao painel → Nova senha (ex.: ele esqueceu a senha);
+    - apaga a conta de login quando você exclui um usuário
+  em Usuários → Excluir. Sem ela, a pessoa excluída já não entra no painel, mas o
+  e-mail continua cadastrado em Authentication (dá para apagar à mão lá).
+  Já instalou antes? Rode o mesmo comando do item d) de novo para atualizar.
+
+  IMPORTANTE
+    - A função fica na região southamerica-east1 (São Paulo), a mesma do banco do
+      passo 2. Se o seu banco ficou em outra região, troque a linha
+      const REGIAO = 'southamerica-east1';  em functions/index.js antes do zip.
+    - NÃO instale também a extensão "Trigger Email from Firestore": os e-mails
+      sairiam em dobro. Se já instalou, desinstale (Firebase → Extensions).
+    - Trocou a senha do e-mail? Só atualize no painel. Não precisa instalar de novo.
+
+
+=================================================================
+COMO FUNCIONA NO DIA A DIA
+=================================================================
+  - Conteúdo: enquanto você escreve, o rascunho é salvo na nuvem sozinho.
+    O site SÓ muda quando você clica em "Publicar no site".
+  - Agenda: o paciente escolhe o horário no site → vira PRÉ-RESERVA (o horário
+    fica travado por 2 horas). Na Agenda → Pré-reservas, a equipe confere o
+    pagamento, cola o link do Google Meet e clica "Confirmar".
+  - Link do Meet: no Google Meet da conta da plataforma, "Nova reunião" →
+    "Criar uma reunião para depois" → copie e cole na confirmação
+    (o botão "Criar sala no Meet" abre isso direto).
+  - O psicólogo vê só os atendimentos dele, marca horários, folgas, "Estou ciente",
+    "Realizado" ou "Falta".
+
+
+=================================================================
+SEGURANÇA
+=================================================================
+  - Login oficial do Google Firebase: senhas guardadas criptografadas e
+    bloqueio automático de quem erra muitas vezes.
+  - Dois fatores obrigatório (app autenticador) para todos: admin, suporte e psicólogos.
+    As regras do banco recusam qualquer acesso aos dados do painel feito sem o código.
+  - Cada papel só vê o que é seu (veja o começo do firestore.rules).
+  - Os dados dos pacientes (nome, e-mail, WhatsApp) nunca ficam visíveis no site:
+    o site só enxerga se o horário está livre ou ocupado.
+  - Duas pessoas não conseguem pegar o mesmo horário: cada horário tem uma "trava"
+    no banco, gravada junto com o agendamento.
+  - Ninguém consegue se dar um papel sozinho: só um administrador muda a coleção "usuarios".
+
+
+=================================================================
+DEU ERRO? (o que cada mensagem quer dizer)
+=================================================================
+  "O app autenticador ainda não foi ativado no projeto Firebase"
+      → faltou o passo 5 ou o passo 6.
+  "Este e-mail ainda não tem acesso ao painel"
+      → falta o documento dessa pessoa na coleção "usuarios" (passo 9) ou o campo papel.
+  "O Firebase não respondeu ao teste" (Configurações de SMTP)
+      → falta instalar a função de e-mail (passo 12.2).
+  "Não conectou: EAUTH · 535 ..."
+      → e-mail ou senha recusados. No Gmail, use uma senha de app (passo 12.1).
+  "Sem permissão para isso" / "Sem permissão para salvar"
+      → regras do passo 3 não publicadas, ou a pessoa entrou sem o app autenticador.
+  Login não abre em um endereço novo ("auth/unauthorized-domain")
+      → adicione o endereço no passo 7.
+  "Confirme seu e-mail" toda vez
+      → abra o link do e-mail de confirmação (veja o spam) antes de entrar.
+  Perdeu o celular com o app autenticador
+      → um administrador tira o app antigo da conta da pessoa:
+        1) Firebase → Authentication → Usuários → copie o UID da pessoa.
+        2) console.cloud.google.com → Cloud Shell ( >_ ) → cole, trocando
+           SEU_PROJECT_ID e UID_DA_PESSOA:
+
+curl -X POST "https://identitytoolkit.googleapis.com/v1/projects/SEU_PROJECT_ID/accounts:update" -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "Content-Type: application/json" -H "X-Goog-User-Project: SEU_PROJECT_ID" -d '{"localId":"UID_DA_PESSOA","mfa":{}}'
+
+        No próximo login ela ativa o app de novo pelo código QR.
+
+TESTE RÁPIDO SEM O APP AUTENTICADOR (só se precisar, antes dos passos 5 e 6)
+  - Em js/firebase-config.js:  window.PAINEL_2FA = false;
+  - Em firestore.rules:        function exige2fa() { return false; }   (e publique)
+  Depois do teste, volte os dois para true. Não deixe assim em produção.
+
+
+IMPORTANTE AO TROCAR DO MODO TESTE PARA O FIREBASE
+  O que foi feito no modo teste NÃO vai sozinho para o Firebase.
+  Antes de colar as chaves: painel → Configurações → "Exportar backup".
+  Depois, já no Firebase: Configurações → "Importar backup", e publique de novo
+  cada artigo e psicólogo. Os acessos dos psicólogos precisam ser criados de novo
+  (com e-mail + senha), porque os do modo teste eram de mentira.

@@ -1,0 +1,178 @@
+/* =====================================================================
+   MODO ESCURO DO PAINEL — Psicólogos Brasil
+   Liga/desliga pelo botão de lua/sol no topo (painel/js/tema.js).
+   Tudo aqui só vale quando o <html> tem data-tema="escuro".
+   Serve para todas as telas do painel: login, início, conteúdo
+   (psicólogos, artigos, configurações), agenda e minha agenda.
+   ===================================================================== */
+
+/* ---------- cores (as duas listas de variáveis do painel) ---------- */
+html[data-tema="escuro"] {
+  color-scheme: dark;
+  /* fundo e cartões */
+  --bg: #0e1120;
+  --card: #171b2f;
+  --cartao-2: #1d2238;        /* cartões dentro de cartões, cabeçalhos de tabela */
+  --campo: #12162a;           /* fundo dos campos de texto */
+  /* texto e linhas */
+  --texto: #e7e9f5;
+  --suave: #a2a8c6;
+  --muted: #a2a8c6;
+  --linha: #2b3150;
+  --borda: #2b3150;
+  /* azul: mais claro para ler bem no fundo escuro; botões cheios usam --sea-botao */
+  --sea: #8d9cff;
+  --sea-2: #a9b5ff;
+  --sea-escuro: #a9b5ff;
+  --sea-claro: rgba(141, 156, 255, .14);
+  --sea-botao: #3d52d9;
+  --sea-botao-hover: #4a5fe6;
+  /* situações */
+  --ok: #54d391;      --ok-bg: rgba(84, 211, 145, .14);
+  --pend: #f2bd57;    --pend-bg: rgba(242, 189, 87, .14);
+  --aviso: #f2bd57;   --aviso-bg: rgba(242, 189, 87, .14);
+  --info: #8d9cff;    --info-bg: rgba(141, 156, 255, .14);
+  --erro: #ff8f85;    --erro-bg: rgba(255, 143, 133, .13);
+  --neutro: #b3b8d1;  --neutro-bg: rgba(179, 184, 209, .13);
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
+}
+html[data-tema="escuro"] body { background: var(--bg); color: var(--texto); }
+html[data-tema="escuro"] ::selection { background: rgba(141, 156, 255, .35); }
+
+/* ---------- topo ---------- */
+html[data-tema="escuro"] .topo { background: #131729; border-bottom-color: var(--linha); }
+html[data-tema="escuro"] .marca-ico { background: var(--sea-botao); color: #fff; }
+
+/* ---------- botões ---------- */
+html[data-tema="escuro"] .btn:not(.primario):not(.btn-primario):not(.btn-ok):not(.btn-whats):not(.btn-link) { background: var(--card); border-color: var(--linha); }
+html[data-tema="escuro"] .btn:not(.primario):not(.btn-primario):not(.btn-ok):not(.btn-whats):not(.btn-link):hover { border-color: var(--sea); }
+html[data-tema="escuro"] .btn.primario, html[data-tema="escuro"] .btn-primario { background: var(--sea-botao); border-color: var(--sea-botao); color: #fff; }
+html[data-tema="escuro"] .btn.primario:hover, html[data-tema="escuro"] .btn-primario:hover { background: var(--sea-botao-hover); border-color: var(--sea-botao-hover); }
+html[data-tema="escuro"] .btn.perigo, html[data-tema="escuro"] .btn-perigo { border-color: rgba(255, 143, 133, .35); }
+html[data-tema="escuro"] .btn.perigo:hover, html[data-tema="escuro"] .btn-perigo:hover { background: var(--erro-bg); }
+html[data-tema="escuro"] .btn-ok { background: #1d8a52; }
+
+/* ---------- campos ---------- */
+html[data-tema="escuro"] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+html[data-tema="escuro"] select,
+html[data-tema="escuro"] textarea { background: var(--campo); color: var(--texto); border-color: var(--linha); }
+html[data-tema="escuro"] input::placeholder, html[data-tema="escuro"] textarea::placeholder { color: #6d7394; }
+html[data-tema="escuro"] input:focus, html[data-tema="escuro"] select:focus, html[data-tema="escuro"] textarea:focus { outline-color: rgba(141, 156, 255, .3); border-color: var(--sea); }
+html[data-tema="escuro"] .slug-pre { background: var(--cartao-2); border-color: var(--linha); }
+html[data-tema="escuro"] .slug-pre input { background: var(--campo); }
+html[data-tema="escuro"] .tags { background: var(--campo); border-color: var(--linha); }
+html[data-tema="escuro"] .busca-l input { background: var(--campo); }
+
+/* ---------- cartões, listas e tabelas (conteúdo) ---------- */
+html[data-tema="escuro"] .item,
+html[data-tema="escuro"] .cartao,
+html[data-tema="escuro"] .tabela-lista,
+html[data-tema="escuro"] .faq-item,
+html[data-tema="escuro"] .passos-ed > div,
+html[data-tema="escuro"] .meta-dia,
+html[data-tema="escuro"] .snippet,
+html[data-tema="escuro"] .ed-barra { background: var(--card); border-color: var(--linha); }
+html[data-tema="escuro"] .vazio-lista { background: var(--card); border-color: #3a4166; }
+html[data-tema="escuro"] .item:hover { border-color: #3d4570; }
+html[data-tema="escuro"] .tl-cab, html[data-tema="escuro"] .tabela-lista .tl-cab { background: var(--cartao-2); }
+html[data-tema="escuro"] .lin:hover { background: rgba(141, 156, 255, .07); }
+html[data-tema="escuro"] .lin-seta { color: #6d7394; }
+html[data-tema="escuro"] .ferramentas, html[data-tema="escuro"] .rodape-ed, html[data-tema="escuro"] .seo-box,
+html[data-tema="escuro"] .verif-box, html[data-tema="escuro"] .acesso-status { background: var(--cartao-2); border-color: var(--linha); }
+html[data-tema="escuro"] .ferramentas button:hover { background: rgba(255, 255, 255, .06); }
+html[data-tema="escuro"] .acesso-status.on { border-color: rgba(84, 211, 145, .35); color: var(--ok); }
+html[data-tema="escuro"] .letras button, html[data-tema="escuro"] .paginacao button { background: var(--card); border-color: var(--linha); }
+html[data-tema="escuro"] .letras button.on, html[data-tema="escuro"] .paginacao button.on { background: var(--sea-botao); border-color: var(--sea-botao); color: #fff; }
+html[data-tema="escuro"] .selo.rasc, html[data-tema="escuro"] .seo-nota:not(.bom):not(.ruim):not(.medio), html[data-tema="escuro"] .selo.ag-off { background: var(--neutro-bg); color: var(--neutro); }
+html[data-tema="escuro"] .meta-dias i::before { background: #2b3150; }
+html[data-tema="escuro"] .meta-dias i.hoje::before { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--sea); }
+html[data-tema="escuro"] .tag.principal, html[data-tema="escuro"] .seo-checks .i { color: #fff; }
+html[data-tema="escuro"] .seo-checks .no { color: var(--suave); }
+html[data-tema="escuro"] .tag-x:hover { background: rgba(255, 255, 255, .12); }
+html[data-tema="escuro"] .previa-frame { background: #fff; }     /* a prévia mostra o site como ele é (claro) */
+html[data-tema="escuro"] kbd { background: var(--cartao-2); border-color: var(--linha); color: var(--texto); }
+
+/* resultado do Google (simulação): fica escuro como o Google em modo escuro */
+html[data-tema="escuro"] .sn-site { color: #dadce0; }
+html[data-tema="escuro"] .sn-link, html[data-tema="escuro"] .sn-desc { color: #bdc1c6; }
+html[data-tema="escuro"] .sn-titulo { color: #8ab4f8; }
+html[data-tema="escuro"] .sn-desc.vazio { color: #6d7394; }
+
+/* ---------- editor de artigos ---------- */
+html[data-tema="escuro"] .editor blockquote { color: var(--suave); }
+html[data-tema="escuro"] .editor hr { border-top-color: #3a4166; }
+html[data-tema="escuro"] .editor code { background: var(--cartao-2); }
+html[data-tema="escuro"] .editor .b-vazio::before { color: #6d7394; }
+html[data-tema="escuro"] .ed-barra > button, html[data-tema="escuro"] .bt button { color: var(--texto); }
+html[data-tema="escuro"] .ed-barra > button:hover, html[data-tema="escuro"] .bt button:hover,
+html[data-tema="escuro"] .pop button:hover { background: rgba(255, 255, 255, .07); }
+html[data-tema="escuro"] .ed-barra .eb-add, html[data-tema="escuro"] .ins { background: var(--sea-botao); color: #fff; }
+html[data-tema="escuro"] .bt { border-left-color: var(--linha); }
+html[data-tema="escuro"] .bt-sep { background: var(--linha); }
+html[data-tema="escuro"] .menu-blocos, html[data-tema="escuro"] .pop { background: var(--card); border-color: #3a4166; box-shadow: 0 12px 34px rgba(0, 0, 0, .5); color: var(--texto); }
+html[data-tema="escuro"] .mb-ico { background: var(--cartao-2); }
+html[data-tema="escuro"] .pop hr { border-top-color: var(--linha); }
+
+/* ---------- login ---------- */
+html[data-tema="escuro"] .login-card { background: var(--card); box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .7); }
+html[data-tema="escuro"] .login-card .marca-ico { color: #fff; }
+
+/* ---------- agenda (agenda.css) ---------- */
+html[data-tema="escuro"] .aviso-sim { color: var(--pend); }
+html[data-tema="escuro"] .aviso-sim code { background: rgba(255, 255, 255, .08); }
+html[data-tema="escuro"] .card-pend { background: rgba(242, 189, 87, .06); border-color: rgba(242, 189, 87, .35); }
+html[data-tema="escuro"] .card-ok, html[data-tema="escuro"] .atend.st-confirmado, html[data-tema="escuro"] .cal-dia.tem { border-color: rgba(84, 211, 145, .4); }
+html[data-tema="escuro"] .card-info, html[data-tema="escuro"] .atend.st-realizado { border-color: rgba(141, 156, 255, .4); }
+html[data-tema="escuro"] .card-erro, html[data-tema="escuro"] .atend.st-falta { border-color: rgba(255, 143, 133, .4); }
+html[data-tema="escuro"] .atend.st-pendente { background: var(--cartao-2); }
+html[data-tema="escuro"] .cal-nav, html[data-tema="escuro"] .cal-dia, html[data-tema="escuro"] .chip,
+html[data-tema="escuro"] .cal-copiar, html[data-tema="escuro"] .legenda i { background: var(--card); border-color: var(--linha); }
+html[data-tema="escuro"] .cal-dia:disabled { color: #4f5574; }
+html[data-tema="escuro"] .cal-dia.sel, html[data-tema="escuro"] .chip.on { background: var(--sea-botao); border-color: var(--sea-botao); color: #fff; }
+html[data-tema="escuro"] .chip.ocupado { color: var(--pend); border-color: rgba(242, 189, 87, .5); }
+html[data-tema="escuro"] .modal { background: var(--card); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
+html[data-tema="escuro"] .modal::backdrop { background: rgba(4, 6, 16, .65); }
+html[data-tema="escuro"] .login-pagina .login-cartao { background: var(--card); }
+
+/* ---------- avisos (toast) e janela "Deseja mesmo sair?" ---------- */
+html[data-tema="escuro"] .toast { background: #262c48; color: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
+html[data-tema="escuro"] .pb-sair-caixa { background: var(--card); color: var(--texto); box-shadow: 0 24px 60px -12px rgba(0, 0, 0, .7); }
+html[data-tema="escuro"] .pb-sair-caixa p { color: var(--suave); }
+html[data-tema="escuro"] .pb-sair-ico { background: var(--sea-claro); color: var(--sea); }
+html[data-tema="escuro"] .pb-sair-nao { background: var(--card); color: var(--sea); border-color: var(--linha) !important; }
+html[data-tema="escuro"] .pb-sair-sim { background: var(--sea-botao); }
+html[data-tema="escuro"] .pb-sair-sim:hover { background: var(--sea-botao-hover); }
+
+/* barras de rolagem discretas */
+html[data-tema="escuro"] { scrollbar-color: #3a4166 transparent; }
+
+/* =====================================================================
+   BOTÃO LUA / SOL (aparece nos dois temas)
+   ===================================================================== */
+.tema-btn {
+  display: inline-grid; place-items: center; width: 38px; height: 38px; flex: none; padding: 0;
+  border-radius: 10px; border: 1.5px solid var(--linha, var(--borda, #e2e5f0)); background: transparent;
+  color: var(--suave, var(--muted, #646a8a)); cursor: pointer; transition: color .15s, border-color .15s, background-color .15s;
+}
+.tema-btn:hover { color: var(--sea, #1f35b5); border-color: var(--sea, #1f35b5); }
+.tema-btn:focus-visible { outline: 3px solid rgba(31, 53, 181, .3); outline-offset: 2px; }
+.tema-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tema-btn .ico-sol { display: none; }
+html[data-tema="escuro"] .tema-btn .ico-lua { display: none; }
+html[data-tema="escuro"] .tema-btn .ico-sol { display: block; }
+html[data-tema="escuro"] .tema-btn:hover { background: rgba(255, 255, 255, .05); }
+/* nas telas de login o botão fica no canto de cima, à direita */
+.tema-btn.tema-solto { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 50; background: var(--card, #fff); }
+
+/* troca suave de tema (sem animar a página inteira quando ela abre) */
+html.tema-trocando, html.tema-trocando * { transition: background-color .25s ease, border-color .25s ease, color .2s ease !important; }
+@media (prefers-reduced-motion: reduce) { html.tema-trocando, html.tema-trocando * { transition: none !important; } }
+
+/* avisos de sucesso/erro: cor cheia também no modo escuro (antes ficavam cinza) */
+html[data-tema="escuro"] .toast.ok, html[data-tema="escuro"] .toast-ok { background: #17864d; color: #fff; }
+html[data-tema="escuro"] .toast.erro, html[data-tema="escuro"] .toast-erro { background: #b42318; color: #fff; }
+html[data-tema="escuro"] .toast.aviso, html[data-tema="escuro"] .toast-aviso { background: #8a5a00; color: #fff; }
+/* janela de confirmação do painel */
+html[data-tema="escuro"] .pb-sair-ico.perigo { background: var(--erro-bg); color: var(--erro); }
+html[data-tema="escuro"] .pb-sair-sim.perigo { background: #b42318; }
+html[data-tema="escuro"] .pb-janela-campo input { background: var(--campo, #1d2340); border-color: var(--linha); color: var(--texto); }

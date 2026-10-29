@@ -1,0 +1,403 @@
+/* Psicólogos Brasil — Página Psicólogos (/psicologos/): busca, filtros e cartões dos profissionais. */
+
+.ps { padding-top: 48px; }
+.ps-head { max-width: 720px; margin-bottom: 28px; }
+.ps-head .lead { margin-top: 12px; }
+
+/* ===== Barra de busca ===== */
+.busca {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr auto;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: var(--sh);
+}
+.busca-campo, .busca-tema { position: relative; min-width: 0; }
+.busca input, .busca select {
+  width: 100%;
+  height: 56px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.busca-campo svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.busca-campo input { padding: 0 16px 0 46px; }
+.busca-tema label {
+  position: absolute; left: 16px; top: 8px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--sea); pointer-events: none;
+}
+.busca-tema select {
+  padding: 22px 40px 4px 15px;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231f35b5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.btn-filtros { height: 56px; border-radius: 14px; gap: 8px; padding: 0 20px; }
+.btn-filtros[aria-expanded="true"] { background: var(--mist); border-color: var(--sea); }
+.btn-filtros .n {
+  display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 999px; background: var(--sea); color: var(--on-sea); font-size: .78rem;
+}
+
+/* ===== Painel de filtros ===== */
+.filtros {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 36px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 24px 26px;
+  box-shadow: var(--sh);
+}
+.filtros .radios { margin: 0; gap: 8px; }
+.filtros .radios legend { font-size: .95rem; }
+.filtros .radios span { padding: 8px 14px; font-size: .92rem; }
+.filtros-pe {
+  grid-column: 1 / -1;
+  display: flex; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--line); padding-top: 18px;
+}
+
+/* ===== Resultado ===== */
+.res-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 26px 0 14px; }
+.res-topo p { margin: 0; font-weight: 700; }
+.ativos { display: flex; flex-wrap: wrap; gap: 8px; }
+.ativos button {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; border-radius: 999px; padding: 6px 12px;
+  background: var(--mist); color: var(--sea-d); font: 600 .85rem Figtree, sans-serif; cursor: pointer;
+}
+.ativos button span { font-size: 1.1rem; line-height: 1; }
+.ativos button:hover { background: var(--line); }
+.aviso-demo { color: var(--muted); font-size: .88rem; margin: 0 0 16px; }
+
+/* ===== Cartões: 2 por linha no computador ===== */
+.pc-lista { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.pc {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--sh);
+  transition: transform .24s var(--out), border-color .24s var(--out);
+}
+@media (hover: hover) { .pc:hover { transform: translateY(-3px); border-color: #c6cfee; } }
+
+.pc-foto {
+  width: 128px; height: 128px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; text-decoration: none;
+  background: var(--mist); color: var(--sea);
+  font: 700 2.2rem "Bricolage Grotesque", serif;
+}
+.pc-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pc-info { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.pc-nome { display: flex; align-items: center; gap: 6px; font-size: 1.35rem; line-height: 1.2; }
+.pc-nome a { text-decoration: none; }
+.pc-nome a:hover { color: var(--sea); }
+.pc-verif { display: inline-flex; flex: none; }
+.pc-selo { width: 22px; height: 22px; color: var(--sea); }
+.pc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pc-prof { color: var(--muted); font-size: .92rem; margin-top: -4px; }
+
+.pc-temas { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-temas li { background: var(--mist); color: var(--sea-d); font-weight: 600; font-size: .8rem; padding: 4px 11px; border-radius: 999px; }
+.pc-temas li.on { background: var(--sea); color: var(--on-sea); }
+.pc-temas li.mais { background: none; border: 1px dashed var(--line); color: var(--muted); }
+
+.pc-bio {
+  color: var(--muted); font-size: .95rem; line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pc-meta { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .88rem; }
+.pc-meta li { display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+.pc-meta svg { flex: none; color: var(--sea); margin-top: 1px; }
+
+.pc-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; padding-top: 6px; }
+.pc-acoes .btn { padding: 11px 20px; font-size: .95rem; gap: 8px; }
+
+.pc-vazio {
+  grid-column: 1 / -1; text-align: center;
+  background: var(--surface); border: 1px dashed var(--line); border-radius: 24px; padding: 44px 24px;
+}
+.pc-vazio h2 { font-size: 1.5rem; margin-bottom: 8px; }
+.pc-vazio p { color: var(--muted); max-width: 52ch; margin: 0 auto 20px; }
+.pc-vazio .pc-acoes { justify-content: center; padding: 0; }
+
+/* ===== Tablet e celular ===== */
+@media (max-width: 1000px) {
+  .pc-lista { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .ps { padding-top: 28px; }
+  .busca { grid-template-columns: 1fr; }
+  .filtros { grid-template-columns: 1fr; padding: 20px; }
+  .filtros-pe .btn { flex: 1; }
+}
+@media (max-width: 560px) {
+  .pc { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 22px 18px; gap: 14px; }
+  .pc-foto { width: 112px; height: 112px; }
+  .pc-info { align-items: center; width: 100%; }
+  .pc-nome, .pc-temas, .pc-acoes { justify-content: center; }
+  .pc-meta { justify-items: center; }
+  .pc-meta li { text-align: left; }
+  .pc-acoes .btn { flex: 1 1 100%; }
+}
+
+/* ===== O cartão inteiro é clicável e abre o perfil do psicólogo ===== */
+.pc[data-url] { cursor: pointer; }
+
+/* ===== Agenda online na lista: UM cartão só — psicólogo à esquerda, "Agende sua sessão" à direita ===== */
+.pc-lista.com-agenda { grid-template-columns: 1fr; gap: 24px; }
+.pc-linha {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--sh); overflow: hidden;
+}
+/* o lado do psicólogo: sem borda própria (a borda agora é do cartão inteiro) */
+.pc-linha .pc { height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+@media (hover: hover) { .pc-linha .pc:hover { transform: none; } }
+.pc-v { display: flex; flex-direction: column; gap: 16px; padding: 28px; }
+.pc-cab { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: start; }
+.pc-cab-txt { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.pc-cab-txt .pc-nome { font-size: 1.45rem; }
+/* foto maior, retangular, com cantos arredondados */
+.pc-v .pc-foto { width: 220px; height: auto; aspect-ratio: 4 / 5; border-radius: 20px; font-size: 3rem; }
+.pc-v .pc-bio { -webkit-line-clamp: 3; margin: 0; }  /* até 3 linhas do "Sobre" */
+.pc-abord { margin: -6px 0 0; color: var(--sea-d); font-size: .9rem; font-weight: 600; }
+.pc-v .pc-acoes:not(.pc-acoes-2) { display: none; }
+/* botão "Apresentação" em cima da foto (só para quem tem vídeo) */
+.pc-foto-box { position: relative; width: fit-content; }
+.pc-play {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgba(255, 255, 255, .94); color: var(--ink); font: 700 .84rem Figtree, sans-serif; white-space: nowrap;
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .45); backdrop-filter: blur(6px); transition: transform .2s var(--out), background-color .2s var(--out);
+}
+.pc-play-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sea); color: #fff; }
+.pc-play-ico svg { margin-left: 2px; }
+.pc-play:hover { transform: translateX(-50%) scale(1.04); background: #fff; }
+.pc-play:focus-visible { outline: 3px solid rgba(31, 53, 181, .45); outline-offset: 2px; }
+/* 2 botões em pílula, ícone à esquerda (padrão do site) */
+.pc-acoes-2 { margin-top: auto; padding-top: 4px; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+.pc-pilula {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px;
+  border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink);
+  font: 600 .95rem Figtree, sans-serif; text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: border-color .2s var(--out), background-color .2s var(--out), transform .16s var(--out);
+}
+.pc-pilula svg { color: var(--sea); flex: none; }
+.pc-pilula:active { transform: scale(.97); }
+@media (hover: hover) { .pc-pilula:hover { background: var(--mist); border-color: var(--sea); } }
+/* janela do vídeo de apresentação */
+.pc-video-fundo { position: fixed; inset: 0; z-index: 200; background: rgba(10, 14, 40, .72); display: grid; place-items: center; padding: 16px; }
+.pc-video { width: min(860px, 100%); background: #0b0f2a; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6); }
+.pc-video-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 18px; color: #fff; }
+.pc-video-fechar { width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; }
+.pc-video-fechar:hover { background: rgba(255, 255, 255, .22); }
+.pc-video-tela { position: relative; aspect-ratio: 16 / 9; background: #000; }
+.pc-video-tela iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* vídeo em pé (celular / Shorts): janela estreita e alta, sem passar da altura da tela */
+.pc-video.vertical { width: min(400px, 100%, calc((100dvh - 120px) * 9 / 16)); }
+.pc-video.vertical .pc-video-tela { aspect-ratio: 9 / 16; }
+
+/* o lado da agenda: fundo levemente azulado e uma linha fina separando */
+.pc-agenda { min-width: 0; scroll-margin-top: 96px; background: #f7f8fe; border-left: 1px solid var(--line); }
+.pc-agenda .agc-caixa { border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: 26px 26px 22px; }
+/* espaço reservado enquanto a caixa ainda não foi montada (evita a página "pular") */
+.pc-agenda:not([data-agc-ok]) { min-height: 640px; }
+.pc-ver-horarios { display: none; }
+
+/* Telas médias: foto um pouco menor */
+@media (max-width: 1180px) {
+  .pc-v { padding: 22px; }
+  .pc-cab { grid-template-columns: 170px minmax(0, 1fr); gap: 18px; }
+  .pc-v .pc-foto { width: 170px; }
+}
+/* Celular e tablet: a agenda abre dentro do mesmo cartão, embaixo, no botão "Ver horários livres" */
+@media (max-width: 1000px) {
+  .pc-linha { grid-template-columns: 1fr; }
+  .pc-ver-horarios { display: inline-flex; }
+  .pc-v .pc-acoes:not(.pc-acoes-2) { display: flex; margin-top: 0; padding-top: 0; }
+  .pc-agenda { display: none; border-left: 0; border-top: 1px solid var(--line); }
+  .pc-linha.aberta .pc-agenda { display: block; }
+  .pc-agenda .agc-caixa { padding: 20px 18px 18px; }
+}
+@media (max-width: 560px) {
+  .pc-v { padding: 22px 18px; text-align: center; align-items: stretch; }
+  .pc-cab { grid-template-columns: 1fr; justify-items: center; }
+  .pc-cab-txt { align-items: center; }
+  .pc-foto-box { width: min(220px, 70%); }
+  .pc-v .pc-foto { width: 100%; }
+  .pc-v .pc-meta { justify-items: center; }
+  .pc-pilula { font-size: .9rem; padding: 10px 12px; }
+  .pc-foto-box { margin: 0 auto; }
+}
+
+
+/* ===== Busca e filtros presos no topo ao rolar ===== */
+.busca-fixa {
+  position: sticky; top: 65px; z-index: 15;           /* logo abaixo do menu do topo (64px + linha) */
+  margin: 0 -12px; padding: 10px 12px;
+  background: linear-gradient(var(--bg) 70%, rgba(245, 247, 253, 0));
+}
+.busca-fixa .busca { transition: box-shadow .25s var(--out), border-color .25s var(--out); }
+.busca-fixa.presa .busca { box-shadow: 0 12px 30px -14px rgba(16, 26, 79, .35); border-color: #c9d2f1; }
+/* painel de filtros aberto com a busca presa: rola por dentro, sem passar da tela */
+.busca-fixa.presa .filtros { max-height: calc(100vh - 190px); overflow-y: auto; overscroll-behavior: contain; }
+.btn-filtros .rot-filtros { white-space: nowrap; }
+
+/* celular: o menu do topo rola junto, então a busca prende no topo da tela, mais compacta */
+@media (max-width: 760px) {
+  /* a busca grande rola com a página; quando some lá em cima, a compacta desce presa no topo (js/psicologos.js) */
+  .busca-fixa { position: relative; top: auto; }
+  .busca-fixa.presa {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 25; margin: 0;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 10px;
+    animation: buscaDesce .28s var(--out);
+  }
+  .busca-fixa.presa .busca { grid-template-columns: minmax(0, 1fr) auto; padding: 8px; gap: 8px; border-radius: 18px; }
+  .busca-fixa.presa .busca-tema { display: none; }
+  .busca-fixa.presa .busca input { height: 48px; }
+  /* busca compacta: o texto de exemplo cabe inteiro (só o exemplo diminui; o que a pessoa digita continua em 16px) */
+  .busca-fixa.presa .busca-campo input { padding-left: 38px; padding-right: 4px; }
+  .busca-fixa.presa .busca-campo svg { left: 12px; }
+  .busca-fixa.presa .busca-campo input::placeholder { font-size: 14px; }
+  .busca-fixa.presa .btn-filtros { height: 48px; padding: 0 14px; }
+  .busca-fixa.presa .btn-filtros .rot-filtros { display: none; }
+  .busca-fixa.presa .filtros { max-height: calc(100vh - 110px); }
+}
+
+/* celular: "Encontre seu psicólogo online" numa linha só (a letra diminui com a tela) */
+@media (max-width: 560px) {
+  .ps-head .page-title { white-space: nowrap; font-size: clamp(1.15rem, 6.6vw, 1.9rem); }
+}
+
+@keyframes buscaDesce { from { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .busca-fixa.presa { animation: none; } }
+/* espaço que segura a altura da busca quando ela fica compacta (js/psicologos.js) */
+.busca-fixa-espaco { height: 0; pointer-events: none; }
+.busca-fixa { overflow-anchor: none; }
+
+/* ===== Computador com tela baixa (notebook 1366×768, 1280×720…) =====
+   Para o cartão com o "Agende sua sessão" caber inteiro na tela, sem cortar
+   o botão de baixo: a busca presa no topo fica mais fina e a caixa da agenda
+   um pouco mais baixa. Em telas maiores nada muda. */
+@media (min-width: 1001px) and (max-height: 860px) {
+  .busca-fixa.presa { padding-top: 6px; padding-bottom: 6px; }
+  .busca-fixa.presa .busca { padding: 6px; gap: 8px; border-radius: 18px; }
+  .busca-fixa.presa .busca input, .busca-fixa.presa .busca select, .busca-fixa.presa .btn-filtros { height: 46px; }
+  .busca-fixa.presa .busca-tema label { top: 5px; font-size: .66rem; }
+  .busca-fixa.presa .busca-tema select { padding-top: 18px; padding-bottom: 2px; }
+  .busca-fixa.presa .tema-sel { height: 46px; padding-top: 4px; padding-bottom: 4px; }
+  .busca-fixa.presa .tema-rot { font-size: .66rem; }
+  .pc-agenda .agc-caixa { --agc-altura: 600px; }
+}
+/* tela bem baixa (a maioria dos notebooks com a barra do navegador): a busca não
+   fica presa no topo, para sobrar espaço para o cartão com a agenda inteira */
+@media (min-width: 1001px) and (max-height: 760px) {
+  .busca-fixa { position: relative; top: auto; }
+}
+
+/* ===== "Com experiência em": lista própria (js/psicologos.js, seletorTema) =====
+   Substitui a lista nativa do navegador (que mostrava a faixa amarela e a seta
+   fora do lugar). Cores do site: azul, branco e azul-claro. */
+.busca-tema.tema-pronto > label, .busca-tema.tema-pronto > select { display: none; }
+.tema-sel {
+  position: relative; width: 100%; height: 56px; display: flex; flex-direction: column; justify-content: center; gap: 1px;
+  padding: 6px 46px 6px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); color: var(--ink);
+  font: inherit; text-align: left; cursor: pointer; transition: border-color .2s var(--out), box-shadow .2s var(--out), background-color .2s var(--out);
+}
+.tema-rot { font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--sea); line-height: 1.2; }
+.tema-valor { font-size: 1rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tema-sel.tem-valor .tema-valor { color: var(--sea-d); font-weight: 600; }
+.tema-chev { position: absolute; right: 14px; top: 50%; margin-top: -10px; color: var(--sea); transition: transform .2s var(--out); pointer-events: none; }
+.tema-sel:hover { border-color: #c6cfee; }
+.tema-sel:focus-visible { outline: 3px solid rgba(31, 53, 181, .25); outline-offset: 2px; }
+.busca-tema.aberto .tema-sel { border-color: var(--sea); background: var(--surface); box-shadow: 0 0 0 3px rgba(31, 53, 181, .12); }
+.busca-tema.aberto .tema-chev { transform: rotate(180deg); }
+
+.tema-painel {
+  position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 30;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 8px;
+  box-shadow: 0 24px 48px -18px rgba(16, 26, 79, .38), 0 2px 6px rgba(16, 26, 79, .06);
+  animation: temaAbre .16s var(--out);
+}
+@keyframes temaAbre { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .tema-painel { animation: none; } .tema-chev { transition: none; } }
+.tema-busca { padding: 2px 2px 8px; }
+.tema-busca input {
+  width: 100%; height: 42px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg); color: var(--ink); font: inherit; font-size: .95rem;
+}
+.tema-busca input:focus { outline: none; border-color: var(--sea); background: var(--surface); }
+.tema-lista { list-style: none; margin: 0; padding: 0; max-height: min(320px, 50vh); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.tema-lista li {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+  color: var(--ink); font-size: .95rem; line-height: 1.35; cursor: pointer;
+}
+.tema-lista li svg { flex: none; color: var(--sea); visibility: hidden; }
+.tema-lista li.ativo { background: var(--mist); color: var(--sea-d); }
+.tema-lista li[aria-selected="true"] { color: var(--sea-d); font-weight: 700; }
+.tema-lista li[aria-selected="true"] svg { visibility: visible; }
+.tema-lista li[aria-selected="true"].ativo { background: #dfe5fb; }
+/* nada encontrado */
+.tema-lista:not(:has(li:not([hidden])))::after { content: "Nenhum tema com esse nome"; display: block; padding: 12px; color: var(--muted); font-size: .9rem; }
+
+/* ===== "Ver mais psicólogos" (mostra 6 por vez — js/psicologos.js, POR_VEZ) ===== */
+.pc-mais { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 32px 0 8px; text-align: center; }
+.pc-mais-txt { margin: 0; color: var(--muted); font-size: .92rem; }
+.pc-mais-btn { gap: 10px; min-width: 260px; background: var(--surface); }
+.pc-mais-btn svg { color: var(--sea); }
+@media (hover: hover) { .pc-mais-btn:hover { background: var(--mist); border-color: var(--sea); } }
+@media (max-width: 560px) { .pc-mais-btn { width: 100%; min-width: 0; } }
+
+/* ===== Cartão compacto no CELULAR (até 600px) — estilo aplicativo =====
+   Foto pequena ao lado do nome, até 3 temas (+N), "Sobre" em 2 linhas e
+   "Ver horários livres" como botão principal. No computador nada muda. */
+.pc-temas .mais-cel { display: none; }
+@media (max-width: 600px) {
+  .pc-v { padding: 18px 16px 16px; gap: 12px; text-align: left; align-items: stretch; }
+  /* cabeçalho: foto à esquerda; nome, CRP e abordagem à direita; temas embaixo, na largura toda */
+  .pc-v .pc-cab { display: grid; grid-template-columns: 76px minmax(0, 1fr); column-gap: 14px; row-gap: 2px; align-items: center; justify-items: start; }
+  .pc-v .pc-cab-txt { display: contents; }
+  .pc-v .pc-foto-box { grid-column: 1; grid-row: 1 / span 3; width: 76px; margin: 0; align-self: start; }
+  .pc-v .pc-foto { width: 76px; height: 76px; aspect-ratio: auto; border-radius: 18px; font-size: 1.4rem; }
+  .pc-v .pc-nome { grid-column: 2; font-size: 1.12rem; margin: 2px 0 0; justify-content: flex-start; text-align: left; }
+  .pc-v .pc-nome { display: block; }
+  .pc-v .pc-nome .pc-verif { display: inline-flex; vertical-align: -3px; margin-left: 5px; }
+  .pc-v .pc-selo { width: 19px; height: 19px; }
+  .pc-v .pc-prof { grid-column: 2; margin: 0; font-size: .84rem; }
+  .pc-v .pc-abord { grid-column: 2; margin: 0; font-size: .82rem; }
+  .pc-v .pc-temas { grid-column: 1 / -1; margin-top: 12px; justify-content: flex-start; }
+  .pc-v .pc-temas .t-extra, .pc-v .pc-temas .mais-pc { display: none; }
+  .pc-v .pc-temas .mais-cel { display: list-item; }
+  .pc-v .pc-temas li { font-size: .78rem; padding: 4px 10px; }
+  /* botão "Apresentação" vira só o ícone de play, no canto da foto */
+  .pc-v .pc-play { left: auto; right: -6px; bottom: -6px; transform: none; padding: 0; gap: 0; font-size: 0; background: #fff; border-radius: 50%; }
+  .pc-v .pc-play:hover { transform: scale(1.06); }
+  .pc-v .pc-play-ico { width: 30px; height: 30px; box-shadow: 0 0 0 3px #fff; }
+  /* "Sobre" em 2 linhas e informações menores */
+  .pc-v .pc-bio { -webkit-line-clamp: 2; font-size: .92rem; line-height: 1.5; text-align: left; }
+  .pc-v .pc-meta { justify-items: start; gap: 4px; font-size: .84rem; }
+  .pc-v .pc-meta li { text-align: left; }
+  /* ações: "Ver horários livres" em destaque (azul cheio); perfil e compartilhar discretos embaixo */
+  .pc-v > .pc-acoes:not(.pc-acoes-2) { order: 5; margin-top: 4px; padding-top: 0; }
+  .pc-v > .pc-acoes:not(.pc-acoes-2) .pc-ver-horarios { width: 100%; min-height: 50px; background: var(--sea); color: var(--on-sea); border-color: var(--sea); font-weight: 700; }
+  .pc-v > .pc-acoes:not(.pc-acoes-2) .pc-ver-horarios svg { color: var(--on-sea); }
+  .pc-linha.aberta .pc-v > .pc-acoes:not(.pc-acoes-2) .pc-ver-horarios { background: var(--mist); color: var(--sea-d); border-color: var(--mist); }
+  .pc-linha.aberta .pc-v > .pc-acoes:not(.pc-acoes-2) .pc-ver-horarios svg { color: var(--sea); }
+  .pc-v > .pc-acoes-2 { order: 6; margin-top: 0; padding-top: 0; gap: 4px; }
+  .pc-v .pc-pilula { min-height: 40px; padding: 6px 10px; border: 0; background: transparent; color: var(--sea-d); font-size: .9rem; }
+  .pc-v .pc-pilula:active { background: var(--mist); }
+}

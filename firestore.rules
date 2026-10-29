@@ -1,0 +1,197 @@
+rules_version = '2';
+
+// =====================================================================
+// REGRAS DE SEGURANÇA DO FIREBASE — Psicólogos Brasil
+// Cole TODO este texto em: Firebase > Firestore Database > Regras > Publicar.
+//
+// Quem pode o quê:
+//   Visitante do site ...... lê o que está publicado (artigos, psicólogos,
+//                            horários livres) e faz a pré-reserva de um
+//                            horário livre. Não lê dados de pacientes.
+//   Psicólogo .............. vê e mexe só na própria agenda e nos próprios
+//                            atendimentos.
+//   Suporte ................ Psicólogos e Agenda (todos os atendimentos).
+//   Administrador .......... tudo, inclusive artigos, configurações e equipe.
+//
+// O papel de cada pessoa fica na coleção "usuarios" (documento = UID do
+// login). Ninguém consegue se dar um papel sozinho: só um administrador.
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Dois fatores ----------
+    // true  = os dados do painel só abrem para quem entrou COM o código do
+    //         app autenticador (recomendado, é o padrão).
+    // false = só para um teste rápido ANTES de ativar o TOTP no Google Cloud.
+    //         Se mudar aqui, mude também PAINEL_2FA em js/firebase-config.js.
+    function exige2fa() { return true; }
+
+    function logado() { return request.auth != null; }
+    function com2fa() {
+      return !exige2fa() || request.auth.token.firebase.get('sign_in_second_factor', null) != null;
+    }
+    function caminhoPerfil() { return /databases/$(database)/documents/usuarios/$(request.auth.uid); }
+    function perfil() { return get(caminhoPerfil()).data; }
+    function ativo() { return logado() && com2fa() && exists(caminhoPerfil()) && perfil().get('ativo', true) == true; }
+    function admin() { return ativo() && perfil().papel == 'admin'; }
+    function equipe() { return ativo() && perfil().papel in ['admin', 'suporte']; }
+    function donoPsi(psiId) { return ativo() && perfil().papel == 'psicologo' && perfil().get('psiId', '') == psiId; }
+
+    // ---------- Equipe e acessos ----------
+    match /usuarios/{uid} {
+      allow read: if (logado() && request.auth.uid == uid) || admin();
+      allow create, update: if admin();
+      // excluir: só o administrador, só suporte/administradores, nunca a si mesmo nem o principal
+      // (psicólogos não são excluídos: o acesso é desativado)
+      allow delete: if admin() && request.auth.uid != uid
+        && resource.data.papel in ['admin', 'suporte'] && resource.data.get('principal', false) != true;
+      // psicólogo: sai junto quando o perfil é excluído em Perfis (admin ou suporte)
+      allow delete: if equipe() && resource.data.papel == 'psicologo';
+      // o suporte cria e atualiza SÓ acessos de psicólogos (nunca admin ou suporte)
+      allow create: if equipe() && request.resource.data.papel == 'psicologo';
+      allow update: if equipe() && resource.data.papel == 'psicologo' && request.resource.data.papel == 'psicologo';
+      // cada pessoa atualiza só o próprio nome, e-mail de exibição e o aviso de senha padrão (tela Minha conta)
+      allow update: if logado() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome', 'email', 'senhaPadrao'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['senhaPadrao'])
+            || request.resource.data.senhaPadrao == false);
+    }
+
+    // ---------- Troca de senha de psicólogo feita pela equipe ----------
+    // A função do Firebase troca a senha e apaga a senha do pedido. Cada um só lê os próprios pedidos.
+    match /trocas_senha/{id} {
+      allow read: if equipe() && resource.data.por == request.auth.uid;
+      allow create: if equipe()
+        && request.resource.data.keys().hasOnly(['uid', 'psiId', 'senha', 'status', 'por', 'em'])
+        && request.resource.data.status == 'pendente'
+        && request.resource.data.por == request.auth.uid
+        && get(/databases/$(database)/documents/usuarios/$(request.resource.data.uid)).data.papel == 'psicologo';
+      allow update, delete: if false;
+    }
+
+    // ---------- Conteúdo publicado no site (todo mundo lê) ----------
+    match /indice/{tipo} {
+      allow read: if true;
+      allow write: if admin() || (tipo == 'psicologos' && equipe());
+    }
+    match /artigos/{slug} { allow read: if true; allow write: if admin(); }
+    match /imagens/{id}   { allow read: if true; allow write: if equipe(); }
+
+    // ---------- Rascunhos e configurações do painel (privado) ----------
+    match /painel_artigos/{id}    { allow read, write: if admin(); }
+    match /painel_psicologos/{id} { allow read, write: if equipe(); }
+    match /painel_config/{id}     { allow read: if equipe(); allow write: if admin(); }
+
+    // ---------- Agenda: psicólogos ----------
+    // dados internos (e-mail, WhatsApp, comissão): só a equipe e o próprio psicólogo
+    match /psicologos_agenda/{psiId} {
+      allow read: if equipe() || donoPsi(psiId);
+      allow write: if equipe();
+      // o próprio psicólogo muda só o e-mail de contato e o WhatsApp (tela Minha conta)
+      allow update: if donoPsi(psiId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'whatsapp', 'atualizado']);
+    }
+    // o que o site precisa para mostrar a agenda (nome, CRP, valor, ligada ou não)
+    match /agenda_publico/{psiId} {
+      allow read: if true;
+      allow write: if equipe();
+    }
+
+    // ---------- Agenda: dias e horários abertos ----------
+    match /disponibilidade/{psiId} {
+      allow read: if true;
+      allow write: if equipe() || donoPsi(psiId);
+    }
+    match /disponibilidade_motivos/{psiId} {
+      allow read, write: if equipe() || donoPsi(psiId);
+    }
+
+    // ---------- Agenda: travas de horário (sem dados do paciente) ----------
+    // Documento = psiId__data__hora. Só um agendamento por horário.
+    function slotLivre(s) {
+      return s.status in ['cancelado', 'expirado']
+        || (s.status == 'pendente' && s.expiraEm < request.time.toMillis());
+    }
+    function slotDoSite(slotId) {
+      let d = request.resource.data;
+      let disp = get(/databases/$(database)/documents/disponibilidade/$(d.psiId)).data;
+      return d.keys().hasOnly(['psiId', 'data', 'hora', 'status', 'grupo', 'agId', 'expiraEm'])
+        && d.status == 'pendente'
+        && d.psiId is string && d.data is string && d.hora is string && d.agId is string && d.grupo is string
+        && slotId == d.psiId + '__' + d.data + '__' + d.hora.replace(':', '')
+        && d.expiraEm is int
+        && d.expiraEm > request.time.toMillis()
+        && d.expiraEm <= request.time.toMillis() + 48 * 3600 * 1000
+        && get(/databases/$(database)/documents/agenda_publico/$(d.psiId)).data.ativo == true
+        && get(/databases/$(database)/documents/agenda_publico/$(d.psiId)).data.get('pausada', false) != true
+        && d.hora in disp.get('datas', {}).get(d.data, [])
+        && existsAfter(/databases/$(database)/documents/agendamentos/$(d.agId));
+    }
+    match /slots/{slotId} {
+      allow read: if true;
+      allow create: if equipe() || slotDoSite(slotId);
+      allow update: if equipe()
+        || (slotLivre(resource.data) && slotDoSite(slotId))
+        || (donoPsi(resource.data.psiId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+            && request.resource.data.status in ['realizado', 'falta']);
+      allow delete: if equipe();
+    }
+
+    // ---------- Agenda: agendamentos (com os dados do paciente) ----------
+    function agendamentoDoSite(agId) {
+      let a = request.resource.data;
+      let trava = getAfter(/databases/$(database)/documents/slots/$(a.psiId + '__' + a.data + '__' + a.hora.replace(':', ''))).data;
+      return a.keys().hasOnly(['id', 'codigo', 'grupo', 'sessao', 'totalSessoes', 'psiId', 'data', 'hora', 'duracao',
+                               'tipo', 'valor', 'paciente', 'status', 'criadoEm', 'expiraEm', 'confirmadoEm',
+                               'linkMeet', 'psiCiente', 'historico'])
+        && a.id == agId
+        && a.status == 'pendente'
+        && a.psiCiente == false
+        && a.linkMeet == ''
+        && a.confirmadoEm == null
+        && a.tipo in ['avulsa', 'mensal']
+        && a.valor is number && a.valor > 0
+        && a.paciente.keys().hasOnly(['nome', 'email', 'whatsapp'])
+        && a.paciente.nome is string && a.paciente.nome.size() <= 120
+        && a.paciente.email is string && a.paciente.email.size() <= 160
+        && a.paciente.whatsapp is string && a.paciente.whatsapp.size() <= 20
+        && a.historico is list && a.historico.size() == 1
+        && trava.agId == agId
+        && trava.grupo == a.grupo;
+    }
+    match /agendamentos/{agId} {
+      allow read: if equipe() || donoPsi(resource.data.psiId);
+      allow create: if equipe() || agendamentoDoSite(agId);
+      allow update: if equipe()
+        || (donoPsi(resource.data.psiId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'historico', 'psiCiente'])
+            && request.resource.data.status in ['realizado', 'falta', resource.data.status]);
+      allow delete: if false;
+    }
+
+    // ---------- Configuração de SMTP (Configurações → Configurações de SMTP) ----------
+    // servidor, porta e usuário: só o administrador lê e muda
+    match /painel_smtp/{id} { allow read, write: if admin(); }
+    // a senha: o administrador só GRAVA; ninguém lê pelo navegador
+    // (só a função de e-mail do Firebase, que roda no servidor, consegue ler)
+    match /painel_smtp_senha/{id} { allow read: if false; allow write: if admin(); }
+    // pedidos de "Testar conexão SMTP": a função responde no próprio documento
+    match /smtp_testes/{id} {
+      allow read: if admin();
+      allow create: if admin() && request.resource.data.status == 'pendente';
+      allow update, delete: if false;
+    }
+
+    // ---------- E-mails (fila enviada pela função de e-mail do Firebase) ----------
+    match /mail/{id} {
+      allow read, create: if equipe();
+      allow delete: if admin();
+      allow update: if false;
+    }
+
+    // ---------- Qualquer outra coisa: bloqueado ----------
+    match /{documento=**} { allow read, write: if false; }
+  }
+}

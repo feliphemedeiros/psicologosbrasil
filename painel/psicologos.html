@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/icones/favicon.svg" type="image/svg+xml">
+  <title>Psicólogos · Painel Psicólogos Brasil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/agenda.css">
+  <link rel="stylesheet" href="css/escuro.css">
+  <script src="js/tema.js"></script>
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="index.html">
+        <span class="marca-ico">PB</span>
+        <span>Psicólogos Brasil <small>Psicólogos</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn btn-secundario btn-peq" data-sair>Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <div class="secao-topo">
+      <div>
+        <h1>Psicólogos<span class="qtd-tit" id="psi-qtd"></span></h1>
+        <p>Entre na agenda de cada psicólogo para ver os atendimentos, a disponibilidade, o resumo do mês e a conta.</p>
+      </div>
+    </div>
+    <div class="psi-busca">
+      <input type="search" id="psi-q" placeholder="Procurar por nome ou CRP" aria-label="Procurar psicólogo" autocomplete="off">
+      <select id="psi-filtro" aria-label="Mostrar">
+        <option value="">Todos</option>
+        <option value="ligada">Agenda ligada</option>
+        <option value="desligada">Agenda desligada</option>
+        <option value="pre">Com pré-reserva esperando</option>
+      </select>
+    </div>
+    <div class="psi-grade" id="psi-grade"><p class="muted">Carregando…</p></div>
+    <nav class="paginacao" id="psi-pag" aria-label="Páginas de psicólogos"></nav>
+    <div id="psi-sem-acesso"></div>
+  </main>
+
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/nuvem.js"></script>
+  <script src="../js/agenda/config.js"></script>
+  <script src="../js/agenda/util.js"></script>
+  <script src="../js/agenda/db.js"></script>
+  <script src="../js/agenda/db-firebase.js"></script>
+  <script src="js/sessao.js"></script>
+  <script src="js/paginacao.js"></script>
+  <script src="js/psicologos-painel.js"></script>
+</body>
+</html>

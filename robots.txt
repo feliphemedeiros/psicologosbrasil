@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /painel/
+
+Sitemap: https://psicologosbrasil.com.br/sitemap.xml
