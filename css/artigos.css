@@ -1,0 +1,123 @@
+/* Psicólogos Brasil — Página Artigos (artigos.html). */
+
+.arts {
+  display: grid;
+  gap: 16px;
+  max-width: none; /* mesma largura do conteúdo da home (1120px) */
+}
+
+details.post {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--sh);
+}
+
+details.post summary {
+  align-items: flex-start;
+  font-weight: 400;
+}
+
+details.post summary div {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+details.post h2 {
+  font-size: 1.45rem;
+}
+
+details.post summary p {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+details.post .body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  max-width: 72ch; /* o texto do artigo continua com linhas confortáveis de ler */
+}
+
+details.post .body p {
+  color: var(--ink);
+  margin: 0;
+}
+
+details.post .body .btn {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+/* Cartões dos artigos criados no Painel (cada um abre a página do artigo) */
+a.post-link {
+  display: grid;
+  gap: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--sh);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .2s, transform .2s;
+}
+a.post-link:hover { border-color: currentColor; transform: translateY(-2px); }
+a.post-link > div { display: grid; gap: 8px; justify-items: start; }
+a.post-link h2 { font-size: 1.45rem; }
+a.post-link p { color: var(--muted); font-size: 1rem; margin: 0; }
+a.post-link .post-meta { color: var(--muted); font-size: .9rem; }
+a.post-link .post-ler { font-weight: 600; margin-top: 4px; }
+a.post-link .post-capa { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; }
+@media (min-width: 760px) {
+  a.post-link.com-capa { grid-template-columns: 280px 1fr; align-items: center; }
+}
+@media (prefers-reduced-motion: reduce) { a.post-link { transition: none; } a.post-link:hover { transform: none; } }
+
+/* ===== Lista no estilo revista (artigos publicados pelo Painel) ===== */
+.arts.arts-revista { display: block; }
+.ap-destaque, .ap-card { display: grid; color: inherit; text-decoration: none; }
+.ap-capa {
+  position: relative; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden;
+  display: grid; place-items: center; color: var(--sea);
+  background: linear-gradient(135deg, #e9edfb, #c9d3fb);
+}
+.ap-capa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--out); }
+.ap-data { display: block; font-size: .85rem; color: var(--muted); letter-spacing: .01em; margin-bottom: 10px; }
+.ap-txt h2, .ap-txt h3 { margin: 0; color: var(--ink); transition: color .2s; }
+.ap-txt p { margin: 12px 0 0; color: var(--muted); line-height: 1.6; }
+
+/* destaque: capa grande à esquerda, texto à direita */
+.ap-destaque { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.ap-destaque h2 { font-size: clamp(1.7rem, 3.4vw, 2.6rem); line-height: 1.15; letter-spacing: -.01em; }
+.ap-destaque p { font-size: 1.05rem; }
+
+.ap-linha { border: 0; border-top: 1px solid var(--line); margin: 44px 0; }
+
+/* demais artigos: 3 colunas */
+.ap-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 28px; }
+.ap-card { align-content: start; gap: 18px; }
+.ap-card h3 { font-size: 1.2rem; line-height: 1.3; }
+.ap-card p { font-size: .95rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ap-card .ap-data { margin-bottom: 8px; }
+
+@media (hover: hover) {
+  .ap-destaque:hover .ap-capa img, .ap-card:hover .ap-capa img { transform: scale(1.04); }
+  .ap-destaque:hover h2, .ap-card:hover h3 { color: var(--sea); }
+}
+.ap-destaque:focus-visible, .ap-card:focus-visible { outline-offset: 6px; border-radius: 16px; }
+@media (max-width: 900px) {
+  .ap-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .ap-destaque { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .ap-linha { margin: 32px 0; }
+}
+@media (max-width: 560px) {
+  .ap-grade { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+}
+@media (prefers-reduced-motion: reduce) { .ap-capa img { transition: none; } }
