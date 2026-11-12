@@ -1,0 +1,44 @@
+/* Psicólogos Brasil — Página Brasileiros nos EUA (terapia-brasileiros-eua/). Usa também sobre.css. */
+
+.pg-eua .qs-box h2 strong { color: var(--sea); font-weight: inherit; }
+
+.eua-passos {
+  list-style: none; margin: 40px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;
+}
+.eua-passos li {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 22px; padding: 26px 24px; box-shadow: var(--sh);
+}
+.eua-n {
+  display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 16px;
+  border-radius: 14px; background: var(--mist); color: var(--sea);
+  font: 700 1.25rem "Bricolage Grotesque", serif;
+}
+.eua-passos h3 { margin: 0 0 8px; font-size: 1.2rem; }
+.eua-passos p { color: var(--muted); margin: 0; line-height: 1.6; font-size: .95rem; }
+.eua-cta { display: grid; justify-items: center; gap: 12px; margin-top: 36px; text-align: center; }
+
+/* Dúvidas frequentes: mesmo modelo da página inicial (caixas com a setinha redonda) */
+.pg-eua .faq { max-width: 860px; margin: 32px auto 0; display: grid; gap: 12px; }
+.pg-eua details.faq-i { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 0; transition: border-color .2s var(--out), box-shadow .2s var(--out); }
+.pg-eua details.faq-i summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; font: 600 1.05rem/1.4 Figtree, sans-serif; color: var(--ink); list-style: none; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; border: 0; }
+.pg-eua details.faq-i summary::-webkit-details-marker { display: none; }
+.pg-eua details.faq-i summary::after { content: none; }
+.pg-eua details.faq-i summary i { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--mist); color: var(--sea); transition: transform .3s var(--out), background-color .2s var(--out); }
+.pg-eua details.faq-i[open] { border-color: var(--sea); box-shadow: var(--sh); }
+.pg-eua details.faq-i[open] summary i { transform: rotate(180deg); background: var(--sea); color: var(--on-sea, #fff); }
+.pg-eua details.faq-i p { margin: 0; padding: 0 24px 24px; max-width: 70ch; color: var(--muted); line-height: 1.7; }
+@media (hover: hover) { .pg-eua details.faq-i:hover { border-color: var(--sea); } }
+@media (prefers-reduced-motion: no-preference) {
+  .pg-eua details.faq-i::details-content { block-size: 0; overflow: clip; transition: block-size .3s var(--out), content-visibility .3s allow-discrete; }
+  .pg-eua details.faq-i[open]::details-content { block-size: auto; }
+}
+@media (max-width: 600px) {
+  .pg-eua details.faq-i summary { padding: 18px; font-size: 1rem; }
+  .pg-eua details.faq-i p { padding: 0 18px 20px; }
+}
+
+@media (max-width: 860px) {
+  .eua-passos { grid-template-columns: 1fr; gap: 14px; margin-top: 28px; }
+}

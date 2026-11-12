@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/agenda.css?v=127">
+  <link rel="stylesheet" href="css/agenda.css?v=219">
   <link rel="stylesheet" href="css/escuro.css?v=120">
-  <link rel="stylesheet" href="css/topo.css?v=122">
+  <link rel="stylesheet" href="css/topo.css?v=206">
   <link rel="stylesheet" href="css/campos.css">
   <script src="js/campos.js" defer></script>
-  <script src="js/tema.js"></script>
+  <script src="js/tema.js?v=205"></script>
 </head>
 <body>
   <header class="topo">
@@ -47,6 +47,7 @@
         <select id="pc-sit" aria-label="Situação">
           <option value="">Todos</option>
           <option value="ativo">Com sessão marcada</option>
+          <option value="novo">Pacientes novos (últimos 30 dias)</option>
           <option value="plano">Em plano mensal</option>
           <option value="sem">Sem sessão marcada</option>
           <option value="30">Sem sessão há mais de 30 dias</option>
@@ -59,8 +60,12 @@
           <option value="sessoes">Mais sessões</option>
           <option value="parados">Mais tempo sem sessão</option>
         </select>
+        <div class="vista-tog" id="pc-vista" role="group" aria-label="Como mostrar os pacientes">
+          <button type="button" data-vista="lista" aria-pressed="true" title="Ver em lista"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="18" r="1.3"/></svg><span class="sr">Lista</span></button>
+          <button type="button" data-vista="grade" aria-pressed="false" title="Ver em quadros"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg><span class="sr">Quadros</span></button>
+        </div>
       </div>
-      <div class="bloco pc-bloco"><div id="pc-lista"></div></div>
+      <div class="bloco pc-bloco" id="pc-bloco"><div id="pc-lista"></div></div>
       <nav class="paginacao" id="pc-pag" aria-label="Páginas de pacientes"></nav>
     </section>
 
@@ -71,13 +76,13 @@
   <script src="../js/firebase-config.js"></script>
   <script src="../js/nuvem.js"></script>
   <script src="../js/agenda/config.js?v=116"></script>
-  <script src="../js/agenda/util.js"></script>
-  <script src="../js/agenda/db.js?v=126"></script>
-  <script src="../js/agenda/db-firebase.js?v=126"></script>
-  <script src="../js/agenda/servicos.js?v=116"></script>
-  <script src="js/sessao.js?v=123"></script>
-  <script src="js/notificacoes.js?v=123"></script>
+  <script src="../js/agenda/util.js?v=163"></script>
+  <script src="../js/agenda/db.js?v=220"></script>
+  <script src="../js/agenda/db-firebase.js?v=220"></script>
+  <script src="../js/agenda/servicos.js?v=178"></script>
+  <script src="js/sessao.js?v=206"></script>
+  <script src="js/notificacoes.js?v=205"></script>
   <script src="js/paginacao.js"></script>
-  <script src="js/pacientes.js"></script>
+  <script src="js/pacientes.js?v=199"></script>
 </body>
 </html>

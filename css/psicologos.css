@@ -213,7 +213,7 @@
 .pc-video.vertical .pc-video-tela { aspect-ratio: 9 / 16; }
 
 /* o lado da agenda: fundo levemente azulado e uma linha fina separando */
-.pc-agenda { min-width: 0; scroll-margin-top: 96px; background: #f7f8fe; border-left: 1px solid var(--line); }
+.pc-agenda { min-width: 0; scroll-margin-top: calc(96px + var(--ann-h, 0px)); background: #f7f8fe; border-left: 1px solid var(--line); }
 .pc-agenda .agc-caixa { border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: 26px 26px 22px; }
 /* espaço reservado enquanto a caixa ainda não foi montada (evita a página "pular") */
 .pc-agenda:not([data-agc-ok]) { min-height: 640px; }
@@ -248,14 +248,14 @@
 
 /* ===== Busca e filtros presos no topo ao rolar ===== */
 .busca-fixa {
-  position: sticky; top: 65px; z-index: 15;           /* logo abaixo do menu do topo (64px + linha) */
+  position: sticky; top: calc(65px + var(--ann-h, 0px)); z-index: 15;           /* logo abaixo do menu do topo (64px + linha) */
   margin: 0 -12px; padding: 10px 12px;
   background: linear-gradient(var(--bg) 70%, rgba(245, 247, 253, 0));
 }
 .busca-fixa .busca { transition: box-shadow .25s var(--out), border-color .25s var(--out); }
 .busca-fixa.presa .busca { box-shadow: 0 12px 30px -14px rgba(16, 26, 79, .35); border-color: #c9d2f1; }
 /* painel de filtros aberto com a busca presa: rola por dentro, sem passar da tela */
-.busca-fixa.presa .filtros { max-height: calc(100vh - 190px); overflow-y: auto; overscroll-behavior: contain; }
+.busca-fixa.presa .filtros { max-height: calc(100vh - 190px - var(--ann-h, 0px)); overflow-y: auto; overscroll-behavior: contain; }
 .btn-filtros .rot-filtros { white-space: nowrap; }
 
 /* celular: o menu do topo fica fixo, então a busca compacta prende logo abaixo dele */
@@ -263,7 +263,7 @@
   /* a busca grande rola com a página; quando some lá em cima, a compacta desce presa no topo (js/psicologos.js) */
   .busca-fixa { position: relative; top: auto; }
   .busca-fixa.presa {
-    position: fixed; top: calc(60px + env(safe-area-inset-top, 0px)); left: 0; right: 0; z-index: 19; margin: 0;
+    position: fixed; top: calc(60px + env(safe-area-inset-top, 0px) + var(--ann-h, 0px)); left: 0; right: 0; z-index: 19; margin: 0;
     padding: 8px 16px 10px;
     animation: buscaDesce .28s var(--out);
   }
@@ -276,7 +276,7 @@
   .busca-fixa.presa .busca-campo input::placeholder { font-size: 14px; }
   .busca-fixa.presa .btn-filtros { height: 48px; padding: 0 14px; }
   .busca-fixa.presa .btn-filtros .rot-filtros { display: none; }
-  .busca-fixa.presa .filtros { max-height: calc(100vh - 110px); }
+  .busca-fixa.presa .filtros { max-height: calc(100vh - 110px - var(--ann-h, 0px)); }
 }
 
 /* celular: "Encontre seu psicólogo online" numa linha só (a letra diminui com a tela) */
@@ -518,3 +518,9 @@
   .ordem { width: 100%; }
 }
 @media (max-width: 400px) { .ps-head .ps-confia { font-size: .74rem; } }
+
+/* ===== Prévia do cartão no painel (psicologos/?previa=1): só o cartão aparece ===== */
+.ps-previa header.site, .ps-previa footer.site, .ps-previa .ps-head, .ps-previa .busca-fixa, .ps-previa .busca-fixa-espaco,
+.ps-previa .res-topo, .ps-previa .pc-ajuda, .ps-previa .pc-mais, .ps-previa .fab-bar, .ps-previa .pb-ck, .ps-previa .drawer, .ps-previa .scrim { display: none !important; }
+.ps-previa .ps { padding-top: 20px; padding-bottom: 24px; }
+.ps-previa .pc-linha a, .ps-previa .pc-pilula { pointer-events: none; }

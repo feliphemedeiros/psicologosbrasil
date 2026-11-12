@@ -1,0 +1,22 @@
+VERSÃO 10 — PAINEL ÚNICO (psicologosbrasil.com.br/painel)
+
+O QUE FAZER (por cima da versão 9):
+  1. APAGUE a pasta  agendamento/  inteira (o painel da agenda foi para dentro de painel/).
+  2. Copie por cima:
+       painel/                     (pasta inteira: login, áreas, psicólogos, artigos e agenda)
+       js/agenda/                  (pasta nova: dados da agenda, usados pelo painel e pelo perfil)
+       js/agenda-psicologo.js
+       css/agenda-psicologo.css    (corrige a rolagem travada em cima do calendário)
+       js/perfil.js
+       js/main.js
+       psicologos/perfil/index.html
+       servicos/index.html         (o link "Agendar conversa" apontava para a página antiga)
+       robots.txt
+       COMO-ATIVAR-O-FIREBASE.txt
+
+LOGIN (modo de teste, o código de 6 números aparece na tela):
+  admin / admin123        → Psicólogos, Artigos e Agenda
+  suporte / suporte123    → Psicólogos e Agenda
+  helena / helena123      → só Minha agenda (também lucas, beatriz, tiago, aline, sam: nome + 123)
+
+TESTAR: na pasta do site rode  python -m http.server  e abra  http://localhost:8000/painel/

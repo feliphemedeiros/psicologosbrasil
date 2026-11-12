@@ -12,7 +12,9 @@
   const { $, $$, esc } = U;
 
   $('[data-nome]').textContent = S.nome;
-  $('[data-papel]').textContent = 'Administrador';
+  $('[data-papel]').textContent = Auth.nomePapel(S);
+  /* quem pode dar baixa e copiar o Pix: administrador ou suporte com o acesso "Financeiro: marcar como pago" */
+  const PAGA = Auth.pode('financeiroPagar');
   $('[data-sair]').onclick = () => Auth.sair();
   Auth.menuAreas($('[data-areas]'), 'financeiro');
 
@@ -100,11 +102,12 @@
         <header class="fin-psi-topo">
           <div class="fin-psi-quem"><h2>${esc(psi.nome)}</h2><span class="muted">${reg ? esc(reg) + ' · ' : ''}${l.length} ${l.length > 1 ? 'sessões' : 'sessão'}${l.length > 1 ? ' desde ' + esc(desde) : ''} · comissão ${Number(psi.comissao) || 0}%</span></div>
           <div class="fin-pix">
-            ${psi.pix
+            ${psi.pix && !PAGA ? '<span class="fin-pix-rot">Pix cadastrado</span><span class="fin-sem-pix fin-so-ver">Só administrador ou quem dá baixa vê a chave.</span>'
+              : psi.pix
               ? `<span class="fin-pix-rot">Pix · ${esc(U.pixNomeTipo(psi.pixTipo || U.pixAdivinhar(psi.pix)))}</span><code class="fin-pix-chave">${esc(U.pixFormatar(psi.pixTipo || U.pixAdivinhar(psi.pix), psi.pix))}</code><button type="button" class="btn btn-primario btn-peq" data-copiar-pix="${esc(psi.pix)}">${ICO_COPIAR} Copiar Pix</button>`
               : `<span class="fin-sem-pix">Sem chave Pix: peça para ${esc(U.primeiroNome(psi.nome))} cadastrar em <b>Minha conta</b>.</span>`}
           </div>
-          <div class="fin-psi-total"><span>Total</span><strong>${U.moeda(tot)}</strong>${l.length > 1 ? `<button type="button" class="btn btn-ok btn-peq" data-pagar-todos="${esc(id)}">Paguei tudo (${l.length} sessões)</button><small class="fin-dica">1 Pix só com o total</small>` : ''}</div>
+          <div class="fin-psi-total"><span>Total</span><strong>${U.moeda(tot)}</strong>${l.length > 1 && PAGA ? `<button type="button" class="btn btn-ok btn-peq" data-pagar-todos="${esc(id)}">Paguei tudo (${l.length} sessões)</button><small class="fin-dica">1 Pix só com o total</small>` : ''}</div>
         </header>
         <div class="tabela-rolagem"><table class="tabela fin-tab">
           <thead><tr><th>Sessão</th><th>Paciente</th><th>Situação</th><th class="num">Valor</th><th class="num">Repasse</th><th></th></tr></thead>
@@ -114,7 +117,7 @@
             <td>${U.badge(a.status)}</td>
             <td class="num">${U.moeda(a.valor)}</td>
             <td class="num"><strong>${U.moeda(repasseDe(a))}</strong></td>
-            <td class="num"><button type="button" class="btn btn-secundario btn-peq" data-pagar="${esc(a.id)}">Paguei só esta</button></td>
+            <td class="num">${PAGA ? `<button type="button" class="btn btn-secundario btn-peq" data-pagar="${esc(a.id)}">Paguei só esta</button>` : ''}</td>
           </tr>`).join('')}</tbody>
         </table></div>
         ${resto > 0 ? `<button type="button" class="fin-mais" data-ver-todas="${esc(id)}">${aberto ? 'Mostrar menos' : `Ver as outras ${resto} ${resto > 1 ? 'sessões' : 'sessão'}`}</button>` : ''}
@@ -143,7 +146,7 @@
         <td>${esc(U.fmtCurta(a.data))}<small>${esc(U.intervalo(a.hora, a.duracao))}</small></td>
         <td>${esc(a.paciente.nome)}</td>
         <td class="num"><strong>${U.moeda(a.repasse.valor || 0)}</strong></td>
-        <td class="num"><button type="button" class="btn-link" data-desfazer="${esc(a.id)}">Desfazer</button></td>
+        <td class="num">${PAGA ? `<button type="button" class="btn-link" data-desfazer="${esc(a.id)}">Desfazer</button>` : ''}</td>
       </tr>`).join('')}</tbody>
       <tfoot><tr><td colspan="4">Total${mes ? ' em ' + esc(U.fmtMes(mes)) : ''}</td><td class="num">${U.moeda(total)}</td><td></td></tr></tfoot>`;
     $('#fin-pag').innerHTML = Paginacao.html(r, ['repasse', 'repasses']);
@@ -205,7 +208,7 @@
     try {
       if (pg) {
         const a = AGS.find(x => x.id === pg.dataset.pagar);
-        const ok = await U.confirmar('Marcar repasse como pago?', `<b>${U.moeda(repasseDe(a))}</b> para <b>${esc(PSIS[a.psiId]?.nome || '—')}</b>, pela sessão de ${esc(U.fmtCurta(a.data))} com ${esc(a.paciente.nome)}.<br><br>Faça o Pix antes de confirmar.`, 'Já paguei');
+        const ok = await U.confirmar('Marcar repasse como pago?', `<b>${U.moeda(repasseDe(a))}</b> para <b>${esc(PSIS[a.psiId]?.nome || '—')}</b>, pela sessão de ${esc(U.fmtCurta(a.data))} com o(a) paciente ${esc(a.paciente.nome)}.<br><br>Faça o Pix antes de confirmar.`, 'Já paguei');
         if (!ok) return;
         await DB.marcarRepasse([a.id], true, S.nome); U.toast('Repasse marcado como pago.');
       } else if (pt) {

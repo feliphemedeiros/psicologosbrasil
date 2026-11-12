@@ -124,3 +124,11 @@ footer.site a.ft-seal-psi .ft-seal-seta { margin-left: 6px; transition: transfor
   footer.site a.ft-seal-psi:hover .ft-seal-seta { transform: translateX(3px); }
 }
 @media (max-width: 640px) { footer.site a.ft-seal-psi { margin-left: 0; } }
+
+/* v262: dados legais enxutos — cada trecho fica inteiro; no celular um trecho por linha */
+.ft-legal span { white-space: nowrap; }
+@media (max-width: 760px) {
+  .ft-legal p { margin: 8px 0; }
+  .ft-legal span { display: block; white-space: normal; }
+  .ft-legal .ft-sep { display: none; }
+}

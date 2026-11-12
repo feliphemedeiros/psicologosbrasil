@@ -158,6 +158,28 @@
     pilula.setAttribute("aria-label", texto + ": ver a lista");
   }
 
+  /* Autor que é psicólogo publicado no site: foto e nome viram link para o perfil dele.
+     Acha pelo CRP (mais seguro) ou, sem CRP, pelo nome. Quem não tem perfil publicado fica sem link. */
+  async function ligarAutor(a) {
+    try {
+      const box = alvo.querySelector(".artigo-autor");
+      if (!box || !a.autor) return;
+      const l = (await NUVEM.lista("psicologos")).filter((x) => x && x.nome && x.ativo !== false);
+      const dig = (t) => String(t || "").replace(/\D/g, "");
+      const crp = dig((String(a.autorCargo || "").match(/CRP\s*([\d./\s-]+)/i) || [])[1]);
+      const p = (crp.length >= 4 && l.find((x) => dig(x.crp) === crp)) || l.find((x) => semAcento(x.nome) === semAcento(a.autor));
+      const s = p && (p.slug || (String(p.url || "").match(/especialista\/([^/]+)/) || [])[1]);
+      if (!s) return;
+      const link = document.createElement("a");
+      link.className = "autor-link";
+      link.href = (typeof SITE_LOCAL !== "undefined" && SITE_LOCAL) ? RAIZ_ABS + "psicologos/perfil/?p=" + encodeURIComponent(s) : RAIZ_ABS + "especialista/" + encodeURIComponent(s) + "/";
+      link.setAttribute("aria-label", `Ver o perfil de ${p.nome}`);
+      box.insertBefore(link, box.firstChild);
+      link.append(box.querySelector(".autor-foto"), box.querySelector(".autor-txt"));
+      link.querySelector(".autor-txt b").insertAdjacentHTML("beforeend", ' <span class="autor-ver" aria-hidden="true">Ver perfil ›</span>');
+    } catch (e) { /* sem link: fica como estava */ }
+  }
+
   if (!slug) { naoEncontrado(); return; }
   NUVEM.artigo(slug)
     .then(async (a) => {
@@ -166,6 +188,7 @@
       a.capa = await NUVEM.resolverTexto(a.capa || "");
       a.autorFoto = await NUVEM.resolverTexto(a.autorFoto || "");
       montar(a);
+      ligarAutor(a);
     })
     .catch(() => {
       alvo.innerHTML = `<div class="artigo"><div class="artigo-wrap"><h1>Não foi possível carregar o artigo</h1><p class="artigo-resumo">Verifique sua conexão e atualize a página.</p></div></div>`;

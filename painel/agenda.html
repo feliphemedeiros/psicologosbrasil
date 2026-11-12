@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/agenda.css?v=127">
+  <link rel="stylesheet" href="css/agenda.css?v=219">
   <link rel="stylesheet" href="css/escuro.css?v=120">
-  <link rel="stylesheet" href="css/topo.css?v=122">
+  <link rel="stylesheet" href="css/topo.css?v=206">
   <link rel="stylesheet" href="css/campos.css">
   <script src="js/campos.js" defer></script>
-  <script src="js/tema.js"></script>
+  <script src="js/tema.js?v=205"></script>
 </head>
 <body>
   <header class="topo">
@@ -40,6 +40,14 @@
   </header>
 
   <main class="conteudo">
+    <!-- BUSCA RÁPIDA DE PACIENTE (vale em todas as abas) -->
+    <div class="busca-pac" id="bp">
+      <label class="busca-pac-campo">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="bp-q" placeholder="Buscar paciente: nome, WhatsApp, e-mail ou código" aria-label="Buscar paciente por nome, WhatsApp, e-mail ou código" autocomplete="off" enterkeyhint="search">
+      </label>
+      <div class="busca-pac-res" id="bp-res" hidden></div>
+    </div>
     <!-- PRÉ-RESERVAS -->
     <section data-painel="pre">
       <div class="secao-topo">
@@ -144,14 +152,14 @@
   <script src="../js/firebase-config.js"></script>
   <script src="../js/nuvem.js"></script>
   <script src="../js/agenda/config.js?v=116"></script>
-  <script src="../js/agenda/util.js"></script>
-  <script src="../js/agenda/db.js?v=126"></script>
-  <script src="../js/agenda/db-firebase.js?v=126"></script>
-  <script src="../js/agenda/servicos.js?v=116"></script>
-  <script src="js/sessao.js?v=123"></script>
-  <script src="js/notificacoes.js?v=123"></script>
+  <script src="../js/agenda/util.js?v=163"></script>
+  <script src="../js/agenda/db.js?v=220"></script>
+  <script src="../js/agenda/db-firebase.js?v=220"></script>
+  <script src="../js/agenda/servicos.js?v=178"></script>
+  <script src="js/sessao.js?v=206"></script>
+  <script src="js/notificacoes.js?v=205"></script>
   <script src="js/paginacao.js"></script>
   <script src="js/escolher-psi.js?v=114"></script>
-  <script src="js/agenda-equipe.js?v=123"></script>
+  <script src="js/agenda-equipe.js?v=219"></script>
 </body>
 </html>

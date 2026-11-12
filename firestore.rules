@@ -37,27 +37,44 @@ service cloud.firestore {
     function ativo() { return logado() && exists(caminhoPerfil()) && perfil().get('ativo', true) == true && (perfil().papel == 'psicologo' || com2fa()); }
     function admin() { return ativo() && perfil().papel == 'admin'; }
     function equipe() { return ativo() && perfil().papel in ['admin', 'suporte']; }
-    // suporte em níveis: 1 = Psicólogos, Pacientes e Agenda · 2 = Psicólogos e Agenda · 3 = só Agenda
-    // (suporte antigo, sem o campo nivel, = nível 1)
-    function nivelSuporte() { return perfil().get('nivel', 1); }
-    function vePacientes() { return admin() || (equipe() && nivelSuporte() == 1); }
+    // suporte: Agenda (tudo) e, de cada psicólogo, só Atendimentos e Disponibilidade.
+    // Pacientes, página no site, resumo (valores), conta/Pix, financeiro e usuários: só administrador.
+    // acessos extras que o administrador dá a cada suporte (Usuários → Editar): campo extras do usuário
+    function extra(x) { return ativo() && perfil().papel == 'suporte' && perfil().get('extras', []).hasAny([x]); }
+    function vePacientes() { return admin() || extra('pacientes'); }
+    function editaArtigos() { return admin() || extra('artigos'); }
+    // "Psicólogos (completo)": página no site, novo psicólogo, acesso ao painel, resumo e conta (sem Pix e comissão)
+    function editaPsis() { return admin() || extra('psicologos'); }
+    // administrador principal (o dono): marque principal: true no documento dele em "usuarios"
+    function principal() { return admin() && perfil().get('principal', false) == true; }
     function donoPsi(psiId) { return ativo() && perfil().papel == 'psicologo' && perfil().get('psiId', '') == psiId; }
 
     // ---------- Equipe e acessos ----------
     match /usuarios/{uid} {
       allow read: if (logado() && request.auth.uid == uid) || admin();
-      allow create, update: if admin();
+      // suporte e psicólogo: qualquer administrador cria e edita (nome, e-mail, acessos extras), sem mudar o papel
+      allow create: if admin() && request.resource.data.papel in ['suporte', 'psicologo'];
+      allow update: if admin() && resource.data.papel in ['suporte', 'psicologo'] && request.resource.data.papel == resource.data.papel;
+      // acesso ao painel do psicólogo (Psicólogos completo)
+      allow create: if editaPsis() && request.resource.data.papel == 'psicologo';
+      allow update: if editaPsis() && resource.data.papel == 'psicologo' && request.resource.data.papel == 'psicologo';
+      // administradores e troca de papel (suporte ⇄ administrador): só o principal, e nunca no próprio principal
+      allow create: if principal();
+      allow update: if principal() && resource.data.get('principal', false) != true
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['principal']);
       // excluir: só o administrador, só suporte/administradores, nunca a si mesmo nem o principal
       // (psicólogos não são excluídos: o acesso é desativado)
       allow delete: if admin() && request.auth.uid != uid
-        && resource.data.papel in ['admin', 'suporte'] && resource.data.get('principal', false) != true;
-      // psicólogo: sai junto quando o perfil é excluído em Perfis (admin ou suporte)
-      allow delete: if equipe() && resource.data.papel == 'psicologo';
-      // o suporte cria e atualiza SÓ acessos de psicólogos (nunca admin ou suporte)
-      allow create: if equipe() && request.resource.data.papel == 'psicologo';
-      allow update: if equipe() && resource.data.papel == 'psicologo' && request.resource.data.papel == 'psicologo';
-      // cada pessoa atualiza só o próprio nome, e-mail de exibição e o aviso de senha padrão (tela Minha conta)
+        && (resource.data.papel == 'suporte' || (resource.data.papel == 'admin' && principal()))
+        && resource.data.get('principal', false) != true;
+      // psicólogo: sai junto quando o perfil é excluído (só administrador)
+      allow delete: if editaPsis() && resource.data.papel == 'psicologo';
+      // cada pessoa só tira o aviso de senha provisória (depois de criar a própria senha);
+      // nome e e-mail: só o administrador principal muda os próprios (os outros, um administrador em Usuários)
       allow update: if logado() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['senhaPadrao'])
+        && request.resource.data.senhaPadrao == false;
+      allow update: if logado() && request.auth.uid == uid && resource.data.get('principal', false) == true
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome', 'email', 'senhaPadrao'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['senhaPadrao'])
             || request.resource.data.senhaPadrao == false);
@@ -68,7 +85,7 @@ service cloud.firestore {
     match /trocas_senha/{id} {
       allow read: if equipe() && resource.data.por == request.auth.uid;
       // equipe: senha de psicólogo · administrador: senha e e-mail de login de suporte/administrador (nunca o próprio)
-      allow create: if equipe()
+      allow create: if editaPsis()
         && request.resource.data.keys().hasOnly(['uid', 'psiId', 'senha', 'email', 'status', 'por', 'em'])
         && request.resource.data.status == 'pendente'
         && request.resource.data.por == request.auth.uid
@@ -78,7 +95,8 @@ service cloud.firestore {
         && request.resource.data.status == 'pendente'
         && request.resource.data.por == request.auth.uid
         && request.resource.data.uid != request.auth.uid
-        && get(/databases/$(database)/documents/usuarios/$(request.resource.data.uid)).data.papel in ['admin', 'suporte']
+        && (get(/databases/$(database)/documents/usuarios/$(request.resource.data.uid)).data.papel == 'suporte'
+            || (get(/databases/$(database)/documents/usuarios/$(request.resource.data.uid)).data.papel == 'admin' && principal()))
         && get(/databases/$(database)/documents/usuarios/$(request.resource.data.uid)).data.get('principal', false) != true;
       allow update, delete: if false;
     }
@@ -108,14 +126,14 @@ service cloud.firestore {
     // ---------- Conteúdo publicado no site (todo mundo lê) ----------
     match /indice/{tipo} {
       allow read: if true;
-      allow write: if admin() || (tipo == 'psicologos' && equipe());
+      allow write: if admin() || (tipo == 'artigos' && editaArtigos()) || (tipo == 'psicologos' && editaPsis());
     }
-    match /artigos/{slug} { allow read: if true; allow write: if admin(); }
-    match /imagens/{id}   { allow read: if true; allow write: if equipe(); }
+    match /artigos/{slug} { allow read: if true; allow write: if editaArtigos(); }
+    match /imagens/{id}   { allow read: if true; allow write: if editaArtigos() || editaPsis(); }
 
     // ---------- Rascunhos e configurações do painel (privado) ----------
-    match /painel_artigos/{id}    { allow read, write: if admin(); }
-    match /painel_psicologos/{id} { allow read, write: if equipe(); }
+    match /painel_artigos/{id}    { allow read, write: if editaArtigos(); }
+    match /painel_psicologos/{id} { allow read: if equipe(); allow write: if editaPsis(); }
     match /painel_config/{id}     { allow read: if equipe(); allow write: if admin(); }
 
     // ---------- Agenda: psicólogos ----------
@@ -123,7 +141,7 @@ service cloud.firestore {
     // troca da chave Pix pelo psicólogo: ele cria o pedido e depois manda o código; a função confere
     match /trocas_pix/{id} {
       allow read: if logado() && resource.data.por == request.auth.uid;
-      allow create: if donoPsi(request.resource.data.psiId)
+      allow create: if (admin() || extra('psicologos'))
         && request.resource.data.keys().hasOnly(['psiId', 'pix', 'pixTipo', 'status', 'por', 'em'])
         && request.resource.data.status == 'pendente' && request.resource.data.por == request.auth.uid
         && request.resource.data.pix is string && request.resource.data.pix.size() <= 140;
@@ -136,20 +154,24 @@ service cloud.firestore {
 
     match /psicologos_agenda/{psiId} {
       allow read: if equipe() || donoPsi(psiId);
-      allow create, delete: if equipe();
-      // administrador muda tudo; suporte muda tudo menos a chave Pix
-      allow update: if admin();
-      allow update: if equipe() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pix', 'pixTipo']);
-      // o próprio psicólogo muda só o WhatsApp de contato (a chave Pix só com o código do e-mail, pela função)
-      // nome, CRP, OPP, e-mail e fuso: só a equipe
-      allow update: if donoPsi(psiId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['whatsapp', 'atualizado'])
-        && request.resource.data.get('whatsapp', '') is string && request.resource.data.get('whatsapp', '').matches('^(\\+[0-9]{8,15})?$');
+      allow create, delete: if editaPsis();
+      // administrador muda tudo; suporte só liga/desliga a agenda online (aba Disponibilidade);
+      // suporte com "Psicólogos (completo)" muda tudo menos chave Pix e comissão
+      // chave Pix: ninguém muda direto pelo navegador; só a função, depois do código no e-mail de quem pediu (admin ou suporte com acesso)
+      allow update: if admin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pix', 'pixTipo']);
+      allow update: if extra('psicologos') && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pix', 'pixTipo', 'comissao']);
+      allow update: if (equipe() || donoPsi(psiId))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pausada', 'atualizado']);
+      // o próprio psicólogo NÃO muda os dados da Conta (nome, CRP, OPP, e-mail, WhatsApp, fuso, chave Pix):
+      // quem muda é a equipe. Ele só troca a própria senha (Firebase Auth) e liga/pausa a agenda (regra acima).
     }
     // o que o site precisa para mostrar a agenda (nome, CRP, valor, ligada ou não)
     match /agenda_publico/{psiId} {
       allow read: if true;
-      allow write: if equipe();
+      allow write: if editaPsis();
+      // agenda online/pausada: suporte ou o próprio psicólogo
+      allow update: if (equipe() || donoPsi(psiId))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pausada']);
     }
 
     // ---------- Agenda: dias e horários abertos ----------
@@ -219,10 +241,27 @@ service cloud.firestore {
         && trava.agId == agId
         && trava.grupo == a.grupo;
     }
+    // v220: "Conheça o psicólogo em 15 minutos" (questionário do site → equipe)
+    match /conhecer/{id} {
+      allow read, update, delete: if equipe();
+      allow create: if request.resource.data.status == 'novo'
+        && request.resource.data.consentimento == true
+        && request.resource.data.id == id
+        && request.resource.data.keys().hasOnly(['id', 'criadoEm', 'status', 'paciente', 'tipoSessao', 'motivos', 'objetivos', 'preferencias', 'horario', 'sobre', 'origem', 'consentimento'])
+        && request.resource.data.paciente.nome is string && request.resource.data.paciente.nome.size() <= 80
+        && request.resource.data.sobre is string && request.resource.data.sobre.size() <= 1500;
+    }
     match /agendamentos/{agId} {
       allow read: if equipe() || donoPsi(resource.data.psiId);
       allow create: if equipe() || agendamentoDoSite(agId);
-      allow update: if equipe()
+      // repasse (Financeiro → marcar como pago): administrador ou suporte com o acesso "marcar como pago"
+      allow update: if admin()
+        || (equipe() && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['repasse']) || extra('financeiro'))
+            // conferência do Pix: o suporte só PEDE; responder "caiu / não caiu" é do administrador
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['conferencia']) || request.resource.data.conferencia.status == 'pedida')
+            // v214: o suporte só confirma o pagamento depois que o administrador conferiu que o Pix caiu
+            && (!(request.resource.data.status == 'confirmado' && resource.data.status in ['pendente', 'expirado'])
+                || ('conferencia' in resource.data && resource.data.conferencia.status == 'caiu')))
         || (donoPsi(resource.data.psiId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'historico', 'psiCiente'])
             && request.resource.data.status in ['realizado', 'falta', resource.data.status]);

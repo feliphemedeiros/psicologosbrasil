@@ -373,7 +373,7 @@ a.chip::before {
 
 .split > div:first-child {
   position: sticky;
-  top: 96px;
+  top: calc(96px + var(--ann-h, 0px));
 }
 
 .steps {
@@ -987,7 +987,7 @@ details.faq-i p strong {
 /* Imagem da seção "Como ajuda": montagem com fundo transparente, mostrada inteira (sem cortar) */
 .ajuda-img { align-self: start; min-height: 0; }
 @media (min-width: 861px) {
-  .ajuda-img { position: sticky; top: 110px; } /* acompanha a leitura no computador */
+  .ajuda-img { position: sticky; top: calc(110px + var(--ann-h, 0px)); } /* acompanha a leitura no computador */
 }
 .ajuda-img img { height: auto; object-fit: contain; border-radius: 0; }
 @media (max-width: 860px) {

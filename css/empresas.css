@@ -1,0 +1,20 @@
+/* Psicólogos Brasil — página Para empresas (usa a base de css/parceiros.css) */
+.em-mock .pc-mock-corpo { padding-bottom: 60px; }
+.em-mock-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.em-mock-nums div { background: var(--mist); border-radius: 16px; padding: 14px 16px; }
+.em-mock-nums b { display: block; font: 700 1.9rem/1 "Bricolage Grotesque", serif; color: var(--sea); }
+.em-mock-nums small { display: block; margin-top: 4px; color: var(--muted); font-size: .82rem; }
+.em-mock-nota { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--muted); font-size: .84rem; }
+.em-mock-nota svg { color: var(--sea); flex: none; }
+
+.em-formatos { padding-top: 8px; }
+.em-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.em-cards li { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px 24px 26px; box-shadow: 0 1px 2px rgba(16, 26, 79, .04); }
+.em-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--sea); color: #fff; font-weight: 800; margin-bottom: 14px; }
+.em-cards h3 { font-size: 1.15rem; margin: 0 0 6px; }
+.em-cards p { color: var(--muted); font-size: .95rem; line-height: 1.6; margin: 0; }
+.em-obs { text-align: center; color: var(--muted); font-size: .95rem; margin: 22px auto 0; max-width: 60ch; }
+.em-mail { margin: 18px 0 0 !important; font-size: .95rem !important; }
+.em-mail a { color: #fff; font-weight: 700; }
+@media (max-width: 900px) { .em-cards { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .em-mock .pc-mock-corpo { padding-bottom: 78px; } }

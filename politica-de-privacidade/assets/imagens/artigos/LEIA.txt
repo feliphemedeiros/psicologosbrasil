@@ -1,0 +1,13 @@
+PASTA DAS IMAGENS DOS ARTIGOS
+
+Aqui ficam as capas e as imagens de dentro dos artigos, com o nome do artigo no arquivo:
+   sindrome-da-cabana.webp, como-atravessar-o-luto.webp ...
+
+Capa: 1600 x 900 (formato 16:9), de preferência .webp, até uns 200 KB.
+
+Na versão com banco de dados (MariaDB), a capa e as imagens enviadas pelo painel
+(Artigos > Capa e publicação) são salvas aqui automaticamente, já com o nome e o tamanho certos.
+
+Os 3 cartões de "Artigos recentes" da página inicial procuram estas capas:
+   sindrome-da-cabana.webp, como-atravessar-o-luto.webp, nevoa-mental.webp
+Enquanto não existirem, aparece um ícone no lugar.

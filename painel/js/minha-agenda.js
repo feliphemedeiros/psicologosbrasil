@@ -23,18 +23,34 @@
   $('[data-sair]').onclick = () => Auth.sair();
   const h = new Date().getHours();
   $('[data-saudacao]').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}, ${U.primeiroNome(S.nome)}!`;
+  /* botão para a equipe falar com o psicólogo no WhatsApp (verde, padrão do WhatsApp) */
+  function botaoWhatsPsi(psi) {
+    const ico = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>';
+    const primeiro = U.primeiroNome(psi.nome || '') || 'psicólogo';
+    if (!U.digitos(psi.whatsapp)) {
+      return `<span class="btn btn-peq visao-whats visao-whats-sem" title="${S.papel === 'admin' ? 'Cadastre o número na aba Conta' : 'Peça a um administrador para cadastrar o número'}">${ico}Sem WhatsApp cadastrado</span>`;
+    }
+    const texto = `Olá, ${primeiro}! Aqui é ${U.primeiroNome(S.nome || '')}, da equipe da Psicólogos Brasil.`;
+    return `<a class="btn btn-whats btn-peq visao-whats" target="_blank" rel="noopener" href="${U.linkWhats(psi.whatsapp, texto)}" title="${esc(U.fmtTelefone(psi.whatsapp))}">${ico}WhatsApp de ${esc(primeiro)}</a>`;
+  }
   if (VISAO_EQUIPE) {
     const psi = await DB.obterPsicologo(PSI_ID).catch(() => null);
-    if (!psi) { location.replace('conteudo.html#psicologos'); return; }
+    if (!psi) { location.replace('psicologos.html'); return; }
     const nomePsi = psi.nome || 'Psicólogo';
     document.title = `${nomePsi} · Painel Psicólogos Brasil`;
     document.querySelectorAll('.papel').forEach(e => { e.textContent = Auth.nomePapel(S); });
-    $('.marca').href = 'conteudo.html#psicologos';
+    $('.marca').href = 'psicologos.html';
     $('.marca small').textContent = 'Psicólogos';
     Auth.menuAreas($('[data-areas]'), 'psicologos');
-    $('.aba[data-aba="conta"]').textContent = 'Conta';
+    { const c = $('.aba[data-aba="conta"]'); [...c.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).forEach(n => { n.textContent = 'Conta'; }); }   /* troca só o texto (mantém o ícone) */
     /* primeira aba: volta para a página do psicólogo no site (a ficha em "Psicólogos") */
-    $('.abas').insertAdjacentHTML('afterbegin', `<a class="aba aba-pagina" href="conteudo.html#psicologos/a:${encodeURIComponent(PSI_ID)}">Página no site</a>`);
+    if (Auth.pode('psiPagina')) $('.abas').insertAdjacentHTML('afterbegin', `<a class="aba aba-pagina" href="psicologos.html#a:${encodeURIComponent(PSI_ID)}">Página no site</a>`);
+    /* suporte: só Atendimentos e Disponibilidade (Resumo tem valores; Conta tem dados e Pix) */
+    [['resumo', 'psiResumo'], ['conta', 'psiConta']].forEach(([aba, area]) => {
+      if (Auth.pode(area)) return;
+      const b = $(`.aba[data-aba="${aba}"]`); if (b) b.remove();
+      const p = $(`[data-painel="${aba}"]`); if (p) { p.hidden = true; p.dataset.bloqueado = '1'; }   /* fica vazio: nada é carregado nele */
+    });
     $('.abas').classList.add('abas-quebra');   /* celular: as 5 abas em botões, todas à vista (sem arrastar) */
     /* o nome do psicólogo bem visível ao lado do título de cada parte */
     const titulos = { atendimentos: 'Atendimentos', disponibilidade: 'Disponibilidade', resumo: 'Resumo', conta: 'Conta' };
@@ -50,16 +66,26 @@
     marcarNomePsi(nomePsi);
     document.querySelector('.topo').insertAdjacentHTML('afterend', `
       <div class="visao-equipe"><div class="visao-equipe-in">
-        <a href="conteudo.html#psicologos" class="visao-voltar">← Todos os psicólogos</a>
+        <a href="psicologos.html" class="visao-voltar">← Todos os psicólogos</a>
         <span>Você está vendo a agenda de <strong>${esc(nomePsi)}</strong> como ${S.papel === 'admin' ? 'administrador' : 'suporte'}. O que você mudar aqui vale para ela(e) também.</span>
+        ${botaoWhatsPsi(psi)}
       </div></div>`);
   }
 
+  /* legenda das cores dos atendimentos: verde só depois do "Estou ciente" */
+  { const leg = document.querySelector('[data-painel="atendimentos"] [data-clique]');
+    if (leg) leg.innerHTML = VISAO_EQUIPE
+      ? 'Cartão <strong style="color:var(--pend)">amarelo</strong> com “Ainda não viu”: pago, mas o psicólogo ainda não confirmou. Faixa <strong style="color:var(--ok)">verde</strong> com “✓ Ciente”: o psicólogo já viu. Faixa <strong style="color:var(--erro)">vermelha</strong> com “Faltou”: o paciente não entrou.'
+      : `Cartão <strong style="color:var(--pend)">amarelo</strong>: sessão paga que você ainda não confirmou. ${clique(true)} em “Estou ciente” e ele ganha a faixa <strong style="color:var(--ok)">verde</strong> com “✓ Ciente”. Faixa <strong style="color:var(--erro)">vermelha</strong> com “Faltou”: o paciente não entrou.`; }
+
   /* ---------------- abas ---------------- */
   function ativar(aba) {
+    const pb = $(`[data-painel="${aba}"]`);
+    if (!pb || pb.dataset.bloqueado) aba = 'atendimentos';
     $$('.aba[data-aba]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.aba === aba)));
     const bc = document.getElementById('btn-conta'); if (bc) bc.classList.toggle('atual', aba === 'conta');
     $$('[data-painel]').forEach(p => (p.hidden = p.dataset.painel !== aba));
+    $$('.nav-flutuante [data-ir]').forEach(b => { const on = b.dataset.ir === aba; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     history.replaceState(null, '', '#' + aba);
   }
   $$('.aba[data-aba]').forEach(b => (b.onclick = () => ativar(b.dataset.aba)));
@@ -79,14 +105,51 @@
       $('#btn-conta').onclick = () => ativar('conta');
     }
   }
+  /* Psicólogo no celular/tablet: barra flutuante embaixo (Atendimentos · Disponibilidade · Resumo · Perfil).
+     No computador continuam as abas de cima. */
+  if (!VISAO_EQUIPE) {
+    const IC = {
+      atendimentos: '<path d="M8 3v3M16 3v3M4 9h16"/><rect x="4" y="5" width="16" height="16" rx="3"/><path d="m9 15 2 2 4-4"/>',
+      disponibilidade: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+      resumo: '<path d="M5 20V11M12 20V5M19 20v-6"/>',
+      conta: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/>'
+    };
+    const itens = [['atendimentos', 'Atendimentos'], ['disponibilidade', 'Disponibilidade'], ['resumo', 'Resumo'], ['conta', 'Perfil']]
+      .filter(([k]) => k === 'conta' || $(`[data-painel="${k}"]`));
+    const nav = document.createElement('nav');
+    nav.className = 'nav-flutuante'; nav.setAttribute('aria-label', 'Minha agenda');
+    nav.innerHTML = itens.map(([k, t]) => `<button type="button" data-ir="${k}"><span class="nf-ico"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>${k === 'atendimentos' ? '<span class="nf-cont" data-cont="novos"></span>' : ''}</span><span class="nf-txt">${t}</span></button>`).join('');
+    document.body.appendChild(nav);
+    document.body.classList.add('com-nav-flutuante');
+    nav.addEventListener('click', e => { const b = e.target.closest('[data-ir]'); if (!b) return; ativar(b.dataset.ir); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  }
   const pedida = location.hash.slice(1);
-  ativar($(`.aba[data-aba="${pedida}"]`) || pedida === 'conta' ? pedida : 'atendimentos');
+  ativar($(`.aba[data-aba="${pedida}"]`) || (pedida === 'conta' && !VISAO_EQUIPE) ? pedida : 'atendimentos');
   /* link para outra aba desta mesma tela (ex.: sininho "Sessão nova" estando em Disponibilidade): troca a aba */
   window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if ($(`.aba[data-aba="${h}"]`) || h === 'conta') { ativar(h); window.scrollTo(0, 0); } });
 
   /* =====================================================================
      ATENDIMENTOS
      ===================================================================== */
+  /* lista ou quadros (igual a Psicólogos, Pacientes e Artigos); a escolha fica guardada neste navegador */
+  let VISTA_AT = 'lista';
+  try { VISTA_AT = localStorage.getItem('pb_vista_atend') === 'grade' ? 'grade' : 'lista'; } catch (e) { /* lista */ }
+  /* v199: no celular (até 640px) é sempre lista e o botão some */
+  const VISTA_CEL = window.matchMedia('(max-width: 640px)');
+  const gradeAt = () => VISTA_AT === 'grade' && !VISTA_CEL.matches;
+  VISTA_CEL.addEventListener('change', () => { const b = $('#lista-atend'); if (b) b.classList.toggle('atend-grade', gradeAt()); });
+  (function () {
+    const g = $('#at-vista'); if (!g) return;
+    const marcar = () => g.querySelectorAll('[data-vista]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vista === VISTA_AT)));
+    marcar();
+    g.addEventListener('click', e => {
+      const b = e.target.closest('[data-vista]'); if (!b || b.dataset.vista === VISTA_AT) return;
+      VISTA_AT = b.dataset.vista; marcar();
+      try { localStorage.setItem('pb_vista_atend', VISTA_AT); } catch (err) { /* tudo bem */ }
+      $('#lista-atend').classList.toggle('atend-grade', gradeAt());
+    });
+  })();
+
   async function renderAtend() {
     const hoje = U.hojeISO();
     const lista = await DB.listarAgendamentos({
@@ -97,7 +160,7 @@
     const futuros = lista.filter(a => a.data >= hoje);
     const passados = lista.filter(a => a.data < hoje).reverse();
     const novos = lista.filter(a => a.status === 'confirmado' && !a.psiCiente).length;
-    $('[data-cont="novos"]').textContent = novos || '';
+    $$('[data-cont="novos"]').forEach(el => { el.textContent = novos || ''; });
 
     const box = $('#lista-atend');
     const sb = await semBaixa();
@@ -120,12 +183,13 @@
     dias.forEach(d => {
       const ehHoje = d === hoje, amanha = d === U.addDias(hoje, 1);
       html += `<h2 class="dia-titulo">${ehHoje ? '<span class="hoje-tag">Hoje</span>' : ''}${amanha ? 'Amanhã · ' : ''}${U.fmtLonga(d)}</h2>`;
-      html += porDia[d].map(cartao).join('');
+      html += `<div class="atend-dia">${porDia[d].map(cartao).join('')}</div>`;
     });
     if (passados.length) {
-      html += `<details style="margin-top:28px"><summary class="dia-titulo" style="cursor:pointer">Últimos 14 dias (${passados.length})</summary>${passados.map(cartao).join('')}</details>`;
+      html += `<details style="margin-top:28px"><summary class="dia-titulo" style="cursor:pointer">Últimos 14 dias (${passados.length})</summary><div class="atend-dia">${passados.map(cartao).join('')}</div></details>`;
     }
     box.innerHTML = aviso + html;
+    box.classList.toggle('atend-grade', gradeAt());
   }
 
   function cartao(a) {
@@ -136,8 +200,8 @@
     if (a.status === 'confirmado') {
       /* "Estou ciente" é a confirmação do próprio psicólogo: a equipe só vê se ele já confirmou */
       acoes += a.psiCiente
-        ? `<span class="ciente-ok">✓ Ciente</span>`
-        : VISAO_EQUIPE ? `<span class="ciente-nao">Ainda não viu</span>` : `<button class="btn btn-ok btn-peq" data-acao="ciente" data-id="${a.id}">Estou ciente</button>`;
+        ? `<span class="ciente-ok ciente-sim" title="${VISAO_EQUIPE ? 'O psicólogo já clicou em “Estou ciente”' : 'Você já confirmou que viu esta sessão'}"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Ciente</span>`
+        : VISAO_EQUIPE ? `<span class="ciente-nao" title="O psicólogo ainda não clicou em “Estou ciente” nesta sessão"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A10.6 10.6 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.3 2.4-2.6 3.7M6.3 6.4C4.3 7.8 2.8 9.8 2 12c1 2.5 5 7 10 7 1.6 0 3.1-.4 4.4-1.1"/></svg>Ainda não viu</span>` : `<button class="btn btn-ok btn-peq" data-acao="ciente" data-id="${a.id}">Estou ciente</button>`;
       acoes += `<a class="btn ${jaComecou ? 'btn-primario' : 'btn-secundario'} btn-peq" href="${esc(a.linkMeet)}" target="_blank" rel="noopener">Entrar na sala</a>`;
       if (passou) {
         acoes += `<button class="btn btn-secundario btn-peq" data-acao="realizado" data-id="${a.id}">Realizado</button>`;
@@ -151,11 +215,11 @@
       falta: 'Paciente faltou'
     }[a.status];
     return `
-      <div class="atend st-${a.status}">
+      <div class="atend st-${a.status}${a.status === 'confirmado' && !a.psiCiente ? ' sem-ciente' : ''}">
         <div class="atend-hora">${U.fmtHora(a.hora)}<small>até ${U.fmtHora(U.horaFim(a.hora, a.duracao))}</small></div>
         <div>
           <div class="atend-nome">${a.status === 'pendente' ? 'Pré-reserva' : esc(a.paciente.nome)}</div>
-          <div class="atend-det">${U.badge(a.status)}<span>${det}</span></div>
+          <div class="atend-det">${a.status === 'confirmado' ? '<span class="badge confirmado badge-pago" title="O paciente já pagou esta sessão"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Pagamento confirmado</span>' : U.badge(a.status)}<span>${det}</span></div>
           ${(n => n ? `<div class="nota-fuso">🌍 ${esc(n)}</div>` : '')(U.notaFuso(a, VISAO_EQUIPE))}
         </div>
         <div class="atend-acoes">${acoes}</div>
@@ -193,10 +257,11 @@
     m.corpo.addEventListener('click', async e => {
       const b = e.target.closest('[data-b]'); if (!b) return;
       const linha = b.closest('.baixa-linha'), id = linha.dataset.id;
-      /* "Faltou" pede um segundo clique para confirmar */
-      if (b.dataset.b === 'falta' && !b.classList.contains('btn-perigo')) {
-        b.classList.replace('btn-secundario', 'btn-perigo'); b.textContent = 'Confirmar falta';
-        return;
+      /* "Faltou" pede confirmação numa janelinha (igual para psicólogo, suporte e admin) */
+      if (b.dataset.b === 'falta') {
+        const ag = l.find(x => x.id === id);
+        const ok = await U.confirmar('Paciente faltou?', ag ? `Confirma que <b>${esc(ag.paciente.nome)}</b> não entrou na sessão de ${esc(U.fmtCurta(ag.data))}, ${esc(U.fmtHora(ag.hora))}?<br><br>Pela regra, falta sem aviso conta como sessão feita.` : 'Pela regra, falta sem aviso conta como sessão feita.', 'Marcar falta', true);
+        if (!ok) return;
       }
       linha.querySelectorAll('button').forEach(x => (x.disabled = true));
       try {
@@ -223,7 +288,8 @@
     if (b.dataset.acao === 'ciente') { await DB.marcarCiente(id, S.nome); U.toast('Pronto! A equipe já sabe que você viu.'); }
     if (b.dataset.acao === 'realizado') { await DB.atualizarStatus(id, 'realizado', S.nome); U.toast('Sessão marcada como realizada.'); }
     if (b.dataset.acao === 'falta') {
-      const ok = await U.confirmar('Paciente faltou?', 'A equipe será avisada no painel. Pela regra, falta sem aviso conta como sessão realizada.', 'Marcar falta', true);
+      const ag = (await DB.obterAgendamento(id)) || null;
+      const ok = await U.confirmar('Paciente faltou?', ag ? `Confirma que <b>${esc(ag.paciente.nome)}</b> não entrou na sessão de ${esc(U.fmtCurta(ag.data))}, ${esc(U.fmtHora(ag.hora))}?<br><br>Pela regra, falta sem aviso conta como sessão feita.` : 'Pela regra, falta sem aviso conta como sessão feita.', 'Marcar falta', true);
       if (!ok) return;
       await DB.atualizarStatus(id, 'falta', S.nome);
       U.toast('Falta registrada.');
@@ -558,8 +624,8 @@
     $('#c-usuario').value = p.usuario || '';
     montarPix(p);
     pixOriginal = { pix: p.pix || '', pixTipo: p.pixTipo || U.pixAdivinhar(p.pix) || '' };
-    pixAberto = false; travarPix(!PIX_DIRETO);
-    $('#c-pix-alterar').hidden = VISAO_EQUIPE;   /* só o próprio psicólogo vê o botão (com código no e-mail) */
+    pixAberto = false; travarPix(true);
+    $('#c-pix-alterar').hidden = !PODE_MUDAR_PIX;   /* só a equipe com acesso troca (código no e-mail de quem troca) */
     $('#c-pix-alterar').textContent = 'Alterar chave Pix';
     atualizarPix();
     /* Disponibilidade: avisa em qual fuso estão os horários (quando não é Brasília) */
@@ -575,16 +641,20 @@
     $('#c-fuso-ajuda').textContent = VISAO_EQUIPE
       ? 'A disponibilidade e os atendimentos ficam neste fuso. Os pacientes veem no fuso deles.'
       : 'Seus horários ficam neste fuso; cada paciente vê no fuso dele. Para mudar, fale com a equipe.';
-    /* o psicólogo muda só o WhatsApp de contato e a chave Pix; nome, CRP, OPP, e-mail e fuso: só a equipe */
-    $('#c-nome').readOnly = !VISAO_EQUIPE; $('#c-crp').readOnly = !VISAO_EQUIPE; $('#c-opp').readOnly = !VISAO_EQUIPE; $('#c-email').readOnly = !VISAO_EQUIPE;
-    ['#c-nome', '#c-crp', '#c-opp', '#c-email'].forEach(id => $(id).closest('.campo').classList.toggle('so-equipe', !VISAO_EQUIPE));
+    /* o psicólogo só VÊ os dados (nome, CRP, OPP, e-mail, WhatsApp, fuso e chave Pix); quem muda é a equipe.
+       Na Conta ele só troca a própria senha. */
+    ['#c-nome', '#c-crp', '#c-opp', '#c-email', '#c-whats'].forEach(id => { $(id).readOnly = !VISAO_EQUIPE; $(id).closest('.campo').classList.toggle('so-equipe', !VISAO_EQUIPE); });
+    { const ct = $('#c-whats').closest('.ct'); if (ct) { ct.classList.toggle('ct-travado', !VISAO_EQUIPE); ct.querySelectorAll('button').forEach(x => { x.disabled = !VISAO_EQUIPE; }); } }
+    $('#c-pix').closest('.campo') && $('#c-pix').closest('.campo').classList.toggle('so-equipe', !VISAO_EQUIPE);
+    $('#c-salvar').hidden = !VISAO_EQUIPE;
+    if (!VISAO_EQUIPE && !p.pix) { inpPix.placeholder = 'Nenhuma chave cadastrada: fale com o suporte'; $$('#c-pix-tipos [data-pix-tipo]').forEach(x => { x.hidden = true; }); }
     $("#campo-usuario").hidden = true;   /* o login é o e-mail */
     $('#c-ajuda').innerHTML = VISAO_EQUIPE
-      ? `Nome, CRP e OPP também mudam na página do site (em <a href="conteudo.html#psicologos">Psicólogos</a> ela fica como “alterada”: publique de novo para o site mostrar).${FB ? ' O e-mail de login só a própria pessoa troca: aqui você muda o e-mail de contato.' : ''}`
-      : 'Aqui você muda o seu <b>WhatsApp de contato</b> e a <b>chave Pix</b>. Para mudar nome, CRP, OPP ou e-mail, fale com o suporte.';
-    $('#c-2fa').textContent = 'Acesso com e-mail e senha. Esqueceu a senha? Use “Esqueci a senha” na tela de login. A troca da chave Pix é confirmada com um código no seu e-mail.';
+      ? `Nome, CRP e OPP também mudam na página do site (em <a href="psicologos.html">Psicólogos</a> ela fica como “alterada”: publique de novo para o site mostrar).${FB ? ' O e-mail de login só a própria pessoa troca: aqui você muda o e-mail de contato.' : ''}`
+      : 'Seus dados ficam com a equipe: para mudar nome, CRP, OPP, e-mail, WhatsApp, fuso ou a <b>chave Pix</b>, fale com o suporte. Para trocar a <b>senha</b>, use “Esqueci a senha” na tela de login.';
+    $('#c-2fa').textContent = 'Acesso com e-mail e senha. Para trocar a senha, use “Esqueci a senha” na tela de login (o código chega no seu e-mail) ou fale com o suporte.';
     $('#c-2fa').hidden = VISAO_EQUIPE;
-    $('#bloco-senha').hidden = VISAO_EQUIPE;    /* senha de outra pessoa: link de nova senha em Usuários */
+    /* v201: troca de senha e Aparência saíram da conta do psicólogo (senha: “Esqueci a senha” no login ou suporte; tema: menu do topo) */
     /* equipe: botão para abrir a conversa com o psicólogo no WhatsApp (segue o número do campo) */
     const irWhats = () => {
       const b = $('#c-whats-ir'), T = window.TEL_CONTA, num = T ? T.valor() : $('#c-whats').value;
@@ -596,12 +666,11 @@
     };
     irWhats();
     if (!$('#c-whats').dataset.ligadoWhats) { $('#c-whats').dataset.ligadoWhats = '1'; $('#c-whats').addEventListener('input', irWhats); }
-    $('#bloco-aparencia').hidden = VISAO_EQUIPE; /* a aparência é de quem está usando: a equipe muda em Configurações ou na própria conta */
     if (VISAO_EQUIPE) {
       marcarNomePsi(p.nome || 'Psicólogo');
       $('#conta-sub').innerHTML = FB
         ? `Dados de contato e de acesso. Senha: <button type="button" class="btn-link" id="link-senha-psi">enviar link de nova senha para ${esc(p.email || '')}</button>.`
-        : 'Dados de contato e de acesso. Para desligar o acesso, use <a href="conteudo.html#usuarios">Usuários</a>.';
+        : 'Dados de contato e de acesso. Para desligar o acesso, use <a href="usuarios.html">Usuários</a>.';
       const bl = $('#link-senha-psi');
       if (bl) bl.onclick = async () => { try { await DB.equipe.novaSenha(p.email); U.toast('Link de nova senha enviado.'); } catch (e) { U.toast(e.message, 'erro'); } };
     }
@@ -629,14 +698,15 @@
   }
 
   /* ---------- chave Pix: tipo (CPF, CNPJ, celular, e-mail, aleatória) + chave ----------
-     O botão "Copiar" aparece só para o administrador e o suporte nível 1 (quem faz os repasses).
+     O botão "Copiar" aparece só para o administrador (quem faz os repasses).
      O psicólogo vê e edita a chave e o tipo, sem o botão de copiar. */
-  const PODE_COPIAR_PIX = VISAO_EQUIPE && (S.papel === 'admin' || (S.papel === 'suporte' && Auth.nivelDe(S) === 1));
+  const PODE_COPIAR_PIX = VISAO_EQUIPE && S.papel === 'admin';
   let pixTipo = '';
   const inpPix = $('#c-pix');
-  /* Quem muda a chave Pix: o administrador direto; o psicólogo com código no e-mail (botão "Alterar chave Pix");
-     o suporte só vê. */
-  const PIX_DIRETO = VISAO_EQUIPE && S.papel === 'admin';
+  /* Quem muda a chave Pix: só a equipe — administrador ou suporte com "Psicólogos (completo)" —, sempre pelo
+     botão "Alterar chave Pix" e com um código de 6 números no e-mail de QUEM está trocando. O psicólogo só vê. */
+  const PODE_MUDAR_PIX = VISAO_EQUIPE && (S.papel === 'admin' || Auth.pode('psiConta'));
+  const PIX_DIRETO = false;
   let pixAberto = false, pixOriginal = { pix: '', pixTipo: '' };
   function travarPix(travar) {
     $$('#c-pix-tipos [data-pix-tipo]').forEach(b => { b.disabled = travar; });
@@ -669,10 +739,11 @@
     aj.classList.toggle('erro', !!v && !n.ok && document.activeElement !== inpPix);
     aj.textContent = v && !n.ok && document.activeElement !== inpPix ? n.erro
       : PODE_COPIAR_PIX ? 'O botão Copiar copia a chave no formato que o banco aceita.'
-      : VISAO_EQUIPE ? 'Copiar a chave: só administrador e suporte nível 1.' : 'É para esta chave que a equipe manda os seus repasses.';
+      : VISAO_EQUIPE ? 'Copiar a chave: só administrador.' : 'É para esta chave que a equipe manda os seus repasses.';
     if (!PIX_DIRETO && !(n && !n.ok && v && document.activeElement !== inpPix)) {
-      if (!VISAO_EQUIPE) aj.textContent = pixAberto ? 'Escolha o tipo e digite a nova chave. Ao salvar, mandamos um código para o seu e-mail para confirmar a troca.' : 'É para esta chave que a equipe manda os seus repasses. Para trocar, toque em “Alterar chave Pix”: confirmamos com um código no seu e-mail.';
-      else aj.textContent = 'Só o administrador muda a chave Pix.' + (PODE_COPIAR_PIX ? ' O botão Copiar copia a chave no formato que o banco aceita.' : '');
+      if (!VISAO_EQUIPE) aj.textContent = 'É para esta chave que a equipe manda os seus repasses. Para trocar, fale com o suporte.';
+      else if (!PODE_MUDAR_PIX) aj.textContent = 'Só o administrador muda a chave Pix.';
+      else aj.textContent = pixAberto ? 'Escolha o tipo e digite a nova chave. Ao salvar, mandamos um código para o SEU e-mail para confirmar a troca.' : 'Para trocar, toque em “Alterar chave Pix”: a troca é confirmada com um código no seu e-mail.' + (PODE_COPIAR_PIX ? ' O botão Copiar copia a chave no formato que o banco aceita.' : '');
     }
   }
   function montarPix(p) {
@@ -689,12 +760,7 @@
     inpPix.focus();
   });
   inpPix.addEventListener('input', () => {
-    if (pixTipo === 'cpf' || pixTipo === 'cnpj' || pixTipo === 'celular') {
-      const d = U.digitos(inpPix.value).slice(0, pixTipo === 'cnpj' ? 14 : 11);
-      if (pixTipo === 'cpf') inpPix.value = d.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
-      else if (pixTipo === 'cnpj') inpPix.value = d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-      else inpPix.value = d.length > 2 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}${d.length > 7 ? '-' + d.slice(7) : ''}` : d;
-    }
+    if (pixTipo) { const m = U.pixMascara(pixTipo, inpPix.value); if (m !== inpPix.value) inpPix.value = m; }
     atualizarPix();
   });
   inpPix.addEventListener('blur', atualizarPix);
@@ -710,6 +776,7 @@
 
   $('#form-dados').addEventListener('submit', async e => {
     e.preventDefault();
+    if (!VISAO_EQUIPE) return;   /* o psicólogo não muda os dados da Conta (só a senha, no bloco de baixo) */
     const dados = {
       nome: $('#c-nome').value.trim(), crp: $('#c-crp').value.trim(), opp: U.digitos($('#c-opp').value).slice(0, 6),
       email: $('#c-email').value.trim().toLowerCase(),
@@ -737,15 +804,14 @@
     if (!window.TEL_CONTA && dados.whatsapp && !U.whatsValido(dados.whatsapp)) return U.toast('WhatsApp inválido.', 'erro');
     const b = $('#c-salvar'); b.disabled = true;
     try {
-      const trocaPix = !VISAO_EQUIPE && pixAberto && (dados.pix !== pixOriginal.pix || dados.pixTipo !== pixOriginal.pixTipo);
-      if (!VISAO_EQUIPE && pixAberto && !dados.pix) { b.disabled = false; inpPix.focus(); return U.toast('Digite a nova chave Pix ou toque em “Cancelar troca da chave”.', 'erro'); }
+      const trocaPix = PODE_MUDAR_PIX && pixAberto && (dados.pix !== pixOriginal.pix || dados.pixTipo !== pixOriginal.pixTipo);
+      if (PODE_MUDAR_PIX && pixAberto && !dados.pix) { b.disabled = false; inpPix.focus(); return U.toast('Digite a nova chave Pix ou toque em “Cancelar troca da chave”.', 'erro'); }
       const whatsAntes = (await DB.obterPsicologo(PSI_ID) || {}).whatsapp || '';
-      const r = await DB.atualizarContato(PSI_ID, VISAO_EQUIPE ? (PIX_DIRETO ? dados : { ...dados, pix: undefined, pixTipo: undefined }) : { whatsapp: dados.whatsapp });
+      const r = await DB.atualizarContato(PSI_ID, VISAO_EQUIPE ? { ...dados, pix: undefined, pixTipo: undefined } : { whatsapp: dados.whatsapp });
       if (trocaPix && !(await confirmarTrocaPix(dados))) {
         /* cancelou o código: nada muda na chave (aviso em amarelo, não em verde) */
         abrirPix(false);
-        const mudouWhats = !VISAO_EQUIPE && (dados.whatsapp || '') !== (whatsAntes ? U.whatsNormalizar(whatsAntes) : '');
-        U.toast(mudouWhats ? 'WhatsApp salvo. A troca da chave Pix foi cancelada: sua chave continua a mesma.' : 'Troca da chave Pix cancelada. Sua chave continua a mesma.', 'aviso');
+        U.toast('Os outros dados foram salvos. A troca da chave Pix foi cancelada: a chave continua a mesma.', 'aviso');
         b.disabled = false; return;
       }
       if (VISAO_EQUIPE) await atualizarPerfil(dados);
@@ -756,16 +822,16 @@
     finally { b.disabled = false; }
   });
 
-  /* psicólogo trocando a chave Pix: código de 6 números no e-mail dele */
+  /* equipe trocando a chave Pix do psicólogo: código de 6 números no e-mail de quem está trocando */
   async function confirmarTrocaPix(dados) {
     let r;
     try { r = await DB.pedirCodigoPix(PSI_ID, { pix: dados.pix, pixTipo: dados.pixTipo }); }
     catch (e) { U.toast(e.message, 'erro'); return false; }
-    if (r.codigo) await Servicos.enviarEmail({ para: r.email, assunto: 'Código para trocar sua chave Pix', corpo: `Seu código para confirmar a nova chave Pix na Psicólogos Brasil é ${r.codigo}. Ele vale por 10 minutos.\n\nSe não foi você, não digite o código e fale com o suporte: sua chave continua a mesma.` });
+    if (r.codigo) await Servicos.enviarEmail({ para: r.email, assunto: 'Código para trocar a chave Pix de um psicólogo', corpo: `Seu código para confirmar a nova chave Pix de ${(await DB.obterPsicologo(PSI_ID) || {}).nome || 'um psicólogo'} na Psicólogos Brasil é ${r.codigo}. Ele vale por 10 minutos.\n\nSe não foi você, não digite o código e fale com o suporte: sua chave continua a mesma.` });
     const esconder = e => { const [n, d] = String(e || '').split('@'); return d ? n.slice(0, 2) + '•••@' + d : String(e || ''); };
     const ok = await Auth.formulario({
       titulo: 'Confirme a nova chave Pix',
-      texto: `Mandamos um código de 6 números para ${esconder(r.email)}. Digite abaixo para confirmar a troca. O código vale por 10 minutos.` + (DB.modo === 'local' && r.codigo ? ` (Modo de teste: o código é ${r.codigo}.)` : ''),
+      texto: `Para sua segurança, mandamos um código de 6 números para o SEU e-mail (${esconder(r.email)}). Digite abaixo para confirmar a troca da chave Pix. O código vale por 10 minutos.` + (DB.modo === 'local' && r.codigo ? ` (Modo de teste: o código é ${r.codigo}.)` : ''),
       icone: 'ok', ok: 'Confirmar troca',
       campos: [{ nome: 'codigo', rotulo: 'Código do e-mail', auto: 'one-time-code', ajuda: 'Não chegou? Confira a caixa de spam. Para mandar outro, cancele e salve de novo.' }],
       aoEnviar: async v => {
@@ -775,36 +841,12 @@
         if (DB.modo === 'local' && x && x.email) await Servicos.enviarEmail({ para: x.email, assunto: 'Sua chave Pix foi alterada', corpo: 'A chave Pix para receber os repasses da Psicólogos Brasil foi alterada agora. Se não foi você, fale com o suporte imediatamente.' });
       }
     });
-    if (ok) U.toast('Chave Pix trocada. Mandamos um aviso para o seu e-mail.');
+    if (ok) U.toast('Chave Pix trocada. O psicólogo recebeu um aviso no e-mail dele.');
     return !!ok;
   }
 
-  $('#s-mostrar').addEventListener('change', e => { ['#s-atual', '#s-nova', '#s-conf'].forEach(id => { $(id).type = e.target.checked ? 'text' : 'password'; }); });
   $('#c-opp').addEventListener('input', e => { e.target.value = U.digitos(e.target.value).slice(0, 6); });
-  $('#form-senha').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!$('#s-atual').value || !$('#s-nova').value) { U.toast('Preencha a senha atual e a nova senha.', 'erro'); return; }
-    if ($('#s-nova').value !== $('#s-conf').value) { U.toast('A confirmação não é igual à nova senha. Digite de novo.', 'erro'); $('#s-conf').focus(); return; }
-    try {
-      await DB.alterarSenha(PSI_ID, $('#s-atual').value, $('#s-nova').value);
-      e.target.reset(); ['#s-atual', '#s-nova', '#s-conf'].forEach(id => { $(id).type = 'password'; });
-      const av = document.getElementById('aviso-senha'); if (av) av.remove();
-      U.toast('Senha alterada.');
-    } catch (err) { U.toast(err.message, 'erro'); }
-  });
-
-  /* ---------------- senha padrão: pede para trocar ---------------- */
-  async function avisoSenhaPadrao() {
-    if (VISAO_EQUIPE || !DB.senhaPadraoAtiva) return;
-    try { if (!(await DB.senhaPadraoAtiva(PSI_ID))) return; } catch (e) { return; }
-    const av = document.createElement('div');
-    av.className = 'aviso-senha'; av.id = 'aviso-senha'; av.setAttribute('role', 'alert');
-    av.innerHTML = `<div class="aviso-senha-in"><span><b>Você está com uma senha provisória.</b> Por segurança, crie uma senha só sua.</span>
-      <button type="button" class="btn btn-primario btn-peq" id="aviso-senha-btn">Trocar senha agora</button></div>`;
-    const main = $('main'); main.parentNode.insertBefore(av, main);
-    $('#aviso-senha-btn').onclick = () => { ativar('conta'); const f = $('#bloco-senha'); if (f) { f.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('#s-atual').focus({ preventScroll: true }), 400); } };
-  }
-  avisoSenhaPadrao();
+  /* v201: senha provisória → a janela “Crie a sua senha” (notificacoes.js) já obriga a criar a senha ao entrar */
 
   /* ---------------- repetir o mês no próximo ----------------
      Cada dia do mês seguinte recebe os horários do mesmo dia da semana deste mês
@@ -903,8 +945,8 @@
     renderCal();
     await renderBloqueios();
     await renderAgendaOnline();
-    await renderResumo();
-    await renderConta();
+    if (Auth.pode(VISAO_EQUIPE ? 'psiResumo' : 'minhaAgenda')) await renderResumo();
+    if (Auth.pode(VISAO_EQUIPE ? 'psiConta' : 'minhaAgenda')) await renderConta();
   }
   await render();
   /* janela "Confirme seus atendimentos": só para o próprio psicólogo, toda vez que entra */

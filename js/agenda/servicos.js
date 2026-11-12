@@ -29,6 +29,17 @@
   }
   /* "10/11 às 13h" no fuso de quem lê */
   function curta(a, fuso) { const v = U.paraFuso(a.data, a.hora, fPsi(a), fuso); return `${U.fmtDDMM(v.data)} às ${U.fmtHora(v.hora)}${U.mesmoRelogio(fuso, U.FUSO_BR, U.msAg(a)) ? '' : ` (horário de ${U.cidadeFuso(fuso)})`}`; }
+  const totalAgs = ags => ags.reduce((t, x) => t + (x.valor || 0), 0);
+  /* "a sessão com Lucas Almeida no sábado, 28/11, às 10h" (no fuso do paciente; mensal: "as 4 sessões …, começando no …") */
+  function quandoConversa(ags, psi) {
+    const a = [...ags].sort((x, y) => U.msAg(x) - U.msAg(y))[0], fp = fPac(a);
+    const v = U.paraFuso(a.data, a.hora, fPsi(a), fp), d = U.diaSemana(v.data);
+    const dia = `${d === 0 || d === 6 ? 'no' : 'na'} ${U.DIAS_LONGOS[d]}, ${U.fmtDDMM(v.data)}, às ${U.fmtHora(v.hora)}`
+      + (U.mesmoRelogio(fp, U.FUSO_BR, U.msAg(a)) ? '' : `, no horário de ${U.nomeFuso(fp).replace(/\s*\(.*\)$/, '')}`);
+    return ags.length > 1
+      ? `as ${ags.length} sessões do plano mensal com ${psi.nome}, começando ${dia}`
+      : `a sessão com ${psi.nome} ${dia}`;
+  }
   function plano(ags) {
     const a = ags[0];
     return a.tipo === 'mensal'
@@ -174,12 +185,34 @@
           + `Ficou alguma dúvida? Posso te ajudar a escolher um novo horário, com ${U.primeiroNome(psi.nome)} ou com outro profissional, se preferir.`;
       },
 
-      /* Pré-reserva: primeira mensagem da equipe ao paciente, já com o horário no fuso dele */
-      whatsRecebemos(ags, psi) {
+      /* Pré-reserva: primeira mensagem da equipe ao paciente (tom de conversa, com o nome de quem atende).
+         op.atendente = nome de quem está logado · op.primeira = a pessoa nunca fez sessão (frase de acolhimento) */
+      whatsRecebemos(ags, psi, op = {}) {
+        const a = ags[0], quem = U.primeiroNome(op.atendente);
+        return `Oi, ${U.primeiroNome(a.paciente.nome)}, tudo bem? ${quem ? `Aqui é ${quem}, da Psicólogos Brasil` : 'Aqui é da equipe Psicólogos Brasil'} 😊\n\n`
+          + `Recebi seu pedido para ${quandoConversa(ags, psi)}.${op.primeira ? ' Que bom que você deu esse passo!' : ''}\n\n`
+          + `Para garantir ${ags.length > 1 ? 'os seus horários' : 'o seu horário'}, é só fazer um Pix de *${U.moeda(totalAgs(ags))}*. Já te mando a chave aqui embaixo.`;
+      },
+
+      /* Pix da clínica: frase curta, a chave sozinha numa linha (fácil de copiar no WhatsApp), quem recebe e o valor */
+      whatsPix(ags, psi, pix) {
         const a = ags[0];
-        return `Olá, ${U.primeiroNome(a.paciente.nome)}! Aqui é da equipe Psicólogos Brasil. Recebemos sua pré-reserva #${a.codigo} com ${psi.nome}:\n`
-          + `${listaSessoes(ags, fPac(a))}\n${plano(ags)}\n\n`
-          + `Para confirmar, é só fazer o Pix. Já te passo os dados.`;
+        return `${U.primeiroNome(a.paciente.nome)}, segue a chave Pix para o pagamento 👇\n\n`
+          + `${pix.chave}\n\n`
+          + `${[U.pixNomeTipo(pix.tipo), pix.nome, pix.banco].filter(Boolean).join(' · ')}\n`
+          + `Valor: *${U.moeda(totalAgs(ags))}*\n\n`
+          + `Assim que pagar, é só me mandar o comprovante por aqui que eu confirmo seu horário e já te envio o link da sessão 😊`;
+      },
+
+      /* Antes de remarcar: a equipe chama o paciente para combinar o novo dia (falta ou pedido de troca) */
+      whatsRemarcarConvite(a, psi, atendente) {
+        const v = U.paraFuso(a.data, a.hora, fPsi(a), fPac(a)), quem = U.primeiroNome(atendente);
+        const quando = `${U.DIAS_LONGOS[U.diaSemana(v.data)]}, ${U.fmtDDMM(v.data)}, às ${U.fmtHora(v.hora)}`;
+        return `Oi, ${U.primeiroNome(a.paciente.nome)}, tudo bem? ${quem ? `Aqui é ${quem}, da Psicólogos Brasil` : 'Aqui é da equipe Psicólogos Brasil'} 😊\n\n`
+          + (a.status === 'falta'
+            ? `Sentimos sua falta na sessão com ${psi.nome} de ${quando}. Aconteceu alguma coisa? Vamos remarcar?`
+            : `Sobre a sua sessão com ${psi.nome} de ${quando}: vamos remarcar?`)
+          + `\n\nMe diz qual dia e horário ficam melhores para você que eu já vejo aqui.`;
       },
 
       /* Remarcação: aviso pelo WhatsApp (paciente no fuso dele; psicólogo no dele, com o do paciente) */

@@ -11,7 +11,7 @@
   --agc-claro: #eef1fc;
   --agc-ok: #17864d;
   --agc-raio: 24px;
-  scroll-margin-top: 96px;
+  scroll-margin-top: calc(96px + var(--ann-h, 0px));
 }
 .agc * { box-sizing: border-box; }
 .agc button { font: inherit; -webkit-tap-highlight-color: transparent; }

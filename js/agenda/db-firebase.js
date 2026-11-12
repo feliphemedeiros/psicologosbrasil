@@ -236,8 +236,8 @@
       if (!s0.exists()) throw new Error('Psicólogo não encontrado.');
       const antes = s0.data();
       const mud = { atualizado: agora() };
-      if (!ehEquipe()) dados = { whatsapp: dados.whatsapp };   /* o psicólogo muda direto só o WhatsApp; Pix só com código no e-mail */
-      if (ehEquipe() && !ehAdmin()) { dados = { ...dados }; delete dados.pix; delete dados.pixTipo; }   /* Pix: só o administrador muda direto */
+      if (!ehEquipe()) throw new Error('Seus dados são atualizados pela equipe. Fale com o suporte.');   /* o psicólogo só troca a senha */
+      dados = { ...dados }; delete dados.pix; delete dados.pixTipo;   /* chave Pix: só pelo código no e-mail de quem troca (pedirCodigoPix) */
       if (dados.email !== undefined) mud.email = String(dados.email).trim().toLowerCase();
       if (dados.whatsapp !== undefined) {
         mud.whatsapp = U.whatsNormalizar(dados.whatsapp);
@@ -401,6 +401,31 @@
        Tudo numa transação: confere se o horário continua livre e grava a
        "trava" (slots) junto com o agendamento. Se duas pessoas tentarem o
        mesmo horário ao mesmo tempo, só uma consegue. */
+    /* v220: "Conheça o psicólogo em 15 minutos" — coleção conhecer/{id} (o site só cria; a equipe lê) */
+    enviarConhecer: comErro(async (p = {}) => {
+      const txt = (v, n) => String(v || '').trim().slice(0, n);
+      const lista = (v, n) => (Array.isArray(v) ? v : []).map(x => txt(x, 60)).filter(Boolean).slice(0, n);
+      const nome = txt(p.nome, 80), email = txt(p.email, 120).toLowerCase(), whatsapp = U.whatsNormalizar(p.whatsapp);
+      if (nome.length < 3) throw new Error('Informe seu nome completo.');
+      if (!U.whatsValido(whatsapp)) throw new Error('Confira o WhatsApp: número com DDD (Brasil) ou com o código do país.');
+      if (!U.emailValido(email)) throw new Error('Informe um e-mail válido.');
+      if (!p.consentimento) throw new Error('Marque a autorização para podermos falar com você.');
+      const pedido = {
+        id: U.id('cn'), criadoEm: agora(), status: 'novo',
+        paciente: { nome, whatsapp, email },
+        tipoSessao: txt(p.tipoSessao, 30), motivos: lista(p.motivos, 25), objetivos: lista(p.objetivos, 15),
+        preferencias: lista(p.preferencias, 12), horario: txt(p.horario, 30), sobre: txt(p.sobre, 1500),
+        origem: txt(p.origem, 120), consentimento: true
+      };
+      const { fs, db } = await NUVEM.firebase();
+      await fs.setDoc(fs.doc(db, 'conhecer', pedido.id), pedido);
+      return clone(pedido);
+    }),
+    listarConhecer: comErro(async () => {
+      const { fs, db } = await fb();
+      const r = await fs.getDocs(fs.query(fs.collection(db, 'conhecer'), fs.orderBy('criadoEm', 'desc'), fs.limit(300)));
+      return r.docs.map(x => x.data());
+    }),
     criarPreReserva: comErro(async ({ psiId, data, hora, tipo = 'avulsa', paciente }) => {
       const nome = String(paciente?.nome || '').trim();
       const email = String(paciente?.email || '').trim();
@@ -451,6 +476,8 @@
       const { fs, db } = await fb();
       const lista = (await Firebase.listarAgendamentos({ grupo })).filter(a => ['pendente', 'expirado'].includes(a.status));
       if (!lista.length) throw new Error('Nada para confirmar nesse agendamento.');
+      /* v214: o suporte só confirma depois que o admin conferiu que o Pix caiu (a regra do Firestore também confere) */
+      if (!ehAdmin() && !lista.every(a => a.conferencia && a.conferencia.status === 'caiu')) throw new Error('O pagamento só pode ser confirmado depois que o admin conferir que o Pix caiu na conta.');
       const t = agora();
       await fs.runTransaction(db, async tx => {
         const refsSlot = lista.map(a => fs.doc(db, 'slots', slotId(a.psiId, a.data, a.hora)));
@@ -529,6 +556,51 @@
         const repasse = pago ? { pagoEm: agora(), por, valor: Math.round(a.valor * (1 - (Number(psi.comissao) || 0) / 100) * 100) / 100, pix: psi.pix || '' } : null;
         await fs.updateDoc(ref, { repasse, historico: [...(a.historico || []), { em: agora(), texto: pago ? `Repasse ao psicólogo pago (por ${por})` : `Repasse desmarcado (por ${por})` }] });
       }
+    }),
+    /* Conferir o Pix: suporte pede (segura a pré-reserva por mais 2 h da equipe, também no slot do site); admin responde */
+    pedirConferencia: comErro(async (grupo, por) => {
+      const { fs, db } = await fb();
+      const l = (await Firebase.listarAgendamentos({ grupo })).filter(a => a.status === 'pendente');
+      if (!l.length) throw new Error('Essa pré-reserva não está mais esperando pagamento.');
+      const t = agora(), segura = U.somarHorasEquipe(t, 2), lote = fs.writeBatch(db);
+      l.forEach(a => {
+        const exp = a.expiraEm && a.expiraEm < segura ? segura : a.expiraEm;
+        a.conferencia = { status: 'pedida', pedidoEm: t, pedidoPor: por };
+        a.historico = [...(a.historico || []), { em: t, texto: `Conferência do Pix pedida ao administrador (por ${por})` }];
+        lote.update(fs.doc(db, 'agendamentos', a.id), { conferencia: a.conferencia, expiraEm: exp, historico: a.historico });
+        if (exp !== a.expiraEm) lote.set(fs.doc(db, 'slots', slotId(a.psiId, a.data, a.hora)), { expiraEm: exp }, { merge: true });
+        a.expiraEm = exp;
+      });
+      await lote.commit();
+      return clone(l);
+    }),
+    /* v209: a equipe marcou que já mandou a 1ª mensagem no WhatsApp (todos da equipe veem) */
+    marcarMensagemEnviada: comErro(async (grupo, por, campo = 'mensagem') => {   /* v217: campo 'pixEnviado' marca o Pix enviado */
+      const { fs, db } = await fb();
+      const pix = campo === 'pixEnviado', k = pix ? 'pixEnviado' : 'mensagem';
+      const l = (await Firebase.listarAgendamentos({ grupo })).filter(a => a.status === 'pendente');
+      if (!l.length) return [];
+      const t = agora(), lote = fs.writeBatch(db);
+      l.forEach(a => {
+        a[k] = { em: t, por };
+        a.historico = [...(a.historico || []), { em: t, texto: pix ? `Pix enviado ao paciente (por ${por})` : `Mensagem no WhatsApp enviada ao paciente (por ${por})` }];
+        lote.update(fs.doc(db, 'agendamentos', a.id), { [k]: a[k], historico: a.historico });
+      });
+      await lote.commit();
+      return clone(l);
+    }),
+    responderConferencia: comErro(async (grupo, caiu, por) => {
+      const { fs, db } = await fb();
+      const l = (await Firebase.listarAgendamentos({ grupo })).filter(a => ['pendente', 'expirado'].includes(a.status));
+      if (!l.length) throw new Error('Essa pré-reserva já foi tratada.');
+      const t = agora(), lote = fs.writeBatch(db);
+      l.forEach(a => {
+        a.conferencia = { ...(a.conferencia || {}), status: caiu ? 'caiu' : 'nao', respEm: t, respPor: por };
+        a.historico = [...(a.historico || []), { em: t, texto: caiu ? `Administrador conferiu: o Pix caiu na conta (por ${por})` : `Administrador conferiu: o Pix NÃO caiu na conta (por ${por})` }];
+        lote.update(fs.doc(db, 'agendamentos', a.id), { conferencia: a.conferencia, historico: a.historico });
+      });
+      await lote.commit();
+      return clone(l);
     }),
     marcarLembrete: comErro(async (id, tipo, por) => {
       const { fs, db } = await fb();
@@ -740,7 +812,7 @@
     throw new Error('O Firebase não respondeu. Confira se a função foi atualizada (passo 12.2 do guia).');
   }
   Firebase.pedirCodigoPix = comErro(async (psiId, { pix, pixTipo }) => {
-    if (psiDaSessao() !== psiId) throw new Error('Sem permissão.');
+    if (!ehEquipe()) throw new Error('A chave Pix é trocada pela equipe.');   /* a função confere: admin ou suporte com "Psicólogos (completo)" */
     const n = U.pixNormalizar(pixTipo, pix);
     if (!n.ok || !n.valor) throw new Error(n.erro || 'Chave Pix inválida.');
     const { fs, db } = await fb(); const s = sessao();
@@ -794,22 +866,23 @@
       if (u.principal) throw new Error('O administrador principal não pode ser excluído.');
       await fs.deleteDoc(fs.doc(db, 'usuarios', uid));
     }),
-    criar: comErro(async ({ nome, email, senha, papel, nivel }) => {
+    criar: comErro(async ({ nome, email, senha, papel }) => {
       if (!ehAdmin()) throw new Error('Só o administrador pode criar acessos.');
       if (!['admin', 'suporte'].includes(papel)) throw new Error('Papel inválido.');
-      if (papel === 'suporte' && ![1, 2, 3].includes(Number(nivel))) throw new Error('Escolha o nível do suporte.');
       if (!String(nome || '').trim()) throw new Error('Coloque o nome.');
       email = String(email || '').trim().toLowerCase();
       if (!U.emailValido(email)) throw new Error('Coloque um e-mail válido.');
       if (!senha || senha.length < 8) throw new Error('Senha inicial: pelo menos 8 caracteres.');
       const uid = await criarContaLogin(email, senha);
       const { fs, db } = await fb();
-      await fs.setDoc(fs.doc(db, 'usuarios', uid), { papel, nome: nome.trim(), email, ativo: true, senhaPadrao: true, criadoEm: agora(), ...(papel === 'suporte' ? { nivel: Number(nivel) } : {}) });
+      await fs.setDoc(fs.doc(db, 'usuarios', uid), { papel, nome: nome.trim(), email, ativo: true, senhaPadrao: true, criadoEm: agora() });
       return uid;
     }),
     /* corrigir nome e e-mail (administrador ou suporte; nunca você mesmo nem o principal).
        E-mail novo = login novo: a função do Firebase troca o e-mail da conta de login. */
-    editar: comErro(async (uid, { nome, email }) => {
+    /* nome, e-mail, papel (suporte ⇄ administrador) e acessos extras do suporte.
+       Papel e administradores: só o principal (as regras do banco conferem o campo principal: true). */
+    editar: comErro(async (uid, { nome, email, papel, extras }) => {
       if (!ehAdmin()) throw new Error('Só o administrador pode editar usuários.');
       const s = sessao();
       if (s && s.uid === uid) throw new Error('Para mudar os seus dados, use Minha conta.');
@@ -820,8 +893,15 @@
       const ref = fs.doc(db, 'usuarios', uid), d = await fs.getDoc(ref);
       if (!d.exists() || !['admin', 'suporte'].includes(d.data().papel)) throw new Error('Só administradores e suporte são editados aqui.');
       if (d.data().principal === true) throw new Error('O administrador principal muda os próprios dados em Minha conta.');
+      papel = papel || d.data().papel;
+      if (!['admin', 'suporte'].includes(papel)) throw new Error('Papel inválido.');
+      const lista = marcarPrincipal((await fs.getDocs(fs.collection(db, 'usuarios'))).docs.map(x => ({ uid: x.id, ...x.data() })));
+      const souPrincipal = !!lista.find(x => x.principal && s && x.uid === s.uid);
+      if ((d.data().papel === 'admin' || papel !== d.data().papel) && !souPrincipal) throw new Error('Só o administrador principal muda administradores e o papel de alguém.');
+      const OK = ['psicologos', 'pacientes', 'artigos', 'financeiro'], ANT = { psiResumo: 'psicologos', financeiroPagar: 'financeiro' };
+      const ex = papel === 'suporte' ? [...new Set((Array.isArray(extras) ? extras : (d.data().extras || [])).map(k => ANT[k] || k).filter(k => OK.includes(k)))] : [];
       if (String(d.data().email || '').toLowerCase() !== email) await pedirTroca({ uid, email });
-      await fs.updateDoc(ref, { nome: nome.trim(), email, atualizado: agora() });
+      await fs.updateDoc(ref, { nome: nome.trim(), email, papel, extras: ex, atualizado: agora() });
     }),
     /* senha provisória definida pelo administrador: no próximo login a pessoa cria a dela */
     senhaProvisoria: comErro(async (uid, senha) => {
@@ -830,17 +910,6 @@
       if (s && s.uid === uid) throw new Error('Para trocar a sua senha, use Minha conta.');
       if (!senha || senha.length < 8) throw new Error('A senha provisória precisa ter pelo menos 8 caracteres.');
       await pedirTroca({ uid, senha });
-    }),
-    /* nível do suporte (1 = Psicólogos, Pacientes e Agenda · 2 = Psicólogos e Agenda · 3 = só Agenda).
-       Vale no próximo login da pessoa; as regras do banco já barram Pacientes na hora. */
-    nivel: comErro(async (uid, nivel) => {
-      if (!ehAdmin()) throw new Error('Só o administrador pode mudar o nível.');
-      if (![1, 2, 3].includes(Number(nivel))) throw new Error('Nível inválido.');
-      const { fs, db } = await fb();
-      const ref = fs.doc(db, 'usuarios', uid);
-      const d = await fs.getDoc(ref);
-      if (!d.exists() || d.data().papel !== 'suporte') throw new Error('Só usuários de suporte têm nível.');
-      await fs.updateDoc(ref, { nivel: Number(nivel), atualizado: agora() });
     }),
     ativar: comErro(async (uid, ativo) => {
       if (!ehAdmin()) throw new Error('Só o administrador pode mudar acessos.');
@@ -870,11 +939,14 @@
       const u = x.auth.currentUser; if (!u) return null;
       const d = await x.fs.getDoc(x.fs.doc(x.db, 'usuarios', u.uid));
       const p = d.exists() ? d.data() : {};
-      return { nome: p.nome || '', email: u.email || p.email || '', papel: p.papel };
+      return { nome: p.nome || '', email: u.email || p.email || '', papel: p.papel, principal: p.principal === true };
     }),
+    /* nome e e-mail: só o administrador principal (principal: true) muda os próprios */
     salvar: comErro(async (_id, { nome, email }) => {
       const x = await NUVEM.authPronta();
       const u = x.auth.currentUser; if (!u) throw new Error('Entre de novo.');
+      const eu = await x.fs.getDoc(x.fs.doc(x.db, 'usuarios', u.uid));
+      if (!eu.exists() || eu.data().principal !== true) throw new Error('Nome e e-mail só um administrador muda, em Usuários.');
       if (!String(nome || '').trim()) throw new Error('Coloque o nome.');
       email = String(email || '').trim().toLowerCase();
       if (!U.emailValido(email)) throw new Error('Coloque um e-mail válido.');

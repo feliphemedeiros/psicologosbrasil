@@ -15,6 +15,12 @@
 .autor-txt{display:flex;flex-direction:column;line-height:1.3}
 .autor-txt b{font-size:1rem;color:var(--ink,#101a4f)}
 .autor-txt small{font-size:.88rem;color:#6b7280}
+/* autor com perfil no site: foto e nome levam ao perfil */
+.autor-link{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;border-radius:14px;padding:4px 10px 4px 4px;margin:-4px -10px -4px -4px;transition:background-color .15s}
+.autor-link:hover{background:#eef0fc}
+.autor-link:hover .autor-txt b{color:var(--sea,#1f35b5);text-decoration:underline;text-underline-offset:3px}
+.autor-ver{font-size:.78rem;font-weight:600;color:var(--sea,#1f35b5);white-space:nowrap;margin-left:4px}
+.autor-link:focus-visible{outline:2px solid var(--sea,#1f35b5);outline-offset:2px}
 .autor-data{display:flex;flex-direction:column;line-height:1.3;font-size:.88rem;color:#4b5563;padding-left:16px;margin-left:4px;border-left:1px solid #dbe1f3}
 .autor-data small{font-size:.82rem;color:#6b7280}
 @media (max-width:520px){.autor-data{display:block;flex-basis:100%;padding:10px 0 0;margin:0;border-left:0;border-top:1px solid #dbe1f3}.autor-data small{display:inline;font-size:.88rem}.autor-data small::before{content:" · "}}
@@ -64,3 +70,8 @@
 .artigo-texto .video-tela iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .artigo-texto figure.video figcaption{margin-top:10px;text-align:center;font-size:.92rem;color:var(--muted,#646a8a)}
 @media (max-width:560px){.artigo-texto figure.video a::before{width:60px;height:60px;margin:-30px 0 0 -30px}.artigo-texto figure.video a::after{margin:-11px 0 0 -6px;border-width:11px 0 11px 19px}}
+/* v263: o botão do fim do artigo também sobe ao passar o mouse (igual aos outros botões do site) */
+.cta-btn{transition:transform .2s cubic-bezier(.23,1,.32,1),box-shadow .2s ease,filter .16s ease}
+@media (hover:hover) and (pointer:fine){.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 24px -12px rgba(0,0,0,.45)}}
+.cta-btn:active{transform:translateY(0) scale(.97);box-shadow:none}
+@media (prefers-reduced-motion:reduce){.cta-btn:hover{transform:none}}

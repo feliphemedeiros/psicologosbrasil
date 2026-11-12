@@ -16,6 +16,10 @@
     $('#c-ajuda').textContent = 'Se trocar o e-mail, mandamos um link para o e-mail novo. O login muda quando você clicar nele.';
     $('#c-2fa').textContent = 'Seu login usa senha + código do app autenticador.';
   }
+  /* v202: troca de senha só para o administrador (botão rápido). O suporte usa “Esqueci a senha” no login (código no e-mail). */
+  const ADM = S.papel === 'admin';
+  $('#c-senha').hidden = !ADM;
+  if (!ADM) $('#c-2fa').textContent = ($('#c-2fa').textContent ? $('#c-2fa').textContent + ' ' : '') + 'Para trocar a senha, use “Esqueci a senha” na tela de login: o código chega no seu e-mail.';
 
   function guardarSessao(campos) {
     const s = Auth.sessao(); if (!s) return;
@@ -33,6 +37,13 @@
       $('#c-email').value = c.email || S.email || '';
       $('#c-usuario').value = c.usuario || '';
       $('#c-papel').value = Auth.nomePapel(S);
+      /* nome e e-mail: só o administrador principal muda os próprios; os outros só a senha */
+      const trava = !c.principal;
+      ['#c-nome', '#c-email'].forEach(id => { $(id).readOnly = trava; $(id).closest('.campo').classList.toggle('so-leitura', trava); });
+      $('#c-salvar').hidden = trava;
+      if (trava) $('#c-ajuda').innerHTML = S.papel === 'suporte'
+        ? 'Nome, e-mail e papel quem muda é um <b>administrador</b> (em Usuários).'
+        : 'Nome, e-mail e papel quem muda é o <b>administrador principal</b> (em Usuários).';
     } catch (e) { U.toast(e.message, 'erro'); }
   }
 
@@ -51,16 +62,22 @@
     finally { b.disabled = false; }
   });
 
-  $('#s-mostrar').addEventListener('change', e => { ['#s-atual', '#s-nova', '#s-conf'].forEach(id => { $(id).type = e.target.checked ? 'text' : 'password'; }); });
-  $('#form-senha').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!$('#s-atual').value || !$('#s-nova').value) { U.toast('Preencha a senha atual e a nova senha.', 'erro'); return; }
-    if ($('#s-nova').value !== $('#s-conf').value) { U.toast('A confirmação não é igual à nova senha. Digite de novo.', 'erro'); $('#s-conf').focus(); return; }
-    try {
-      await DB.alterarSenha(S.id, $('#s-atual').value, $('#s-nova').value);
-      e.target.reset(); ['#s-atual', '#s-nova', '#s-conf'].forEach(id => { $(id).type = 'password'; });
-      U.toast('Senha alterada.');
-    } catch (err) { U.toast(err.message, 'erro'); }
+  $('#c-senha').addEventListener('click', () => {
+    if (!ADM) return;
+    Auth.formulario({
+      titulo: 'Trocar senha', icone: 'editar', ok: 'Salvar nova senha', mostrarSenhas: true,
+      campos: [
+        { nome: 'atual', rotulo: 'Senha atual', tipo: 'password', auto: 'current-password' },
+        { nome: 'nova', rotulo: 'Nova senha', tipo: 'password', auto: 'new-password', ajuda: 'Pelo menos 8 caracteres. Misture letras e números.' },
+        { nome: 'conf', rotulo: 'Repita a nova senha', tipo: 'password', auto: 'new-password' }
+      ],
+      aoEnviar: async v => {
+        if (!v.atual || !v.nova) throw new Error('Preencha a senha atual e a nova senha.');
+        if (v.nova.length < 8) throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
+        if (v.nova !== v.conf) throw new Error('As duas senhas novas não estão iguais.');
+        await DB.alterarSenha(S.id, v.atual, v.nova);
+      }
+    }).then(r => { if (r) U.toast('Senha alterada.'); });
   });
 
   render();

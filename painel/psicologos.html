@@ -1,6 +1,430 @@
-<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Psicólogos · Painel Psicólogos Brasil</title>
-<meta http-equiv="refresh" content="0; url=conteudo.html#psicologos">
-<script>location.replace('conteudo.html#psicologos');</script>
-</head><body><p><a href="conteudo.html#psicologos">Abrir Psicólogos</a></p></body></html>
+<link rel="icon" href="../assets/icones/favicon.svg?v=109" type="image/svg+xml">
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nuvem.js"></script>
+<script src="../js/agenda/config.js?v=116"></script>
+<script src="../js/agenda/util.js?v=163"></script>
+<script src="../js/agenda/db.js?v=220"></script>
+<script src="../js/agenda/db-firebase.js?v=220"></script>
+<script src="js/sessao.js?v=206"></script>
+<script src="js/notificacoes.js?v=205"></script>
+<script src="js/exemplo.js"></script>
+<script>/* sem acesso a esta área: volta para a tela de entrada */ if (!Auth.exigir(['psicologos'])) document.documentElement.hidden = true;</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="css/conteudo.css?v=199">
+<link rel="stylesheet" href="css/escuro.css?v=120">
+<link rel="stylesheet" href="css/topo.css?v=206">
+<link rel="stylesheet" href="css/campos.css">
+<script src="js/campos.js" defer></script>
+<script src="js/tema.js?v=205"></script>
+</head>
+<body data-pagina="psicologos">
+<script>/* já entrou? então não mostra a tela de login nem por um instante (evita a "piscada" ao voltar da agenda) */
+(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(s&&(!s.expira||s.expira>Date.now()))document.documentElement.classList.add('tem-sessao');}catch(e){}})();</script>
+<!-- ============ LOGIN ============ -->
+<div class="login" id="login">
+  <form class="login-card" id="loginForm" autocomplete="on">
+    <div class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></div>
+    <div><h1>Painel Psicólogos Brasil</h1><p class="login-sub">Entre para publicar artigos e psicólogos.</p></div>
+    <label><span id="loginUsuarioRot">Usuário</span><input id="loginUsuario" name="usuario" type="text" autocomplete="username" required></label>
+    <label>Senha<input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></label>
+    <p class="login-erro" id="loginErro" role="alert"></p>
+    <button class="btn primario" type="submit" id="loginBtn">Entrar</button>
+    <button class="login-esq" type="button" id="loginEsqueci" hidden>Esqueci a senha</button>
+    <p class="login-modo" id="loginModo">Carregando…</p>
+  </form>
+</div>
+<div class="app">
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="index.html">
+        <span class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></span>
+        <span>Psicólogos Brasil <small id="marcaSub">Psicólogos</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn pequeno" type="button" data-sair>Sair</button>
+      </div>
+    </div>
+    <nav class="abas nav" role="tablist" aria-label="Seções" hidden>
+      <button class="aba ativo" role="tab" data-view="psicologos">Psicólogos <span class="qtd" id="qtdPsicologos">0</span></button>
+      <button class="aba" role="tab" data-view="artigos">Artigos <span class="qtd" id="qtdArtigos">0</span></button>
+      <button class="aba" role="tab" data-view="usuarios">Usuários</button>
+      <button class="aba" role="tab" data-view="config">Configurações</button>
+      <a class="nav-link" href="agenda.html" id="navAgenda" hidden><span class="qtd" id="qtdPend"></span></a>
+    </nav>
+    <nav class="ficha-topo" id="psiFichaTopo" aria-label="Partes da ficha do psicólogo" hidden></nav>
+    <div class="pasta-box" hidden>
+      <div class="pasta-nome off" id="pastaNome">Não conectada</div>
+      <button class="btn pequeno" id="btnPasta">Conectar pasta</button>
+      <p class="dica" id="pastaDica"></p>
+    </div>
+  </header>
+<script>/* sininho e menu da conta já na hora (sem mostrar o "Sair" antigo por um instante) */try{window.Notificacoes&&Notificacoes.montar()}catch(e){}</script>
+  <div class="visao-equipe" id="psiVisao" hidden><div class="visao-equipe-in"></div></div>
+
+
+  <main class="conteudo">
+    <!-- ================= PSICÓLOGOS ================= -->
+    <section class="view ativa" id="view-psicologos">
+      <header class="topbar">
+        <div>
+          <h1>Psicólogos<span class="qtd-tit" id="qtdPsicologosT" aria-label="quantidade de psicólogos"></span></h1>
+          <p class="sub">Tudo de cada psicólogo num lugar só: página no site, agenda, disponibilidade, resumo e conta.</p>
+        </div>
+        <button class="btn primario" id="novoPsicologo">+ Novo psicólogo</button>
+      </header>
+      <div class="lista-tela" id="telaPsicologos">
+        <div class="filtros-lista">
+          <label class="busca-l"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span class="sr">Procurar psicólogo</span><input type="search" id="fp-q" placeholder="Procurar por nome, CRP, usuário ou tema" autocomplete="off"></label>
+          <button type="button" class="btn filtros-btn" id="fp-mais" aria-expanded="false" aria-controls="fp-caixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtros<span class="filtros-n" id="fp-n" hidden></span></button>
+          <div class="vista-tog" id="fp-vista" role="group" aria-label="Como mostrar os psicólogos">
+            <button type="button" data-vista="lista" aria-pressed="true" title="Ver em lista"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="18" r="1.3"/></svg><span class="sr">Lista</span></button>
+            <button type="button" data-vista="grade" aria-pressed="false" title="Ver em quadros"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg><span class="sr">Quadros</span></button>
+          </div>
+          <div class="filtros-caixa" id="fp-caixa" hidden>
+          <select id="fp-status" aria-label="Situação"><option value="">Todas as situações</option><option value="publicado">Publicados</option><option value="alterado">Com alterações não publicadas</option><option value="rascunho">Rascunhos</option></select>
+          <select id="fp-visivel" aria-label="Aparece no site"><option value="">Visíveis e ocultos</option><option value="sim">Só visíveis no site</option><option value="nao">Só ocultos</option></select>
+          <select id="fp-agenda" aria-label="Agenda online"><option value="">Com e sem agenda</option><option value="sim">Com agenda online</option><option value="nao">Sem acesso à agenda</option></select>
+          <select id="fp-verif" aria-label="Verificação"><option value="">Verificados ou não</option><option value="sim">Só verificados</option><option value="nao">Falta verificar o CRP</option></select>
+          <select id="fp-abord" aria-label="Abordagem"></select>
+          <select id="fp-ordem" aria-label="Ordem"><option value="az">Nome (A–Z)</option><option value="za">Nome (Z–A)</option><option value="novos">Cadastrados por último</option><option value="editados">Editados por último</option></select>
+          <button type="button" class="btn-link" id="fp-limpar">Limpar filtros</button>
+          </div>
+        </div>
+        <div class="letras" id="letrasPsi" aria-label="Filtrar pela primeira letra"></div>
+        <div class="tabela-lista" id="listaPsicologos"></div>
+        <nav class="paginacao" id="pagPsicologos" aria-label="Páginas de psicólogos"></nav>
+      </div>
+        <div class="cartao" id="cartaoPsi" hidden>
+          <div class="cartao-topo"><button class="btn pequeno" type="button" data-voltar="psi">← Todos os psicólogos</button><span class="cartao-pos" id="posPsi"></span></div>
+          <nav class="ficha" id="psiFicha" aria-label="Partes da ficha do psicólogo" hidden></nav>
+          <div class="ed-vazio" id="psiVazio">
+            <h2>Nenhum psicólogo aberto</h2>
+            <p>Clique em “+ Novo psicólogo” ou escolha um da lista.</p>
+          </div>
+          <div id="psiEd" hidden>
+            <div class="abas" data-tipo="psi">
+              <button data-aba="editar" class="ativo">Cadastro</button>
+              <button data-aba="previa">Prévia do perfil</button>
+              <button data-aba="html">Código HTML</button>
+            </div>
+            <div class="aba-painel ativo" data-aba="editar">
+              <div class="grade">
+                <div class="campo cheio">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Foto do perfil</b><span class="aj">Aparece no cartão da lista e no topo da página do psicólogo.</span></div>
+                      <span class="acesso-pill" id="p-foto-pill">Sem foto</span>
+                    </div>
+                    <div class="imagem-campo">
+                      <div class="imagem-prev retrato" id="p-foto-prev">Sem foto</div>
+                      <div class="imagem-acoes">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                          <button class="btn pequeno" type="button" id="p-foto-btn">Escolher foto</button>
+                          <button class="btn pequeno perigo" type="button" id="p-foto-rem">Remover</button>
+                        </div>
+                        <span class="aj" style="font-size:12px;color:var(--suave)">Use uma foto de rosto, bem iluminada. Ela é cortada em retrato (4:5) e convertida para WebP automaticamente.</span>
+                        <input type="file" id="p-foto-file" accept="image/*" hidden>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Informações pessoais</b><span class="aj">Nome, registro profissional e o endereço do perfil no site.</span></div>
+                    </div>
+                    <div class="video-grade info-grade">
+                      <div class="campo">
+                        <label for="p-nome">Nome completo</label>
+                        <input type="text" id="p-nome" placeholder="Ex.: Maria Silva">
+                      </div>
+                      <div class="campo">
+                        <label for="p-tratamento">Exibir como</label>
+                        <select id="p-tratamento"><option>Psicóloga</option><option>Psicólogo</option></select>
+                      </div>
+                      <div class="campo">
+                        <label for="p-crp">CRP <span class="aj">— Brasil · 2 números / 5 números</span></label>
+                        <input type="text" id="p-crp" inputmode="numeric" maxlength="8" placeholder="Ex.: 11/12345" autocomplete="off">
+                      </div>
+                      <div class="campo">
+                        <label for="p-opp">OPP <span class="aj">— Portugal · só números (se tiver)</span></label>
+                        <input type="text" id="p-opp" inputmode="numeric" maxlength="6" placeholder="Ex.: 12345" autocomplete="off">
+                      </div>
+                      <div class="campo cheio">
+                        <label for="p-slug">Link do perfil</label>
+                        <div class="slug-pre"><span>/especialista/</span><input type="text" id="p-slug" placeholder="maria-silva"></div>
+                      </div>
+                      <div class="campo cheio">
+                        <label for="p-salaMeet">Sala do Google Meet <span class="aj">— a sala fixa do psicólogo. Vai sozinha no e-mail do paciente quando o pagamento é confirmado (não aparece no site)</span></label>
+                        <input type="url" id="p-salaMeet" placeholder="https://meet.google.com/abc-defg-hij" autocomplete="off" spellcheck="false">
+                        <span class="aj sala-msg" id="p-salaMeet-msg"></span>
+                      </div>
+                        <div class="campo cheio">
+                          <label for="p-bio">Sobre o profissional <span class="aj">— deixe uma linha em branco entre parágrafos</span></label>
+                          <textarea id="p-bio" rows="6" placeholder="Formação, experiência, como trabalha…"></textarea>
+                          <div class="contador" id="p-bio-c"></div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio" id="p-acesso-sec">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Acesso ao painel</b><span class="aj" id="p-acesso-intro">E-mail e senha que o psicólogo usa para entrar.</span></div>
+                      <span class="acesso-pill" id="p-acesso-pill"></span>
+                    </div>
+                    <div class="acesso-grade">
+                      <div class="campo">
+                        <label for="p-email" id="p-email-l">E-mail</label>
+                        <input type="email" id="p-email" placeholder="nome@exemplo.com" autocomplete="off">
+                      </div>
+                      <div class="campo">
+                        <label for="p-usuario">Usuário de acesso</label>
+                        <input type="text" id="p-usuario" placeholder="Ex.: maria.silva" autocapitalize="off" spellcheck="false" autocomplete="off">
+                      </div>
+                      <div class="campo">
+                        <label for="p-senha" id="p-senha-l">Senha</label>
+                        <input type="text" id="p-senha" placeholder="Pelo menos 6 caracteres" autocomplete="off" spellcheck="false">
+                      </div>
+                    </div>
+                    <p class="acesso-status" id="p-acesso-status"></p>
+                    <div class="acesso-acoes">
+                      <button class="btn primario pequeno" type="button" id="p-acesso-salvar">Criar acesso</button>
+                      <button class="btn pequeno" type="button" id="p-senha-padrao">Usar senha padrão</button>
+                      <button class="btn pequeno" type="button" id="p-senha-link" hidden>Enviar link de nova senha por e-mail</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Especialidades</b><span class="aj">Abordagens e temas em que o psicólogo tem experiência. É o que aparece nos filtros da lista de psicólogos.</span></div>
+                    </div>
+                    <div class="video-grade info-grade">
+                        <div class="campo cheio">
+                          <label>Abordagens</label>
+                          <div class="checks" id="p-abordagens"></div>
+                          <div class="add-linha"><input type="text" id="p-abord-nova" placeholder="Não está na lista? Escreva a abordagem (ex.: Terapia Sistêmica)" autocomplete="off"><button type="button" class="btn pequeno" id="p-abord-add">+ Adicionar</button></div>
+                        </div>
+                        <div class="campo cheio">
+                          <label>Com experiência em <span class="aj">— temas que aparecem no filtro do site · <b id="p-temas-n">0</b> marcados</span></label>
+                          <input type="text" id="p-temas-busca" placeholder="Procurar tema…" autocomplete="off" style="max-width:280px">
+                          <div class="checks checks-temas" id="p-temas"></div>
+                          <div class="destaques" id="p-destaques-box">
+                            <span class="seo-rot">Aparecem primeiro no cartão <span class="aj">— toque na ⭐ para escolher até 5 dos temas marcados (o cartão da lista mostra só os primeiros)</span></span>
+                            <div class="destaques-lista" id="p-destaques"></div>
+                          </div>
+                        </div>
+                        <div class="campo cheio">
+                          <label for="p-especialidades">Outros temas <span class="aj">— opcional, se não estiver na lista; separe por vírgula</span></label>
+                          <input type="text" id="p-especialidades" placeholder="Ex.: Vida acadêmica, Atletas">
+                        </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Atendimento</b><span class="aj">Para quem, em que idiomas e com quais recursos de acessibilidade.</span></div>
+                    </div>
+                    <div class="video-grade info-grade">
+                        <div class="campo cheio">
+                          <label>Público atendido <span class="aj">— o site mostra todos os marcados</span></label>
+                          <div class="checks" id="p-publico"></div>
+                          <div class="botoes" style="margin-top:8px"><button type="button" class="btn pequeno" id="p-publico-todos">Marcar todos os públicos</button></div>
+                        </div>
+                        <div class="campo">
+                          <label>Idiomas das sessões</label>
+                          <div class="checks" id="p-idiomas"></div>
+                        </div>
+                        <div class="campo">
+                          <label>Acessibilidade</label>
+                          <div class="checks" id="p-acess"></div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Valores das sessões</b><span class="aj">Preço da sessão avulsa e do plano mensal. A comissão é a parte da plataforma em cada sessão.</span></div>
+                    </div>
+                    <div class="video-grade info-grade">
+                        <div class="campo">
+                          <label for="p-valor">Valor da sessão avulsa (R$) <span class="aj">— opcional</span></label>
+                          <input type="number" id="p-valor" min="0" step="1" placeholder="Ex.: 120">
+                        </div>
+                        <div class="campo">
+                          <label for="p-duracao">Duração (minutos)</label>
+                          <input type="number" id="p-duracao" min="10" step="5" placeholder="50">
+                        </div>
+                        <div class="campo">
+                          <label for="p-mensal">Plano mensal · 4 sessões (R$) <span class="aj">— vazio = desconto automático</span></label>
+                          <input type="number" id="p-mensal" min="0" step="5">
+                        </div>
+                        <div class="campo" data-so-admin>
+                          <label for="p-comissao">Comissão da plataforma (%) <span class="aj">— só o admin vê</span></label>
+                          <input type="number" id="p-comissao" min="0" max="100" step="1">
+                        </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="acesso-card video-card">
+                    <div class="acesso-topo">
+                      <div><b>Vídeo de apresentação</b><span class="aj">Opcional. Link do YouTube (ou Vimeo): aparece como botão no cartão da lista e na página do psicólogo.</span></div>
+                      <span class="acesso-pill" id="p-video-pill">Sem vídeo</span>
+                    </div>
+                    <div class="video-grade">
+                      <div class="campo">
+                        <label for="p-video">Link do vídeo</label>
+                        <input type="url" id="p-video" placeholder="Ex.: https://youtu.be/abc123 ou https://youtube.com/shorts/abc123">
+                      </div>
+                      <div class="campo">
+                        <label for="p-video-formato">Formato do vídeo</label>
+                        <select id="p-video-formato"><option value="auto">Automático (link de Shorts = em pé)</option><option value="horizontal">Deitado (horizontal)</option><option value="vertical">Em pé (vertical, de celular)</option></select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="verif-box" id="p-verif-box">
+                    <label class="linha-check"><input type="checkbox" id="p-verificado"> <svg class="selo-ok" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12.00 0.55 L12.74 0.74 L13.41 1.27 L13.99 2.00 L14.48 2.75 L14.93 3.37 L15.43 3.73 L16.03 3.82 L16.79 3.71 L17.67 3.52 L18.59 3.41 L19.44 3.52 L20.10 3.90 L20.48 4.56 L20.59 5.41 L20.48 6.33 L20.29 7.21 L20.18 7.97 L20.27 8.57 L20.63 9.07 L21.25 9.52 L22.00 10.01 L22.73 10.59 L23.26 11.26 L23.45 12.00 L23.26 12.74 L22.73 13.41 L22.00 13.99 L21.25 14.48 L20.63 14.93 L20.27 15.43 L20.18 16.03 L20.29 16.79 L20.48 17.67 L20.59 18.59 L20.48 19.44 L20.10 20.10 L19.44 20.48 L18.59 20.59 L17.67 20.48 L16.79 20.29 L16.03 20.18 L15.43 20.27 L14.93 20.63 L14.48 21.25 L13.99 22.00 L13.41 22.73 L12.74 23.26 L12.00 23.45 L11.26 23.26 L10.59 22.73 L10.01 22.00 L9.52 21.25 L9.07 20.63 L8.57 20.27 L7.97 20.18 L7.21 20.29 L6.33 20.48 L5.41 20.59 L4.56 20.48 L3.90 20.10 L3.52 19.44 L3.41 18.59 L3.52 17.67 L3.71 16.79 L3.82 16.03 L3.73 15.43 L3.37 14.93 L2.75 14.48 L2.00 13.99 L1.27 13.41 L0.74 12.74 L0.55 12.00 L0.74 11.26 L1.27 10.59 L2.00 10.01 L2.75 9.52 L3.37 9.07 L3.73 8.57 L3.82 7.97 L3.71 7.21 L3.52 6.33 L3.41 5.41 L3.52 4.56 L3.90 3.90 L4.56 3.52 L5.41 3.41 L6.33 3.52 L7.21 3.71 L7.97 3.82 L8.57 3.73 L9.07 3.37 L9.52 2.75 L10.01 2.00 L10.59 1.27 L11.26 0.74Z"/><path d="M7.6 12.4l3 3 5.8-6.2" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg> Perfil verificado</label>
+                    <p>Mostra o selo azul ✓ ao lado do nome, no perfil e na lista. Só marque depois de conferir o CRP no <a href="https://cadastro.cfp.org.br/" target="_blank" rel="noopener">Cadastro Nacional do CFP</a>.</p>
+                    <label class="verif-data" id="p-verif-data-l" hidden>Conferido em <input type="date" id="p-verif-data"></label>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="acesso-card">
+                    <div class="acesso-topo">
+                      <div><b>Página do psicólogo</b><span class="aj">Textos da página do perfil. Os campos vazios usam um texto padrão.</span></div>
+                    </div>
+                    <div class="video-grade info-grade">
+                        <div class="campo cheio">
+                          <label for="p-titulo">Frase principal do topo</label>
+                          <input type="text" id="p-titulo" placeholder="Ex.: Um espaço seguro para você se reencontrar">
+                        </div>
+                        <div class="campo cheio">
+                          <label for="p-citacao">Frase de destaque <span class="aj">— aparece grande, entre aspas</span></label>
+                          <textarea id="p-citacao" rows="2" placeholder="Ex.: Estou aqui para ouvir, acolher e caminhar com você, no seu tempo."></textarea>
+                        </div>
+                        <div class="campo cheio">
+                          <label>Os 3 passos</label>
+                          <div class="passos-ed" id="p-passos"></div>
+                        </div>
+                        <div class="campo cheio">
+                          <label for="p-esperar">O que esperar? <span class="aj">— um item por linha</span></label>
+                          <textarea id="p-esperar" rows="4"></textarea>
+                        </div>
+                        <div class="campo cheio">
+                          <label>Foto do consultório ou ambiente <span class="aj">— opcional, aparece ao lado do “O que esperar?”</span></label>
+                          <div class="imagem-campo">
+                            <div class="imagem-prev" id="p-amb-prev">Sem imagem</div>
+                            <div class="imagem-acoes">
+                              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                <button class="btn pequeno" type="button" id="p-amb-btn">Escolher imagem</button>
+                                <button class="btn pequeno perigo" type="button" id="p-amb-rem">Remover</button>
+                              </div>
+                              <input type="file" id="p-amb-file" accept="image/*" hidden>
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="campo cheio">
+                  <div class="seo-box">
+                    <div class="seo-topo"><b>Schema (dados estruturados)</b><span class="seo-nota bom" id="p-schema-status">ProfilePage · Person · FAQPage</span></div>
+                    <p class="schema-intro">O schema do perfil (página, nome, CRP, foto, temas) e as perguntas frequentes já são criados automaticamente. Aqui você personaliza, se quiser.</p>
+                    <div>
+                      <span class="seo-rot">Perguntas frequentes (FAQ) <span class="aj">— opcional. Vazio: a página usa as perguntas automáticas. Com pelo menos uma pergunta aqui, elas substituem as automáticas na página e no schema FAQPage</span></span>
+                      <div id="p-faq"></div>
+                      <div class="botoes" style="margin-top:8px"><button type="button" class="btn pequeno" id="p-faq-add">+ Adicionar pergunta</button></div>
+                    </div>
+                    <div>
+                      <span class="seo-rot">Schema personalizado (JSON-LD) <span class="aj">— cole o código; pode ser com ou sem a tag &lt;script&gt;, um ou vários</span></span>
+                      <textarea class="codigo" id="p-schema" spellcheck="false" placeholder='{&#10;  "@context": "https://schema.org",&#10;  "@type": "MedicalBusiness",&#10;  "name": "..."&#10;}'></textarea>
+                      <div class="contador" id="p-schema-c" style="text-align:left"></div>
+                    </div>
+                    <details id="p-schema-ver" class="schema-ver">
+                      <summary>Ver o schema completo que vai na página</summary>
+                      <textarea class="codigo" id="p-schema-final" readonly spellcheck="false"></textarea>
+                    </details>
+                    <div class="botoes" style="margin-top:0">
+                      <button type="button" class="btn pequeno" id="p-schema-copiar">Copiar schema completo</button>
+                      <a class="btn pequeno" href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Testar no Google ↗</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="aba-painel" data-aba="previa">
+              <div class="disp">
+                <span class="previa-qual" role="group" aria-label="O que ver">
+                  <button class="btn pequeno ativo" type="button" data-pv="pagina">Página do perfil</button>
+                  <button class="btn pequeno" type="button" data-pv="cartao">Cartão na lista</button>
+                </span>
+                <button class="btn pequeno" data-larg="100%">🖥 Computador</button>
+                <button class="btn pequeno" data-larg="390px">📱 Celular</button>
+              </div>
+              <iframe class="previa-frame" id="p-previa" title="Prévia do perfil"></iframe>
+              <iframe class="previa-frame" id="p-previa-cartao" title="Prévia do cartão na lista de psicólogos" hidden></iframe>
+            </div>
+            <div class="aba-painel" data-aba="html">
+              <p class="sub" style="margin:0 0 10px">Arquivo <b id="p-html-caminho"></b> completo.</p>
+              <textarea class="codigo html-saida" id="p-html" readonly></textarea>
+              <div class="botoes"><button class="btn pequeno" id="p-copiar">Copiar HTML</button></div>
+            </div>
+            <!-- barra presa embaixo da tela enquanto o perfil está aberto -->
+            <div class="rodape-ed rodape-fixo" id="p-barra">
+              <div class="barra-esq">
+                <button type="button" class="seo-flutua" id="p-nota" aria-haspopup="dialog" title="Ver o que falta no perfil"><span class="seo-flutua-rot">Perfil</span><span class="seo-nota" id="p-nota-txt">0%</span></button>
+                <div class="info" id="p-info"></div>
+              </div>
+              <div class="acoes">
+                <label class="agenda-switch mini" for="p-agenda-ativa" title="Desligue se o psicólogo ficar um tempo ausente: o perfil continua no site, mas sem horários livres.">
+                  <input type="checkbox" id="p-agenda-ativa" role="switch" checked>
+                  <span class="agenda-switch-trilho" aria-hidden="true"><span></span></span>
+                  <span class="agenda-switch-txt"><b id="p-agenda-tit">Agenda online</b><small id="p-agenda-sub" hidden></small></span>
+                </label>
+                <button class="btn perigo" id="p-excluir">Excluir</button>
+                <button class="btn" id="p-desativar" type="button">Desativar</button>
+                <button class="btn" id="p-zip">Baixar .zip</button>
+                <button class="btn" type="button" id="p-ver-previa">Prévia</button>
+                <button class="btn primario" id="p-gerar">Salvar na pasta do site</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </section>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/conteudo/base.js?v=169"></script>
+<script src="js/conteudo/artigos-editor.js?v=158"></script>
+<script src="js/conteudo/psicologos-editor.js?v=158"></script>
+<script src="js/conteudo/eventos.js?v=162"></script>
+<script src="js/conteudo/publicar.js?v=158"></script>
+<script src="js/conteudo/listas.js?v=199"></script>
+<script src="js/conteudo/acessos-psicologo.js?v=189"></script>
+<script src="js/conteudo/permissoes.js?v=158"></script>
+<script src="js/conteudo/usuarios.js?v=203"></script>
+<script src="js/conteudo/perfil-extras.js?v=158"></script>
+<script src="js/conteudo/inicio.js?v=158"></script>
+<script src="js/conteudo/barra-celular.js?v=158"></script>
+</body>
+</html>

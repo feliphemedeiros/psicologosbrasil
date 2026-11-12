@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/agenda.css?v=127">
+  <link rel="stylesheet" href="css/agenda.css?v=219">
   <link rel="stylesheet" href="css/escuro.css?v=120">
-  <link rel="stylesheet" href="css/topo.css?v=122">
+  <link rel="stylesheet" href="css/topo.css?v=206">
   <link rel="stylesheet" href="css/campos.css">
   <script src="js/campos.js" defer></script>
-  <script src="js/tema.js"></script>
+  <script src="js/tema.js?v=205"></script>
 </head>
 <body>
   <!-- ============ LOGIN (usuário e senha → código) ============ -->
@@ -39,7 +39,10 @@
         </div>
         <p class="erro-form" id="erro-login" role="alert"></p>
         <button class="btn btn-primario" type="submit" id="btn-entrar">Continuar</button>
-        <p class="login-volta" id="esqueci-box" hidden><button type="button" class="btn-link" id="esqueci">Esqueci a senha</button></p>
+        <div class="esqueci-box" id="esqueci-box" hidden>
+          <button type="button" class="btn btn-secundario btn-esqueci" id="esqueci"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7M17 6l2.5 2.5M14.5 8.5 17 11"/></svg>Esqueci a senha</button>
+          <small>Digite seu e-mail acima e toque aqui: mandamos um código para criar uma senha nova.</small>
+        </div>
       </form>
 
       <!-- Firebase: ativar o app autenticador (só no primeiro login de cada pessoa) -->
@@ -118,12 +121,12 @@
   <script src="../js/firebase-config.js"></script>
   <script src="../js/nuvem.js"></script>
   <script src="../js/agenda/config.js?v=116"></script>
-  <script src="../js/agenda/util.js"></script>
-  <script src="../js/agenda/db.js?v=126"></script>
-  <script src="../js/agenda/db-firebase.js?v=126"></script>
-  <script src="../js/agenda/servicos.js?v=116"></script>
-  <script src="js/sessao.js?v=123"></script>
-  <script src="js/notificacoes.js?v=123"></script>
+  <script src="../js/agenda/util.js?v=163"></script>
+  <script src="../js/agenda/db.js?v=220"></script>
+  <script src="../js/agenda/db-firebase.js?v=220"></script>
+  <script src="../js/agenda/servicos.js?v=178"></script>
+  <script src="js/sessao.js?v=206"></script>
+  <script src="js/notificacoes.js?v=205"></script>
   <script src="js/exemplo.js"></script>
   <script>
   (function () {
@@ -217,7 +220,28 @@
     }
     $('#voltar-login').onclick = voltar;
 
-    /* "Esqueci a senha" (modo de teste): código no e-mail + senha nova */
+    /* Modo teste: simula a chegada do e-mail (notificação no canto da tela, por cima de tudo) */
+    function emailDeTeste(o) {
+      document.querySelectorAll('.email-teste').forEach(x => x.remove());
+      const el = document.createElement('div');
+      el.className = 'email-teste'; el.setAttribute('role', 'status');
+      el.innerHTML = `<div class="et-topo"><span class="et-app"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>E-mail · agora</span><button type="button" class="et-x" aria-label="Fechar">×</button></div>`
+        + (o.semAcesso
+          ? `<b>Nenhum e-mail enviado</b><p>${U.esc(o.para)} não tem acesso ao painel. (Na versão real a tela não conta isso, por segurança.)</p>`
+          : `<b>Psicólogos Brasil</b><span class="et-assunto">${U.esc(o.assunto)}</span><p>Para: ${U.esc(o.para)}</p><p>Seu código é:</p><div class="et-codigo">${U.esc(o.codigo)}</div><button type="button" class="et-copiar">Copiar código</button>`)
+        + `<small class="et-nota">Simulação do modo teste: no site de verdade, isso chega no e-mail.</small>`;
+      document.body.appendChild(el);
+      el.querySelector('.et-x').onclick = () => el.remove();
+      const cp = el.querySelector('.et-copiar');
+      if (cp) cp.onclick = async () => {
+        let ok = false; try { await navigator.clipboard.writeText(o.codigo); ok = true; } catch (e) { ok = false; }
+        const campo = document.querySelector('.pb-sair-fundo input[autocomplete="one-time-code"]');
+        if (campo) { campo.value = o.codigo; campo.dispatchEvent(new Event('input', { bubbles: true })); }
+        cp.textContent = ok || campo ? 'Código colado ✓' : 'Selecione e copie';
+      };
+    }
+
+    /* "Esqueci a senha": código no e-mail + senha nova */
     $('#esqueci-box').hidden = false;
     $('#esqueci').addEventListener('click', async () => {
       const erro = $('#erro-login'), email = $('#usuario').value.trim();
@@ -225,9 +249,11 @@
       if (!U.emailValido(email)) { erro.textContent = 'Digite seu e-mail no campo acima e toque de novo em “Esqueci a senha”.'; $('#usuario').focus(); return; }
       const r = await DB.pedirCodigoSenha(email);
       if (r) await Servicos.enviarEmail({ para: r.email, assunto: 'Código para criar uma nova senha', corpo: `Seu código para criar uma nova senha no painel da Psicólogos Brasil é ${r.codigo}. Ele vale por 10 minutos. Se não foi você, ignore este e-mail.` });
+      /* modo teste: o e-mail "chega" numa caixinha que imita a notificação de um e-mail novo */
+      if (DB.modo === 'local') emailDeTeste(r ? { para: r.email, assunto: 'Código para criar uma nova senha', codigo: r.codigo } : { para: email, semAcesso: true });
       const ok = await Auth.formulario({
         titulo: 'Criar uma nova senha',
-        texto: `Se ${email} tiver acesso ao painel, mandamos para ele um código de 6 números.` + (DB.modo === 'local' ? (r ? ` (Modo de teste: o código é ${r.codigo}.)` : ' (Modo de teste: esse e-mail não tem acesso.)') : ''),
+        texto: `Se ${email} tiver acesso ao painel, mandamos para ele um código de 6 números. Confira a caixa de entrada (e o spam). O código vale por 10 minutos.`,
         icone: 'editar', ok: 'Salvar nova senha', mostrarSenhas: true,
         campos: [
           { nome: 'codigo', rotulo: 'Código do e-mail', auto: 'one-time-code' },
@@ -253,8 +279,13 @@
       if (DB.modo !== 'local') $('[data-rodape-teste]').remove();
 
       const info = await resumos();
-      const cartoes = Auth.areasMenu(s).map(k => ({ ...Auth.AREAS[k], chave: k, info: info[k] || '' }));
-      cartoes.push({
+      const suporte = s.papel === 'suporte';
+      let chaves = Auth.areasMenu(s);
+      /* suporte: Agenda primeiro (é o dia a dia dele), depois Psicólogos e o resto */
+      if (suporte && chaves.includes('agenda')) chaves = ['agenda', ...chaves.filter(k => k !== 'agenda')];
+      const cartoes = chaves.map(k => ({ ...Auth.AREAS[k], desc: Auth.descDe(k, s), chave: k, info: info[k] || '' }));
+      /* Minha conta: o suporte abre pelo menu do nome, lá em cima (sem cartão aqui) */
+      if (!suporte) cartoes.push({
         chave: 'conta', nome: 'Minha conta', url: 'conta.html', desc: 'Seu nome, e-mail e senha.', info: '',
         ico: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.2-5.5 6.5-5.5 1 0 1.9.2 2.7.5"/><rect x="14.5" y="15" width="7" height="5.5" rx="1.3"/><path d="M16.3 15v-1.6a1.7 1.7 0 0 1 3.4 0V15"/></svg>'
       });
@@ -316,7 +347,7 @@
         return p;
       }
       function concluir(u, p) {
-        Auth.entrar({ id: p.papel === 'psicologo' ? p.psiId : u.uid, uid: u.uid, papel: p.papel, nivel: p.nivel, nome: p.nome || u.email, email: u.email });
+        Auth.entrar({ id: p.papel === 'psicologo' ? p.psiId : u.uid, uid: u.uid, papel: p.papel, extras: p.extras, nome: p.nome || u.email, email: u.email });
       }
       function aviso(titulo, texto) { $('#aviso-tit').textContent = titulo; $('#aviso-txt').innerHTML = texto; mostrar(av); }
       async function sairDoFirebase() { try { await A.signOut(auth); } catch (e) {} }
@@ -449,6 +480,18 @@
           r.artigos = `${as.length} artigo${as.length === 1 ? '' : 's'} · ${pubA} publicado${pubA === 1 ? '' : 's'}`;
         } catch (e) {}
       }
+      /* sessões confirmadas que o psicólogo ainda não viu ("Estou ciente"): o suporte cobra pelo WhatsApp */
+      try {
+        if (Auth.pode('acompanhar')) {
+          const conf = await DB.listarAgendamentos({ status: ['confirmado'], de: U.hojeISO() }), nv = conf.filter(a => !a.psiCiente);
+          if (nv.length) {
+            const nPsi = new Set(nv.map(a => a.psiId)).size;
+            r.psicologos = (r.psicologos ? r.psicologos + '<br>' : '') + `<b class="tag-pend">${nv.length} ${nv.length > 1 ? 'sessões' : 'sessão'} que o psicólogo ainda não viu${nPsi > 1 ? ` (${nPsi} psicólogos)` : ''}</b>`;
+          } else if (conf.length) {
+            r.psicologos = (r.psicologos ? r.psicologos + '<br>' : '') + '<b class="tag-lem">✓ Os psicólogos já viram todas as sessões</b>';
+          }
+        }
+      } catch (e) {}
       return r;
     }
   })();

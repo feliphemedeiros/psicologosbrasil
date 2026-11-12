@@ -164,6 +164,33 @@
   function hist(a, texto) { a.historico.push({ em: agora(), texto }); }
 
   /* ------------------------------------------------------------------
+     REGISTRO DE ATIVIDADES — PRÉVIA (modo teste)
+     Na versão final quem grava é o servidor (PHP), com o usuário da sessão,
+     o IP e o aparelho, e ninguém consegue apagar. Aqui fica num localStorage
+     separado só para ver como a tela "Atividades" funciona.
+     ------------------------------------------------------------------ */
+  const CHAVE_ATIV = 'pb_atividades_v1';
+  const sessaoAtual = () => { try { return JSON.parse(sessionStorage.getItem('pb_painel_sessao') || 'null'); } catch (e) { return null; } };
+  function registrar(r) {
+    try {
+      const q = r.quem || sessaoAtual() || {};
+      const l = JSON.parse(localStorage.getItem(CHAVE_ATIV) || '[]');
+      l.push({ id: U.id('at'), em: agora(), quemId: q.id || '', quemNome: q.nome || 'Sistema', quemPapel: q.papel || '', tipo: r.tipo || 'outro', acao: r.acao || '', alvo: r.alvo || '', antes: r.antes || null, depois: r.depois || null, aparelho: navigator.userAgent.replace(/^.*?\(([^)]*)\).*$/, '$1').slice(0, 60) });
+      localStorage.setItem(CHAVE_ATIV, JSON.stringify(l.slice(-3000)));
+    } catch (e) { /* o registro nunca atrapalha a ação */ }
+  }
+  const principalDe = d => (d.usuarios.find(u => u.papel === 'admin' && u.principal) || d.usuarios.find(u => u.papel === 'admin') || {}).id;
+  const NOMES_EXTRAS = { psicologos: 'Psicólogos (completo)', pacientes: 'Pacientes', artigos: 'Artigos', financeiro: 'Financeiro' };
+  const EXTRAS_ANTIGOS = { psiResumo: 'psicologos', financeiroPagar: 'financeiro' };
+  const normExtras = l => [...new Set((Array.isArray(l) ? l : []).map(k => EXTRAS_ANTIGOS[k] || k).filter(k => NOMES_EXTRAS[k]))];
+  const textoExtras = l => (l && l.length ? l.map(k => NOMES_EXTRAS[k] || k).join(', ') : 'nenhum');
+  /* tipo da atividade a partir do texto do histórico do agendamento */
+  function tipoHist(t) {
+    return /Pagamento confirmado/i.test(t) ? 'pagamento' : /^Cancelado/i.test(t) ? 'cancelamento' : /^Remarcado/i.test(t) ? 'remarcacao'
+      : /Lembrete|Renovação/i.test(t) ? 'lembrete' : /Repasse/i.test(t) ? 'repasse' : /excluídos/i.test(t) ? 'paciente' : 'status';
+  }
+
+  /* ------------------------------------------------------------------
      ADAPTADOR LOCAL — implementa todas as funções do DB
      ------------------------------------------------------------------ */
   const Local = {
@@ -175,12 +202,14 @@
       const bate = x => (String(x.usuario || '').toLowerCase() === u || String(x.email || '').toLowerCase() === u) && x.senha === senha;
       const adm = d.usuarios.find(bate);
       if (adm && adm.ativo === false) throw new Error('Seu acesso está desativado. Fale com o administrador.');
-      if (adm) return { id: adm.id, papel: adm.papel, nome: adm.nome, email: adm.email, doisFatores: true, ...(adm.papel === 'suporte' ? { nivel: Number(adm.nivel) || 1 } : {}) };
+      if (adm) { registrar({ quem: adm, tipo: 'acesso', acao: 'Entrou no painel (e-mail e senha certos)' }); return { id: adm.id, papel: adm.papel, nome: adm.nome, email: adm.email, doisFatores: true, ...(adm.papel === 'suporte' ? { extras: normExtras(adm.extras) } : {}) }; }
       const psi = d.psicologos.find(bate);
       if (psi) {
         if (!psi.ativo) throw new Error('Seu acesso está desativado. Fale com a equipe.');
         return { id: psi.id, papel: 'psicologo', nome: psi.nome, email: psi.email, doisFatores: true };
       }
+      const conhecido = d.usuarios.find(x => String(x.email || '').toLowerCase() === u || String(x.usuario || '').toLowerCase() === u);
+      if (conhecido) registrar({ quem: conhecido, tipo: 'acesso', acao: 'Tentou entrar com a senha errada' });
       return null;
     },
     async gerarCodigo2FA(usuarioId) {
@@ -246,9 +275,10 @@
       const sess = JSON.parse(sessionStorage.getItem('pb_painel_sessao') || 'null');
       if (sess && sess.papel === 'psicologo') {
         if (sess.id !== psiId) throw new Error('Sem permissão.');
-        dados = { whatsapp: dados.whatsapp };   /* chave Pix: só com o código do e-mail (pedirCodigoPix / confirmarCodigoPix) */
+        throw new Error('Seus dados são atualizados pela equipe. Fale com o suporte.');   /* o psicólogo só troca a senha */
       }
-      if (sess && sess.papel === 'suporte') { dados = { ...dados }; delete dados.pix; delete dados.pixTipo; }   /* Pix: só o administrador muda direto */
+      /* chave Pix: ninguém muda direto; só com o código no e-mail de quem troca (pedirCodigoPix / confirmarCodigoPix) */
+      dados = { ...dados }; delete dados.pix; delete dados.pixTipo;
       if (dados.whatsapp && !U.whatsValido(U.whatsNormalizar(dados.whatsapp))) throw new Error('WhatsApp inválido: confira o país e o número.');
       if (dados.usuario !== undefined) {
         const u = String(dados.usuario || '').trim().toLowerCase();
@@ -258,8 +288,13 @@
       }
       ['nome', 'crp', 'opp', 'email', 'whatsapp', 'pix'].forEach(k => { if (dados[k] !== undefined) p[k] = k === 'whatsapp' ? U.whatsNormalizar(dados[k]) : String(dados[k]).trim(); });
       if (dados.pixTipo !== undefined) p.pixTipo = String(dados.pixTipo || '');
+      const antesP = { ...p };
       if (dados.fuso !== undefined) { if (!U.fusoValido(dados.fuso)) throw new Error('Fuso horário inválido.'); p.fuso = dados.fuso; }
       salvar(d);
+      const ROT = { nome: 'Nome', crp: 'CRP', opp: 'OPP', email: 'E-mail', whatsapp: 'WhatsApp', pix: 'Chave Pix', fuso: 'Fuso' };
+      const mud = Object.keys(ROT).filter(k => dados[k] !== undefined && String(antesP[k] || '') !== String(p[k] || ''));
+      if (mud.length) registrar({ tipo: 'psicologo', acao: `Mudou ${mud.map(k => ROT[k]).join(', ')} do psicólogo`, alvo: p.nome,
+        antes: Object.fromEntries(mud.map(k => [ROT[k], antesP[k] || '—'])), depois: Object.fromEntries(mud.map(k => [ROT[k], p[k] || '—'])) });
       return { psi: clone(p) };
     },
     /* Troca da chave Pix pelo próprio psicólogo: código de 6 números no e-mail dele.
@@ -269,15 +304,20 @@
       const d = carregar();
       const p = d.psicologos.find(x => x.id === psiId);
       if (!p) throw new Error('Psicólogo não encontrado.');
+      /* só a equipe troca a chave Pix: administrador ou suporte com "Psicólogos (completo)".
+         O código vai para o e-mail de QUEM está trocando (não do psicólogo). */
       const sess = JSON.parse(sessionStorage.getItem('pb_painel_sessao') || 'null');
-      if (!sess || sess.papel !== 'psicologo' || sess.id !== psiId) throw new Error('Sem permissão.');
-      if (!p.email) throw new Error('Você não tem e-mail cadastrado. Fale com o suporte.');
+      const extras = (sess && Array.isArray(sess.extras) ? sess.extras : []).map(k => (k === 'psiResumo' ? 'psicologos' : k));
+      if (!sess || !(sess.papel === 'admin' || (sess.papel === 'suporte' && extras.includes('psicologos')))) throw new Error('Sem permissão para trocar a chave Pix.');
+      const quem = (d.usuarios || []).find(u => u.id === sess.id || u.uid === sess.id) || {};
+      const emailQuem = quem.email || sess.email || '';
+      if (!emailQuem) throw new Error('Seu usuário não tem e-mail cadastrado. Cadastre em Minha conta.');
       const n = U.pixNormalizar(pixTipo, pix);
       if (!n.ok || !n.valor) throw new Error(n.erro || 'Chave Pix inválida.');
       const codigo = String(Math.floor(100000 + Math.random() * 900000));
-      d.codigos2fa['pix:' + psiId] = { codigo, expira: agora() + 10 * 60e3, pix: n.valor, pixTipo, tentativas: 0 };
+      d.codigos2fa['pix:' + psiId] = { codigo, expira: agora() + 10 * 60e3, pix: n.valor, pixTipo, tentativas: 0, por: sess.nome || '' };
       salvar(d);
-      return { codigo, email: p.email };
+      return { codigo, email: emailQuem };
     },
     async confirmarCodigoPix(psiId, codigo) {
       const d = carregar();
@@ -290,7 +330,7 @@
         if (c.tentativas >= 5) { delete d.codigos2fa['pix:' + psiId]; salvar(d); throw new Error('Código errado muitas vezes. Peça outro código.'); }
         salvar(d); throw new Error('Código incorreto. Confira no e-mail.');
       }
-      p.pix = c.pix; p.pixTipo = c.pixTipo; p.pixAlteradoEm = agora();
+      p.pix = c.pix; p.pixTipo = c.pixTipo; p.pixAlteradoEm = agora(); p.pixAlteradoPor = c.por || '';
       delete d.codigos2fa['pix:' + psiId];
       salvar(d);
       return { pix: p.pix, pixTipo: p.pixTipo, email: p.email };
@@ -327,6 +367,7 @@
       const p = d.psicologos.find(x => x.id === psiId);
       if (!p) throw new Error('Psicólogo não encontrado.');
       p.pausada = !online; salvar(d);
+      registrar({ tipo: 'psicologo', acao: online ? 'Ligou a agenda online' : 'Pausou a agenda online', alvo: p.nome });
       return clone(p);
     },
     /* A equipe define uma senha nova para o psicólogo (ex.: esqueceu a senha).
@@ -436,6 +477,30 @@
        ATENÇÃO (banco de verdade): esta função precisa rodar NO SERVIDOR,
        numa única transação, com uma regra única (psi_id + data + hora para
        status que ocupam). Assim duas pessoas nunca pegam o mesmo horário. */
+    /* v220: "Conheça o psicólogo em 15 minutos" — respostas do questionário do site (página /conhecer/).
+       Fica em d.conhecer para a equipe ver no painel. */
+    async enviarConhecer(p = {}) {
+      const txt = (v, n) => String(v || '').trim().slice(0, n);
+      const lista = (v, n) => (Array.isArray(v) ? v : []).map(x => txt(x, 60)).filter(Boolean).slice(0, n);
+      const nome = txt(p.nome, 80), email = txt(p.email, 120).toLowerCase(), whatsapp = U.whatsNormalizar(p.whatsapp);
+      if (nome.length < 3) throw new Error('Informe seu nome completo.');
+      if (!U.whatsValido(whatsapp)) throw new Error('Confira o WhatsApp: número com DDD (Brasil) ou com o código do país.');
+      if (!U.emailValido(email)) throw new Error('Informe um e-mail válido.');
+      if (!p.consentimento) throw new Error('Marque a autorização para podermos falar com você.');
+      const pedido = {
+        id: U.id('cn'), criadoEm: agora(), status: 'novo',
+        paciente: { nome, whatsapp, email },
+        tipoSessao: txt(p.tipoSessao, 30), motivos: lista(p.motivos, 25), objetivos: lista(p.objetivos, 15),
+        preferencias: lista(p.preferencias, 12), horario: txt(p.horario, 30), sobre: txt(p.sobre, 1500),
+        origem: txt(p.origem, 120), consentimento: true
+      };
+      const d = carregar();
+      d.conhecer = d.conhecer || [];
+      d.conhecer.unshift(pedido);
+      salvar(d);
+      return clone(pedido);
+    },
+    async listarConhecer() { const d = carregar(); return clone(d.conhecer || []); },
     async criarPreReserva({ psiId, data, hora, tipo = 'avulsa', paciente }) {
       const d = carregar();
       const nome = String(paciente?.nome || '').trim();
@@ -481,6 +546,9 @@
       const d = carregar();
       const lista = d.agendamentos.filter(a => a.grupo === grupo && ['pendente', 'expirado'].includes(a.status));
       if (!lista.length) throw new Error('Nada para confirmar nesse agendamento.');
+      /* v214: o suporte só confirma depois que o admin conferiu que o Pix caiu */
+      const quem = sessaoAtual();
+      if (quem && quem.papel !== 'admin' && !lista.every(a => a.conferencia && a.conferencia.status === 'caiu')) throw new Error('O pagamento só pode ser confirmado depois que o admin conferir que o Pix caiu na conta.');
       const ids = lista.map(a => a.id);
       for (const a of lista) {
         if (a.status === 'expirado') {
@@ -545,6 +613,43 @@
     },
 
     /* Lembrete enviado pela equipe (Agenda → Lembretes): 'paciente', 'psicologo' ou 'renovacao' */
+    /* ---------- Conferir o Pix (suporte pede, o administrador responde) ----------
+       conferencia = { status: 'pedida' | 'caiu' | 'nao', pedidoEm, pedidoPor, respEm, respPor }
+       Pedir segura a pré-reserva por mais 2 horas (no horário da equipe) enquanto o admin confere. */
+    async pedirConferencia(grupo, por) {
+      const d = carregar(), t = agora();
+      const l = d.agendamentos.filter(a => a.grupo === grupo && a.status === 'pendente');
+      if (!l.length) throw new Error('Essa pré-reserva não está mais esperando pagamento.');
+      const segura = U.somarHorasEquipe(t, 2);
+      l.forEach(a => {
+        a.conferencia = { status: 'pedida', pedidoEm: t, pedidoPor: por };
+        if (a.expiraEm && a.expiraEm < segura) a.expiraEm = segura;
+        hist(a, `Conferência do Pix pedida ao administrador (por ${por})`);
+      });
+      salvar(d);
+      return clone(l);
+    },
+    /* v209: a equipe marcou que já mandou a 1ª mensagem no WhatsApp (todos da equipe veem) */
+    async marcarMensagemEnviada(grupo, por, campo = 'mensagem') {   /* v217: campo 'pixEnviado' marca o Pix enviado */
+      const d = carregar(), t = agora(), pix = campo === 'pixEnviado';
+      const l = d.agendamentos.filter(a => a.grupo === grupo && a.status === 'pendente');
+      if (!l.length) return [];
+      l.forEach(a => { a[pix ? 'pixEnviado' : 'mensagem'] = { em: t, por }; hist(a, pix ? `Pix enviado ao paciente (por ${por})` : `Mensagem no WhatsApp enviada ao paciente (por ${por})`); });
+      salvar(d);
+      return clone(l);
+    },
+    async responderConferencia(grupo, caiu, por) {
+      const d = carregar(), t = agora();
+      const l = d.agendamentos.filter(a => a.grupo === grupo && ['pendente', 'expirado'].includes(a.status));
+      if (!l.length) throw new Error('Essa pré-reserva já foi tratada.');
+      l.forEach(a => {
+        a.conferencia = { ...(a.conferencia || {}), status: caiu ? 'caiu' : 'nao', respEm: t, respPor: por };
+        hist(a, caiu ? `Administrador conferiu: o Pix caiu na conta (por ${por})` : `Administrador conferiu: o Pix NÃO caiu na conta (por ${por})`);
+      });
+      salvar(d);
+      return clone(l);
+    },
+
     async marcarLembrete(id, tipo, por) {
       const d = carregar();
       const a = d.agendamentos.find(x => x.id === id);
@@ -561,8 +666,12 @@
     async listarPacientesExtra() { return clone(carregar().pacientes || {}); },
     async salvarPacienteObs(chave, obs, por) {
       const d = carregar(); d.pacientes = d.pacientes || {};
+      const antesObs = (d.pacientes[chave] || {}).obs || '';
       d.pacientes[chave] = { ...(d.pacientes[chave] || {}), obs: String(obs || '').slice(0, 2000), obsPor: por, obsEm: agora() };
-      salvar(d); return clone(d.pacientes[chave]);
+      salvar(d);
+      const ag = d.agendamentos.find(a => U.chavePaciente(a.paciente) === chave);
+      registrar({ tipo: 'paciente', acao: 'Mudou as observações do paciente', alvo: ag ? ag.paciente.nome : '', antes: { Observações: antesObs || '—' }, depois: { Observações: d.pacientes[chave].obs || '—' } });
+      return clone(d.pacientes[chave]);
     },
     /* Excluir paciente (LGPD): apaga nome, WhatsApp e e-mail dos atendimentos dele (eles ficam
        como "Paciente removido" para os repasses e números) e apaga as observações. */
@@ -637,13 +746,15 @@
     /* ---------- Minha conta da equipe (painel/conta.html) ---------- */
     minhaConta: {
       async obter(id) {
-        const u = carregar().usuarios.find(x => x.id === id);
-        return u ? clone({ nome: u.nome, email: u.email, usuario: u.usuario, papel: u.papel }) : null;
+        const d = carregar(), u = d.usuarios.find(x => x.id === id);
+        return u ? clone({ nome: u.nome, email: u.email, usuario: u.usuario, papel: u.papel, principal: u.id === principalDe(d) }) : null;
       },
+      /* nome e e-mail: só o administrador principal muda os próprios; os outros pedem a um administrador (Usuários → Editar) */
       async salvar(id, { nome, email, usuario }) {
         const d = carregar();
         const u = d.usuarios.find(x => x.id === id);
         if (!u) throw new Error('Conta não encontrada.');
+        if (u.id !== principalDe(d)) throw new Error('Nome e e-mail só um administrador muda, em Usuários.');
         if (!String(nome || '').trim()) throw new Error('Coloque o nome.');
         if (!U.emailValido(email)) throw new Error('Coloque um e-mail válido.');
         const us = String(usuario || '').trim().toLowerCase();
@@ -659,78 +770,113 @@
     equipe: {
       async listar() {
         const d = carregar();
-        const principal = (d.usuarios.find(u => u.papel === 'admin' && u.principal) || d.usuarios.find(u => u.papel === 'admin') || {}).id;
+        const principal = principalDe(d);
         return clone([
-          ...d.usuarios.map(u => ({ uid: u.id, papel: u.papel, nome: u.nome, email: u.email, usuario: u.usuario, ativo: u.ativo !== false, principal: u.id === principal, ...(u.papel === 'suporte' ? { nivel: Number(u.nivel) || 1 } : {}) })),
+          ...d.usuarios.map(u => ({ uid: u.id, papel: u.papel, nome: u.nome, email: u.email, usuario: u.usuario, ativo: u.ativo !== false, principal: u.id === principal, ...(u.papel === 'suporte' ? { extras: normExtras(u.extras) } : {}) })),
           ...d.psicologos.map(p => ({ uid: p.id, papel: 'psicologo', nome: p.nome, email: p.email, usuario: p.usuario, psiId: p.id, ativo: !!p.ativo }))
         ].sort((a, b) => (a.nome || '').localeCompare(b.nome || '')));
       },
-      async criar({ nome, email, senha, papel, nivel }) {
+      /* administradores: só o principal cria, muda, desativa ou exclui (ele é o dono do painel) */
+      async criar({ nome, email, senha, papel }) {
         const d = carregar();
         if (!['admin', 'suporte'].includes(papel)) throw new Error('Papel inválido.');
-        if (papel === 'suporte' && ![1, 2, 3].includes(Number(nivel))) throw new Error('Escolha o nível do suporte.');
+        const s = sessaoAtual();
+        if (papel === 'admin' && (!s || s.id !== principalDe(d))) throw new Error('Só o administrador principal cria outro administrador.');
         if (!String(nome || '').trim()) throw new Error('Coloque o nome.');
         email = String(email || '').trim().toLowerCase();
         if (!U.emailValido(email)) throw new Error('Coloque um e-mail válido.');
         if (!senha || senha.length < 6) throw new Error('Senha inicial: pelo menos 6 caracteres.');
         const usuario = email.split('@')[0];
         if ([...d.usuarios, ...d.psicologos].some(x => String(x.usuario).toLowerCase() === usuario)) throw new Error(`O usuário "${usuario}" já existe. Use outro e-mail.`);
-        const u = { id: U.id('u'), usuario, senha, senhaPadrao: true, papel, nome: nome.trim(), email, doisFatores: true, ativo: true, ...(papel === 'suporte' ? { nivel: Number(nivel) } : {}) };   /* senha provisória: no 1º acesso a pessoa cria a dela */
+        const u = { id: U.id('u'), usuario, senha, senhaPadrao: true, papel, nome: nome.trim(), email, doisFatores: true, ativo: true, ...(papel === 'suporte' ? { extras: [] } : {}) };   /* senha provisória: no 1º acesso a pessoa cria a dela */
         d.usuarios.push(u); salvar(d);
+        registrar({ tipo: 'usuarios', acao: `Criou o acesso de ${papel === 'admin' ? 'administrador' : 'suporte'}`, alvo: `${u.nome} (${email})` });
         return u.id;
       },
-      /* corrigir nome e e-mail de um administrador ou suporte (nunca o principal nem você mesmo: use Minha conta) */
-      async editar(uid, { nome, email }) {
+      /* corrigir nome e e-mail, trocar o papel (suporte ⇄ administrador) e os acessos extras do suporte.
+         Nunca o principal nem você mesmo (use Minha conta). Papel e administradores: só o principal. */
+      async editar(uid, { nome, email, papel, extras }) {
         const d = carregar();
         const u = d.usuarios.find(x => x.id === uid);
         if (!u) throw new Error('Usuário não encontrado.');
-        const s = JSON.parse(sessionStorage.getItem('pb_painel_sessao') || 'null');
+        const s = sessaoAtual(), principal = principalDe(d), souPrincipal = !!s && s.id === principal;
         if (s && s.id === uid) throw new Error('Para mudar os seus dados, use Minha conta.');
+        if (u.id === principal) throw new Error('O administrador principal muda os próprios dados em Minha conta.');
+        papel = papel || u.papel;
+        if (!['admin', 'suporte'].includes(papel)) throw new Error('Papel inválido.');
+        if ((u.papel === 'admin' || papel !== u.papel) && !souPrincipal) throw new Error('Só o administrador principal muda administradores e o papel de alguém.');
         if (!String(nome || '').trim()) throw new Error('Coloque o nome.');
         email = String(email || '').trim().toLowerCase();
         if (!U.emailValido(email)) throw new Error('Coloque um e-mail válido.');
         const usuario = email.split('@')[0];
         if ([...d.usuarios, ...d.psicologos].some(x => x.id !== uid && (String(x.email || '').toLowerCase() === email || String(x.usuario).toLowerCase() === usuario))) throw new Error('Já existe um acesso com esse e-mail.');
-        Object.assign(u, { nome: nome.trim(), email, usuario });
+        const novosExtras = papel === 'suporte' ? normExtras(Array.isArray(extras) ? extras : u.extras) : undefined;
+        const antes = { Nome: u.nome, 'E-mail': u.email, Papel: u.papel === 'admin' ? 'Administrador' : 'Suporte', 'Acessos extras': u.papel === 'suporte' ? textoExtras(normExtras(u.extras)) : '—' };
+        Object.assign(u, { nome: nome.trim(), email, usuario, papel });
+        if (novosExtras) u.extras = novosExtras; else delete u.extras;
         salvar(d);
+        const depois = { Nome: u.nome, 'E-mail': u.email, Papel: u.papel === 'admin' ? 'Administrador' : 'Suporte', 'Acessos extras': u.papel === 'suporte' ? textoExtras(normExtras(u.extras)) : '—' };
+        const mud = Object.keys(antes).filter(k => antes[k] !== depois[k]);
+        if (mud.length) registrar({ tipo: 'usuarios', acao: mud.includes('Papel') ? `Mudou o papel para ${depois.Papel}` : mud.includes('Acessos extras') ? 'Mudou os acessos extras' : 'Editou os dados do usuário', alvo: u.nome,
+          antes: Object.fromEntries(mud.map(k => [k, antes[k]])), depois: Object.fromEntries(mud.map(k => [k, depois[k]])) });
       },
       /* o administrador define uma senha provisória (a pessoa esqueceu ou acabou de ser contratada) */
       async senhaProvisoria(uid, senha) {
         const d = carregar();
         const u = d.usuarios.find(x => x.id === uid);
         if (!u) throw new Error('Usuário não encontrado.');
-        const s = JSON.parse(sessionStorage.getItem('pb_painel_sessao') || 'null');
+        const s = sessaoAtual();
         if (s && s.id === uid) throw new Error('Para trocar a sua senha, use Minha conta.');
+        if (u.papel === 'admin' && (!s || s.id !== principalDe(d))) throw new Error('Só o administrador principal define a senha de outro administrador.');
         if (!senha || senha.length < 8) throw new Error('A senha provisória precisa ter pelo menos 8 caracteres.');
         u.senha = senha; u.senhaPadrao = true; salvar(d);
-      },
-      /* muda o nível de um usuário de suporte (1, 2 ou 3) */
-      async nivel(uid, nivel) {
-        const d = carregar();
-        const u = d.usuarios.find(x => x.id === uid);
-        if (!u || u.papel !== 'suporte') throw new Error('Só usuários de suporte têm nível.');
-        if (![1, 2, 3].includes(Number(nivel))) throw new Error('Nível inválido.');
-        u.nivel = Number(nivel); salvar(d);
+        registrar({ tipo: 'usuarios', acao: 'Definiu uma senha provisória', alvo: u.nome });
       },
       async ativar(uid, ativo) {
         const d = carregar();
         const u = d.usuarios.find(x => x.id === uid) || d.psicologos.find(x => x.id === uid);
         if (!u) throw new Error('Usuário não encontrado.');
-        const principal = (d.usuarios.find(x => x.papel === 'admin' && x.principal) || d.usuarios.find(x => x.papel === 'admin') || {}).id;
+        const principal = principalDe(d), s = sessaoAtual();
         if (!ativo && u.id === principal) throw new Error('O administrador principal não pode ser desativado.');
+        if (u.papel === 'admin' && (!s || s.id !== principal)) throw new Error('Só o administrador principal desativa ou reativa outro administrador.');
         u.ativo = !!ativo; salvar(d);
+        registrar({ tipo: 'usuarios', acao: ativo ? 'Reativou o acesso' : 'Desativou o acesso', alvo: u.nome });
       },
       async excluir(uid) {
         const d = carregar();
-        const s = JSON.parse(sessionStorage.getItem('pb_painel_sessao') || 'null');
+        const s = sessaoAtual();
         if (s && s.id === uid) throw new Error('Você não pode excluir o seu próprio acesso.');
         const u = d.usuarios.find(x => x.id === uid);
         if (!u) throw new Error(d.psicologos.some(x => x.id === uid) ? 'Psicólogos não são excluídos: desative o acesso.' : 'Usuário não encontrado.');
-        const principal = (d.usuarios.find(x => x.papel === 'admin' && x.principal) || d.usuarios.find(x => x.papel === 'admin') || {}).id;
+        const principal = principalDe(d);
         if (u.id === principal) throw new Error('O administrador principal não pode ser excluído.');
+        if (u.papel === 'admin' && (!s || s.id !== principal)) throw new Error('Só o administrador principal exclui outro administrador.');
         d.usuarios = d.usuarios.filter(x => x.id !== uid); salvar(d);
+        registrar({ tipo: 'usuarios', acao: 'Excluiu o acesso', alvo: `${u.nome} (${u.email})` });
       },
       async novaSenha() { throw new Error('No modo teste não há envio de e-mail. Com o Firebase, o link de nova senha vai para o e-mail da pessoa.'); }
+    },
+
+    /* ---------- Registro de atividades (prévia) ----------
+       Junta o que foi gravado aqui com o histórico de cada sessão ("Cancelado por Maria").
+       → [{ id, em, quemId, quemNome, quemPapel, tipo, acao, alvo, antes, depois, aparelho, origem }] */
+    atividades: {
+      async listar() {
+        const d = carregar();
+        let l = [];
+        try { l = JSON.parse(localStorage.getItem(CHAVE_ATIV) || '[]'); } catch (e) { l = []; }
+        const porNome = {}; d.usuarios.forEach(u => { porNome[u.nome] = u; });
+        const psis = {}; d.psicologos.forEach(p => { psis[p.id] = p.nome; });
+        d.agendamentos.forEach(a => (a.historico || []).forEach((h, i) => {
+          const t = String(h.texto || ''), m = /\(por ([^)]+)\)|\bpor ([^:(]+?)(?=:|\s\(|$)/.exec(t);
+          if (!m) return;
+          const nome = (m[1] || m[2] || '').trim(), u = porNome[nome];
+          l.push({ id: `h-${a.id}-${i}`, em: h.em, quemId: u ? u.id : '', quemNome: nome, quemPapel: u ? u.papel : (nome === 'Administrador' ? 'admin' : ''), tipo: tipoHist(t),
+            acao: t.replace(/\s*\(por [^)]*\)/, '').replace(/\s+por [^:(]+?(?=:|\s\(|$)/, '').trim(),
+            alvo: `${a.paciente.nome} com ${psis[a.psiId] || 'psicólogo'} · ${U.fmtCurta(a.data)}, ${U.fmtHora(a.hora)}`, origem: 'sessao', agId: a.id });
+        }));
+        return clone(l.sort((x, y) => y.em - x.em));
+      }
     },
 
     /* ---------- testes ---------- */

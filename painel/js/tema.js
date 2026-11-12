@@ -51,7 +51,18 @@
         "Claro | Escuro" fica onde houver [data-tema-escolha] (Configurações e Minha conta) */
   function porBotoes() {
     document.querySelectorAll('.login-pagina, .login').forEach(l => {
-      if (!l.querySelector('.tema-btn')) l.appendChild(criarBotao(true));
+      if (l.querySelector('.tema-btn')) return;
+      /* v205: na tela de login o botão fica na mesma linha da logo e rola junto com a página */
+      const marca = l.querySelector('.login-caixa > .marca');
+      if (marca) {
+        const linha = document.createElement('div');
+        linha.className = 'login-topo';
+        marca.parentNode.insertBefore(linha, marca);
+        linha.appendChild(marca);
+        linha.appendChild(criarBotao(false));
+        return;
+      }
+      l.appendChild(criarBotao(true));
     });
     document.querySelectorAll('[data-tema-escolha]').forEach(box => {
       if (box.querySelector('button')) return;

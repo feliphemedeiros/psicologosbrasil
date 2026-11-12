@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Usuários · Painel Psicólogos Brasil</title>
+<link rel="icon" href="../assets/icones/favicon.svg?v=109" type="image/svg+xml">
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nuvem.js"></script>
+<script src="../js/agenda/config.js?v=116"></script>
+<script src="../js/agenda/util.js?v=163"></script>
+<script src="../js/agenda/db.js?v=220"></script>
+<script src="../js/agenda/db-firebase.js?v=220"></script>
+<script src="js/sessao.js?v=206"></script>
+<script src="js/notificacoes.js?v=205"></script>
+<script src="js/exemplo.js"></script>
+<script>/* sem acesso a esta área: volta para a tela de entrada */ if (!Auth.exigir(['admin'])) document.documentElement.hidden = true;</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="css/conteudo.css?v=199">
+<link rel="stylesheet" href="css/escuro.css?v=120">
+<link rel="stylesheet" href="css/topo.css?v=206">
+<link rel="stylesheet" href="css/campos.css">
+<script src="js/campos.js" defer></script>
+<script src="js/tema.js?v=205"></script>
+</head>
+<body data-pagina="usuarios">
+<script>/* já entrou? então não mostra a tela de login nem por um instante (evita a "piscada" ao voltar da agenda) */
+(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(s&&(!s.expira||s.expira>Date.now()))document.documentElement.classList.add('tem-sessao');}catch(e){}})();</script>
+<!-- ============ LOGIN ============ -->
+<div class="login" id="login">
+  <form class="login-card" id="loginForm" autocomplete="on">
+    <div class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></div>
+    <div><h1>Painel Psicólogos Brasil</h1><p class="login-sub">Entre para publicar artigos e psicólogos.</p></div>
+    <label><span id="loginUsuarioRot">Usuário</span><input id="loginUsuario" name="usuario" type="text" autocomplete="username" required></label>
+    <label>Senha<input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></label>
+    <p class="login-erro" id="loginErro" role="alert"></p>
+    <button class="btn primario" type="submit" id="loginBtn">Entrar</button>
+    <button class="login-esq" type="button" id="loginEsqueci" hidden>Esqueci a senha</button>
+    <p class="login-modo" id="loginModo">Carregando…</p>
+  </form>
+</div>
+<div class="app">
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="index.html">
+        <span class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></span>
+        <span>Psicólogos Brasil <small id="marcaSub">Usuários</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn pequeno" type="button" data-sair>Sair</button>
+      </div>
+    </div>
+    <nav class="abas nav" role="tablist" aria-label="Seções" hidden>
+      <button class="aba" role="tab" data-view="psicologos">Psicólogos <span class="qtd" id="qtdPsicologos">0</span></button>
+      <button class="aba" role="tab" data-view="artigos">Artigos <span class="qtd" id="qtdArtigos">0</span></button>
+      <button class="aba ativo" role="tab" data-view="usuarios">Usuários</button>
+      <button class="aba" role="tab" data-view="config">Configurações</button>
+      <a class="nav-link" href="agenda.html" id="navAgenda" hidden><span class="qtd" id="qtdPend"></span></a>
+    </nav>
+    <nav class="ficha-topo" id="psiFichaTopo" aria-label="Partes da ficha do psicólogo" hidden></nav>
+    <div class="pasta-box" hidden>
+      <div class="pasta-nome off" id="pastaNome">Não conectada</div>
+      <button class="btn pequeno" id="btnPasta">Conectar pasta</button>
+      <p class="dica" id="pastaDica"></p>
+    </div>
+  </header>
+<script>/* sininho e menu da conta já na hora (sem mostrar o "Sair" antigo por um instante) */try{window.Notificacoes&&Notificacoes.montar()}catch(e){}</script>
+  <div class="visao-equipe" id="psiVisao" hidden><div class="visao-equipe-in"></div></div>
+
+
+  <main class="conteudo">
+    <!-- ================= USUÁRIOS ================= -->
+    <section class="view ativa" id="view-usuarios">
+      <header class="topbar">
+        <div>
+          <h1>Usuários<span class="qtd-tit" id="qtdUsuariosT"></span></h1>
+          <p class="sub">Adicione, desative ou mande nova senha para quem entra no painel.</p>
+        </div>
+        <button class="btn primario" type="button" id="eq-ir-novo">+ Novo usuário</button>
+      </header>
+      <div class="eq-abas" role="tablist" aria-label="Usuários">
+        <button type="button" role="tab" id="eq-aba-pessoas" data-eq-aba="pessoas" aria-selected="true" aria-controls="eq-painel-pessoas">Pessoas</button>
+        <button type="button" role="tab" id="eq-aba-ativ" data-eq-aba="atividades" aria-selected="false" aria-controls="eq-painel-ativ">Atividades</button>
+      </div>
+      <div class="cartao" id="eq-painel-ativ" role="tabpanel" aria-labelledby="eq-aba-ativ" hidden>
+        <p class="at-previa"><b>Prévia.</b> Na versão com servidor, cada linha é gravada pelo próprio servidor, com o horário, o IP e o aparelho, e ninguém consegue apagar (nem administrador). Aqui aparecem o histórico das sessões e o que foi feito neste navegador.</p>
+        <div class="at-filtros">
+          <label class="busca-l"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span class="sr">Procurar nas atividades</span><input type="search" id="at-q" placeholder="Procurar paciente, psicólogo ou ação" autocomplete="off"></label>
+          <select id="at-quem" aria-label="Pessoa"></select>
+          <select id="at-periodo" aria-label="Período"><option value="1">Hoje</option><option value="7" selected>Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="">Tudo</option></select>
+          <select id="at-tipo" aria-label="Tipo"></select>
+        </div>
+        <div class="at-lista" id="at-lista"><p class="eq-vazio">Carregando…</p></div>
+        <nav class="paginacao" id="pagAtiv" aria-label="Páginas de atividades"></nav>
+      </div>
+      <div class="cartao" id="eq-painel-pessoas" role="tabpanel" aria-labelledby="eq-aba-pessoas">
+        <div class="cfg-grupo" id="cfg-equipe">
+          <p id="eq-intro">Quem pode entrar no painel. <b>Administrador</b> vê tudo; <b>Suporte</b> vê a Agenda e, em Psicólogos, os atendimentos e a disponibilidade de cada um; em <b>Editar</b> você pode dar acessos extras (Pacientes, Artigos, Resumo dos psicólogos, Financeiro). Só o <b>administrador principal</b> cria, muda ou remove administradores; cada <b>psicólogo</b> vê só a própria agenda. A equipe entra com e-mail, senha e o código do app autenticador; o psicólogo, com e-mail e senha.</p>
+          <div class="eq-filtros">
+            <label class="busca-l"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span class="sr">Procurar usuário</span><input type="search" id="eq-q" placeholder="Procurar por nome ou e-mail" autocomplete="off"></label>
+            <select id="eq-fpapel" aria-label="Papel"><option value="">Todos os papéis</option><option value="admin">Administradores</option><option value="suporte">Suporte</option><option value="psicologo">Psicólogos</option><option value="off">Desativados</option></select>
+          </div>
+          <div class="eq-grade" id="equipe-lista"><p class="eq-vazio">Carregando…</p></div>
+          <nav class="paginacao" id="pagUsuarios" aria-label="Páginas de usuários"></nav>
+          <div class="eq-modal-fundo" id="eq-modal" hidden>
+          <div class="eq-modal" role="dialog" aria-modal="true" aria-labelledby="eq-novo-tit">
+          <div class="eq-modal-topo"><h3 class="eq-sub" id="eq-novo-tit">Novo usuário</h3><button type="button" class="eq-modal-x" id="eq-modal-x" aria-label="Fechar">×</button></div>
+          <div class="grade">
+            <div class="campo"><label for="eq-nome">Nome</label><input type="text" id="eq-nome" autocomplete="off"></div>
+            <div class="campo"><label for="eq-email">E-mail <span class="aj">— é com ele que a pessoa entra</span></label><input type="email" id="eq-email" autocomplete="off"></div>
+            <div class="campo"><label for="eq-papel">Papel</label><select id="eq-papel"><option value="psicologo">Psicólogo(a) (só a própria agenda)</option><option value="suporte">Suporte (Agenda, atendimentos e disponibilidade)</option><option value="admin">Administrador (tudo)</option></select></div>
+            <div class="campo" id="eq-perfil-campo"><label for="eq-perfil">Perfil do psicólogo <span class="aj">— criado antes em Perfis</span></label><select id="eq-perfil"></select></div>
+            <div class="campo"><label for="eq-senha">Senha provisória <span class="aj">— vazio: psicólogo = nome + 123; equipe = o painel gera uma</span></label><input type="text" id="eq-senha" autocomplete="off"></div>
+          </div>
+          <p class="eq-nota" id="eq-nota">A pessoa recebe um e-mail para confirmar o endereço. No primeiro login, ela ativa o app autenticador pelo código QR e cria a senha dela (a provisória deixa de valer).</p>
+          <div class="eq-modal-acoes"><button class="btn" type="button" id="eq-cancelar">Cancelar</button><button class="btn primario" type="button" id="eq-criar">Criar acesso</button></div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/conteudo/base.js?v=169"></script>
+<script src="js/conteudo/artigos-editor.js?v=158"></script>
+<script src="js/conteudo/psicologos-editor.js?v=158"></script>
+<script src="js/conteudo/eventos.js?v=162"></script>
+<script src="js/conteudo/publicar.js?v=158"></script>
+<script src="js/conteudo/listas.js?v=199"></script>
+<script src="js/conteudo/acessos-psicologo.js?v=189"></script>
+<script src="js/conteudo/permissoes.js?v=158"></script>
+<script src="js/conteudo/usuarios.js?v=203"></script>
+<script src="js/conteudo/perfil-extras.js?v=158"></script>
+<script src="js/conteudo/inicio.js?v=158"></script>
+<script src="js/conteudo/barra-celular.js?v=158"></script>
+</body>
+</html>

@@ -98,6 +98,6 @@ const HR = { Manhã: [9, 0], Tarde: [15, 0], Noite: [19, 30] };
 (function () {
   if (window.PBCookies || document.getElementById("pb-ck-js")) return;
   const s = document.createElement("script");
-  s.id = "pb-ck-js"; s.src = BASE + "js/cookies.js"; s.defer = true;
+  s.id = "pb-ck-js"; s.src = BASE + "js/cookies.js?v=262"; s.defer = true;
   document.head.appendChild(s);
 })();

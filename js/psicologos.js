@@ -551,7 +551,8 @@
     }
     const posicao = () => {
       const fixa = $("#buscaFixa");
-      const topoMenu = celular ? 0 : ((document.querySelector("header.site") || {}).offsetHeight || 0);
+      const annH = (document.querySelector(".ann") || {}).offsetHeight || 0;   /* faixa dos 15 minutos, fixa no topo */
+      const topoMenu = celular ? annH : (((document.querySelector("header.site") || {}).offsetHeight || 0) + annH);
       /* no celular a busca fica compacta (cerca de 80px) depois que gruda no topo */
       const buscaPresa = fixa && getComputedStyle(fixa).position === "sticky";
       const alturaBusca = celular ? 84 : (buscaPresa ? fixa.offsetHeight : 0);

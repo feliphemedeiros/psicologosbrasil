@@ -7,7 +7,6 @@ ErrorDocument 404 /404.html
 RewriteEngine On
 
 # Páginas removidas: quem tiver o link antigo (ou vier do Google) cai na página certa, sem erro
-RewriteRule ^terapia-brasileiros-eua/?$ / [R=301,L]
 RewriteRule ^servicos/?$ /psicologos/ [R=301,L]
 
 # Perfil de cada psicólogo com endereço curto: psicologosbrasil.com.br/especialista/nome-do-psicologo/

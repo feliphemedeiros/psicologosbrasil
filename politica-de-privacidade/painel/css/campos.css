@@ -1,0 +1,137 @@
+/* =====================================================================
+   CAMPOS DO PAINEL — listas, datas e meses (junto com js/campos.js)
+   Bordas redondas, setinha própria e a caixinha que abre com as cores
+   do painel, no tema claro e no escuro. Vale para todas as telas.
+   ===================================================================== */
+:root {
+  --pc-fundo: #fff;
+  --pc-linha: #e2e5f0;
+  --pc-texto: #1b1f3b;
+  --pc-suave: #646a8a;
+  --pc-cor: #1f35b5;
+  --pc-claro: #eef0fc;
+  --pc-sombra: 0 18px 40px -12px rgba(16, 22, 52, .28), 0 2px 6px rgba(16, 22, 52, .06);
+  --pc-seta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%231f35b5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --pc-cal-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%231f35b5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='3'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+}
+html[data-tema="escuro"] {
+  --pc-fundo: #1d2238;
+  --pc-linha: #2b3150;
+  --pc-texto: #e7e9f5;
+  --pc-suave: #a2a8c6;
+  --pc-cor: #8d9cff;
+  --pc-claro: rgba(141, 156, 255, .16);
+  --pc-sombra: 0 18px 40px -12px rgba(0, 0, 0, .65), 0 2px 6px rgba(0, 0, 0, .3);
+  --pc-seta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238d9cff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --pc-cal-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238d9cff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='3'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
+/* ---------- o campo fechado ---------- */
+select:not([multiple]):not([size]),
+input[type=date], input[type=month] {
+  -webkit-appearance: none; appearance: none;
+  border-radius: 12px !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+select:not([multiple]):not([size]) { background-image: var(--pc-seta) !important; padding-right: 40px !important; text-overflow: ellipsis; }
+input[type=date], input[type=month] { background-image: var(--pc-cal-ico) !important; padding-right: 42px !important; color: var(--pc-texto); min-height: 44px; }
+select:not([multiple]):not([size]):hover, input[type=date]:hover, input[type=month]:hover { border-color: var(--pc-cor); }
+select.pc-aberto, input.pc-aberto { border-color: var(--pc-cor) !important; box-shadow: 0 0 0 3px var(--pc-claro) !important; }
+/* o ícone de calendário do navegador some: o nosso abre ao clicar no campo */
+input[type=date]::-webkit-calendar-picker-indicator,
+input[type=month]::-webkit-calendar-picker-indicator { display: none; }
+input[type=date]::-webkit-datetime-edit, input[type=month]::-webkit-datetime-edit { color: var(--pc-texto); }
+input[type=date]::-webkit-datetime-edit-fields-wrapper, input[type=month]::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+input[type=date]::-webkit-datetime-edit-text, input[type=month]::-webkit-datetime-edit-text { color: var(--pc-suave); padding: 0 2px; }
+/* celular: o aparelho abre o calendário dele; o ícone fica só de enfeite */
+@media (hover: none), (pointer: coarse) {
+  input[type=date]::-webkit-calendar-picker-indicator,
+  input[type=month]::-webkit-calendar-picker-indicator { display: block; opacity: 0; position: absolute; right: 0; width: 44px; height: 100%; cursor: pointer; }
+  input[type=date], input[type=month] { position: relative; }
+}
+
+/* ---------- a caixinha que abre ---------- */
+.pc-pop {
+  position: fixed; z-index: 3000; box-sizing: border-box;
+  background: var(--pc-fundo); color: var(--pc-texto);
+  border: 1px solid var(--pc-linha); border-radius: 14px; box-shadow: var(--pc-sombra);
+  font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px;
+  animation: pcAbre .12s ease-out;
+}
+@keyframes pcAbre { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .pc-pop { animation: none; } }
+
+/* lista */
+.pc-lista { max-height: min(320px, 60vh); overflow-y: auto; padding: 6px; max-width: min(420px, calc(100vw - 16px)); overscroll-behavior: contain; }
+.pc-op { padding: 9px 12px; border-radius: 9px; cursor: pointer; line-height: 1.35; display: flex; align-items: center; gap: 8px; }
+.pc-op.ativo { background: var(--pc-claro); }
+.pc-op.sel { color: var(--pc-cor); font-weight: 700; }
+.pc-op.sel::after { content: ""; margin-left: auto; width: 16px; height: 16px; flex: none; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/contain no-repeat; }
+.pc-op.off { opacity: .45; cursor: default; }
+.pc-grupo { padding: 10px 12px 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--pc-suave); }
+
+/* calendário */
+.pc-cal { width: 292px; padding: 12px; }
+.pc-cal-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pc-cal-topo b { font-size: 15px; }
+.pc-nav { width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; color: var(--pc-cor); font: 400 22px/1 system-ui, sans-serif; cursor: pointer; }
+.pc-nav:hover { background: var(--pc-claro); }
+.pc-semana, .pc-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
+.pc-semana span { font-size: 11.5px; font-weight: 700; color: var(--pc-suave); padding: 4px 0; }
+.pc-dia, .pc-mes {
+  height: 34px; border: 1.5px solid transparent; border-radius: 10px; background: transparent; color: var(--pc-texto);
+  font: 600 14px "Figtree", system-ui, sans-serif; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.pc-dia:hover:not(:disabled), .pc-mes:hover:not(:disabled) { background: var(--pc-claro); }
+.pc-dia.hoje, .pc-mes.hoje { border-color: var(--pc-cor); color: var(--pc-cor); }
+.pc-dia.sel, .pc-mes.sel { background: var(--pc-cor); border-color: var(--pc-cor); color: #fff; }
+html[data-tema="escuro"] .pc-dia.sel, html[data-tema="escuro"] .pc-mes.sel { background: #3d52d9; border-color: #3d52d9; }
+.pc-dia:disabled, .pc-mes:disabled { opacity: .3; cursor: default; }
+.pc-meses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.pc-mes { height: 40px; text-transform: capitalize; }
+.pc-cal-pe { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--pc-linha); }
+.pc-link { border: 0; background: none; padding: 4px 6px; border-radius: 8px; color: var(--pc-cor); font: 600 13.5px "Figtree", system-ui, sans-serif; cursor: pointer; }
+.pc-link:hover:not(:disabled) { background: var(--pc-claro); }
+.pc-link:disabled { opacity: .4; cursor: default; }
+
+/* ---------- avisos (ex.: "Publicado!", "Agenda desligada") ----------
+   No topo da tela, no meio, logo abaixo do menu: não ficam mais por cima
+   da barra de botões lá embaixo. Clique no aviso para fechar. */
+#toast, #toasts {
+  position: fixed !important; top: var(--pc-aviso-topo, 84px) !important; bottom: auto !important; left: 50% !important; right: auto !important;
+  transform: translateX(-50%) !important; z-index: 3500 !important;
+  display: flex !important; flex-direction: column !important; align-items: center; gap: 8px !important;
+  width: min(460px, calc(100vw - 32px)) !important; max-width: none !important; pointer-events: none;
+}
+/* aviso na "camada do topo" (popover): sem a moldura padrão do navegador */
+#toast[popover], #toasts[popover] { margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; overflow: visible !important; height: auto !important; color: inherit; }
+#toast .toast, #toasts .toast {
+  pointer-events: auto; cursor: pointer; width: 100%; box-sizing: border-box;
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 18px 14px 14px !important; border-radius: 16px !important;
+  background: var(--pc-fundo) !important; color: var(--pc-texto) !important;
+  border: 1px solid var(--pc-linha); box-shadow: var(--pc-sombra) !important;
+  font: 500 14.5px/1.45 "Figtree", system-ui, sans-serif;
+  animation: pcAviso .22s ease-out !important;
+}
+#toast .toast::before, #toasts .toast::before {
+  content: "i"; flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  font: 800 14px/1 system-ui, sans-serif; background: rgba(255, 255, 255, .22); color: #fff;
+}
+/* cores fortes: verde = deu certo, vermelho = erro, amarelo = atenção, azul = aviso */
+#toast .toast, #toasts .toast { background: #1f35b5 !important; color: #fff !important; border-color: transparent; }
+#toast .toast.ok, #toasts .toast.toast-ok { background: #17864d !important; }
+#toast .toast.erro, #toasts .toast.toast-erro { background: #c62828 !important; }
+#toast .toast.aviso, #toasts .toast.toast-aviso { background: #b26a00 !important; }
+#toast .toast.ok::before, #toasts .toast.toast-ok::before { content: "✓"; }
+#toast .toast.erro::before, #toasts .toast.toast-erro::before, #toast .toast.aviso::before, #toasts .toast.toast-aviso::before { content: "!"; }
+html[data-tema="escuro"] #toast .toast, html[data-tema="escuro"] #toasts .toast { box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .7) !important; }
+#toasts .toast.saindo { opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .2s; }
+@keyframes pcAviso { from { opacity: 0; transform: translateY(-10px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { #toast .toast, #toasts .toast { animation: none !important; } }

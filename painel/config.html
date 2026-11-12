@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Configurações · Painel Psicólogos Brasil</title>
+<link rel="icon" href="../assets/icones/favicon.svg?v=109" type="image/svg+xml">
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nuvem.js"></script>
+<script src="../js/agenda/config.js?v=116"></script>
+<script src="../js/agenda/util.js?v=163"></script>
+<script src="../js/agenda/db.js?v=220"></script>
+<script src="../js/agenda/db-firebase.js?v=220"></script>
+<script src="js/sessao.js?v=206"></script>
+<script src="js/notificacoes.js?v=205"></script>
+<script src="js/exemplo.js"></script>
+<script>/* sem acesso a esta área: volta para a tela de entrada */ if (!Auth.exigir(['admin'])) document.documentElement.hidden = true;</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="css/conteudo.css?v=199">
+<link rel="stylesheet" href="css/escuro.css?v=120">
+<link rel="stylesheet" href="css/topo.css?v=206">
+<link rel="stylesheet" href="css/campos.css">
+<script src="js/campos.js" defer></script>
+<script src="js/tema.js?v=205"></script>
+</head>
+<body data-pagina="config">
+<script>/* já entrou? então não mostra a tela de login nem por um instante (evita a "piscada" ao voltar da agenda) */
+(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(s&&(!s.expira||s.expira>Date.now()))document.documentElement.classList.add('tem-sessao');}catch(e){}})();</script>
+<!-- ============ LOGIN ============ -->
+<div class="login" id="login">
+  <form class="login-card" id="loginForm" autocomplete="on">
+    <div class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></div>
+    <div><h1>Painel Psicólogos Brasil</h1><p class="login-sub">Entre para publicar artigos e psicólogos.</p></div>
+    <label><span id="loginUsuarioRot">Usuário</span><input id="loginUsuario" name="usuario" type="text" autocomplete="username" required></label>
+    <label>Senha<input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></label>
+    <p class="login-erro" id="loginErro" role="alert"></p>
+    <button class="btn primario" type="submit" id="loginBtn">Entrar</button>
+    <button class="login-esq" type="button" id="loginEsqueci" hidden>Esqueci a senha</button>
+    <p class="login-modo" id="loginModo">Carregando…</p>
+  </form>
+</div>
+<div class="app">
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="index.html">
+        <span class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></span>
+        <span>Psicólogos Brasil <small id="marcaSub">Configurações</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn pequeno" type="button" data-sair>Sair</button>
+      </div>
+    </div>
+    <nav class="abas nav" role="tablist" aria-label="Seções" hidden>
+      <button class="aba" role="tab" data-view="psicologos">Psicólogos <span class="qtd" id="qtdPsicologos">0</span></button>
+      <button class="aba" role="tab" data-view="artigos">Artigos <span class="qtd" id="qtdArtigos">0</span></button>
+      <button class="aba" role="tab" data-view="usuarios">Usuários</button>
+      <button class="aba ativo" role="tab" data-view="config">Configurações</button>
+      <a class="nav-link" href="agenda.html" id="navAgenda" hidden><span class="qtd" id="qtdPend"></span></a>
+    </nav>
+    <nav class="ficha-topo" id="psiFichaTopo" aria-label="Partes da ficha do psicólogo" hidden></nav>
+    <div class="pasta-box" hidden>
+      <div class="pasta-nome off" id="pastaNome">Não conectada</div>
+      <button class="btn pequeno" id="btnPasta">Conectar pasta</button>
+      <p class="dica" id="pastaDica"></p>
+    </div>
+  </header>
+<script>/* sininho e menu da conta já na hora (sem mostrar o "Sair" antigo por um instante) */try{window.Notificacoes&&Notificacoes.montar()}catch(e){}</script>
+  <div class="visao-equipe" id="psiVisao" hidden><div class="visao-equipe-in"></div></div>
+
+
+  <main class="conteudo">
+    <section class="view ativa" id="view-config">
+      <header class="topbar">
+        <div>
+          <h1>Configurações</h1>
+          <p class="sub">Valem para todas as páginas que o painel gera.</p>
+        </div>
+      </header>
+      <div class="cfg-bloco">
+        <div class="cfg-grupo seo-box smtp-grupo">
+        <div class="smtp-topo">
+          <span class="smtp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></span>
+          <div>
+            <h2>Configurações de SMTP</h2>
+            <p>O e-mail que o sistema usa para enviar sozinho os avisos de agendamento e de pendências.</p>
+          </div>
+        </div>
+        <form id="smtp-form" novalidate autocomplete="off">
+          <div class="grade">
+            <div class="campo"><label for="smtp-host">Servidor SMTP (host)</label><input type="text" id="smtp-host" placeholder="ex.: smtp.gmail.com" autocapitalize="off" spellcheck="false"></div>
+            <div class="campo"><label for="smtp-porta">Porta SMTP</label><input type="text" id="smtp-porta" inputmode="numeric" placeholder="ex.: 465 ou 587"></div>
+            <div class="campo"><label for="smtp-usuario">Usuário (e-mail remetente)</label><input type="email" id="smtp-usuario" placeholder="ex.: contato@psicologosbrasil.com.br" autocapitalize="off" spellcheck="false" autocomplete="off"></div>
+            <div class="campo"><label for="smtp-senha">Senha do e-mail</label>
+              <div class="smtp-senha-box"><input type="password" id="smtp-senha" autocomplete="new-password" placeholder="Senha do e-mail"><button type="button" class="smtp-olho" id="smtp-olho" aria-label="Mostrar a senha" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            </div>
+          </div>
+          <p class="smtp-nota" id="smtp-nota">Gmail: use <b>smtp.gmail.com</b>, porta <b>465</b> e uma <b>senha de app</b> (Conta Google → Segurança → Verificação em duas etapas → Senhas de app). A senha normal do Gmail não funciona.</p>
+          <p class="smtp-status" id="smtp-status" role="status" aria-live="polite" hidden></p>
+          <div class="smtp-botoes">
+            <button type="button" class="btn" id="smtp-testar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-4 16-4-6-8-2z"/><path d="m12 14 8-10"/></svg>Testar conexão SMTP</button>
+            <button type="submit" class="btn primario" id="smtp-salvar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>Salvar configuração SMTP</button>
+          </div>
+        </form>
+        </div>
+        <div class="cfg-grupo seo-box" id="lst-cartao">
+          <h2>Ordem da lista de psicólogos</h2>
+          <p>Dá destaque, na página Psicólogos, a quem é <b>novo na plataforma</b> ou teve <b>pouco atendimento</b>. Vale para a ordem “Recomendados”, que é a que abre primeiro.</p>
+          <label class="agenda-switch mini off" for="lst-ativo" id="lst-switch">
+            <input type="checkbox" id="lst-ativo" role="switch">
+            <span class="agenda-switch-trilho" aria-hidden="true"><span></span></span>
+            <span class="agenda-switch-txt"><b id="lst-tit">Destaque desligado</b></span>
+          </label>
+          <div class="grade" style="margin-top:16px">
+            <div class="campo"><label for="lst-lugares">Lugares de destaque <span class="aj">— logo depois do 1º</span></label>
+              <select id="lst-lugares"><option value="1">1 (2º lugar)</option><option value="2">2 (2º e 3º)</option><option value="3">3 (do 2º ao 4º)</option><option value="4">4 (do 2º ao 5º)</option><option value="5">5 (do 2º ao 6º)</option></select></div>
+            <div class="campo"><label for="lst-novoDias">Novo na plataforma <span class="aj">— até quantos dias</span></label><input type="number" id="lst-novoDias" min="0" max="365" inputmode="numeric"></div>
+            <div class="campo"><label for="lst-poucos">Pouco atendimento <span class="aj">— até quantos nos últimos 30 dias</span></label><input type="number" id="lst-poucos" min="0" max="100" inputmode="numeric"></div>
+          </div>
+          <p class="aj" style="margin:8px 0 0">Ligado: o 1º lugar é de quem tem o horário mais cedo e os lugares seguintes ficam com os novos ou com pouco atendimento, trocando todo dia. Só entra no destaque quem tem <b>horário livre nos próximos 7 dias</b> e <b>perfil completo</b> (foto, texto e temas). Se faltar gente, os lugares ficam com a ordem normal. Quem está sem horário continua no fim da lista.</p>
+          <div class="botoes"><button class="btn primario pequeno" type="button" id="lst-salvar">Salvar e aplicar no site</button><span class="aj" id="lst-status" role="status" aria-live="polite"></span></div>
+        </div>
+        <div class="cfg-grupo seo-box" id="eqh-cartao">
+          <h2>Horário da equipe e pré-reserva</h2>
+          <p>Quando a equipe está disponível para confirmar os pagamentos. O prazo da pré-reserva e a antecedência mínima contam <b>só dentro deste horário</b>: um pedido feito à meia-noite, com prazo de 2 horas, vence às 10h (8h + 2h).</p>
+          <div class="campo"><label>Dias de atendimento</label><div class="eq-dias" id="eqh-dias"><label class="eq-dia"><input type="checkbox" value="1"> Seg</label><label class="eq-dia"><input type="checkbox" value="2"> Ter</label><label class="eq-dia"><input type="checkbox" value="3"> Qua</label><label class="eq-dia"><input type="checkbox" value="4"> Qui</label><label class="eq-dia"><input type="checkbox" value="5"> Sex</label><label class="eq-dia"><input type="checkbox" value="6"> Sáb</label><label class="eq-dia"><input type="checkbox" value="0"> Dom</label></div></div>
+          <div class="grade" style="margin-top:14px">
+            <div class="campo"><label for="eqh-inicio">Começa às</label><select id="eqh-inicio"><option value="0">0h</option><option value="1">1h</option><option value="2">2h</option><option value="3">3h</option><option value="4">4h</option><option value="5">5h</option><option value="6">6h</option><option value="7">7h</option><option value="8">8h</option><option value="9">9h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option></select></div>
+            <div class="campo"><label for="eqh-fim">Termina às</label><select id="eqh-fim"><option value="1">1h</option><option value="2">2h</option><option value="3">3h</option><option value="4">4h</option><option value="5">5h</option><option value="6">6h</option><option value="7">7h</option><option value="8">8h</option><option value="9">9h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option><option value="24">24h</option></select></div>
+            <div class="campo"><label for="eqh-prazo">Prazo da pré-reserva <span class="aj">— horas, no horário da equipe</span></label><input type="number" id="eqh-prazo" min="1" max="48" inputmode="numeric"></div>
+            <div class="campo"><label for="eqh-antes">Antecedência mínima para agendar <span class="aj">— horas, no horário da equipe</span></label><input type="number" id="eqh-antes" min="0" max="48" inputmode="numeric"></div>
+          </div>
+          <p class="aj" id="eqh-exemplo" style="margin:10px 0 0"></p>
+          <div class="botoes"><button class="btn primario pequeno" type="button" id="eqh-salvar">Salvar e aplicar no site</button><span class="aj" id="eqh-status" role="status" aria-live="polite"></span></div>
+        </div>
+        <div class="cfg-grupo seo-box" id="pix">
+          <h2>Pix da clínica</h2>
+          <p>A conta onde o <b>paciente paga</b> a sessão. Na Agenda, o botão <b>“Enviar Pix ao paciente”</b> monta a mensagem com esta chave e o valor certo, pronta para o WhatsApp. (O Pix de cada psicólogo, para o repasse, fica na Conta dele.)</p>
+          <div class="grade">
+            <div class="campo"><label for="pixc-tipo">Tipo da chave</label><select id="pixc-tipo"><option value="cnpj">CNPJ</option><option value="cpf">CPF</option><option value="celular">Celular</option><option value="email">E-mail</option><option value="aleatoria">Chave aleatória</option></select></div>
+            <div class="campo"><label for="pixc-chave">Chave Pix</label><input type="text" id="pixc-chave" autocomplete="off" spellcheck="false" autocapitalize="off"><span class="aj pixc-ajuda" id="pixc-ajuda" aria-live="polite"></span></div>
+            <div class="campo"><label for="pixc-nome">Nome de quem recebe <span class="aj">— aparece no app do banco</span></label><input type="text" id="pixc-nome" maxlength="80" placeholder="Ex.: Psicólogos Brasil Ltda"></div>
+            <div class="campo"><label for="pixc-banco">Banco <span class="aj">— opcional</span></label><input type="text" id="pixc-banco" maxlength="40" placeholder="Ex.: Nubank"></div>
+          </div>
+          <div class="botoes"><button class="btn primario pequeno" type="button" id="pixc-salvar">Salvar Pix da clínica</button><span class="aj" id="pixc-status" role="status" aria-live="polite"></span></div>
+        </div>
+        <div class="cfg-grupo seo-box">
+          <h2>Site</h2>
+          <p>Endereço oficial e número de WhatsApp usados nos links para o Google e nos botões de agendamento.</p>
+          <div class="grade">
+            <div class="campo"><label for="cfg-siteUrl">Endereço do site</label><input type="url" id="cfg-siteUrl"></div>
+            <div class="campo"><label for="cfg-whatsapp">WhatsApp geral (com 55 + DDD)</label><input type="text" id="cfg-whatsapp"></div>
+          </div>
+        </div>
+        <div class="cfg-grupo seo-box">
+          <h2>Artigos</h2>
+          <p>As categorias para escolher em cada artigo e o autor principal, que já vem em todo artigo novo.</p>
+          <div class="grade">
+            <div class="campo cheio"><label for="cfg-cat-input">Categorias <span class="aj">— digite e clique em Adicionar (ou aperte Enter); clique no × para tirar</span></label>
+              <div class="cat-linha"><div class="tags" id="cfg-cat-tags"><input id="cfg-cat-input" placeholder="Ex.: Ansiedade" maxlength="40" autocomplete="off"></div><button class="btn pequeno" type="button" id="cfg-cat-add">+ Adicionar</button></div>
+              <textarea id="cfg-categorias" hidden></textarea></div>
+          </div>
+          <div class="cfg-sub">
+            <h3>Autor principal</h3>
+            <p class="aj">Todo artigo novo começa com este autor. Para um artigo de outra pessoa, troque dentro do próprio artigo, em “Usar outro autor”.</p>
+            <div class="grade">
+              <div class="campo"><label for="cfg-autor">Nome</label><input type="text" id="cfg-autor"></div>
+              <div class="campo"><label for="cfg-autorTrat">Cargo</label><select id="cfg-autorTrat"><option>Psicólogo</option><option>Psicóloga</option></select></div>
+              <div class="campo"><label for="cfg-autorCrp">CRP <span class="aj">— só o número</span></label><input type="text" id="cfg-autorCrp" inputmode="numeric" maxlength="9" placeholder="Ex.: 11/14186"></div>
+              <div class="campo"><label for="cfg-autorOpp">OPP <span class="aj">— opcional</span></label><input type="text" id="cfg-autorOpp" inputmode="numeric" placeholder="Ex.: 12345"></div>
+              <div class="campo"><label>Foto</label>
+                <div class="imagem-campo"><div class="imagem-prev autor-prev" id="cfg-autorFoto-prev">Sem foto</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pequeno" type="button" id="cfg-autorFoto-btn">Escolher foto</button><button class="btn pequeno perigo" type="button" id="cfg-autorFoto-rem">Remover</button></div>
+                  <input type="file" id="cfg-autorFoto-file" accept="image/*" hidden></div></div>
+            </div>
+          </div>
+        </div>
+        <details class="cfg-grupo seo-box cfg-avancado" id="cfg-avancado">
+          <summary><span><b>Avançado</b><small>Topo, rodapé, scripts do site e sitemap. Só mexa se souber o que está fazendo.</small></span><span class="cfg-av-seta" aria-hidden="true">▾</span></summary>
+        <div class="cfg-grupo cfg-interno">
+          <h2>Fontes, topo, rodapé e scripts do site</h2>
+          <p>Cole aqui o <code>&lt;header&gt;</code> e o <code>&lt;footer&gt;</code> do seu site uma vez só. Todas as páginas geradas usam o que estiver aqui. Use links começando com “/” (ex.: <code>/quem-somos/</code>), porque as páginas ficam dentro de pastas.</p>
+          <div class="grade">
+            <div class="campo cheio"><label for="cfg-head">Código extra no &lt;head&gt; <span class="aj">— fontes do Google, Google Analytics, pixel etc.</span></label><textarea class="codigo" id="cfg-head" style="min-height:90px"></textarea></div>
+            <div class="campo cheio"><label for="cfg-header">Topo (header + menu do celular)</label><textarea class="codigo" id="cfg-header"></textarea></div>
+            <div class="campo cheio"><label for="cfg-footer">Rodapé (footer + botão flutuante)</label><textarea class="codigo" id="cfg-footer"></textarea></div>
+            <div class="campo cheio"><label for="cfg-scripts">Scripts no fim da página</label><textarea class="codigo" id="cfg-scripts" style="min-height:80px"></textarea></div>
+          </div>
+          <div class="botoes"><button class="btn pequeno" id="cfg-restaurar">Restaurar topo e rodapé de exemplo</button></div>
+        </div>
+        <div class="cfg-grupo cfg-interno">
+          <h2>SEO: sitemap e listas</h2>
+          <p>Toda vez que você salva um artigo ou psicólogo, o painel atualiza <code>sitemap.xml</code>, <code>data/artigos.json</code> e <code>data/psicologos.json</code>. As páginas fixas abaixo também entram no sitemap.</p>
+          <div class="campo"><label for="cfg-paginasFixas">Páginas fixas do site</label><textarea id="cfg-paginasFixas" rows="7"></textarea></div>
+          <div class="botoes"><button class="btn pequeno" id="cfg-sitemap">Atualizar sitemap e listas agora</button></div>
+        </div>
+        </details>
+        <div class="cfg-grupo seo-box">
+          <h2>Backup do painel</h2>
+          <p>O painel guarda tudo neste navegador, neste computador. Exporte um backup de vez em quando, ou para usar em outro computador.</p>
+          <div class="botoes">
+            <button class="btn pequeno" id="cfg-exportar">Exportar backup (.json)</button>
+            <button class="btn pequeno" id="cfg-importar">Importar backup</button>
+            <input type="file" id="cfg-importar-file" accept="application/json,.json" hidden>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/conteudo/base.js?v=169"></script>
+<script src="js/conteudo/artigos-editor.js?v=158"></script>
+<script src="js/conteudo/psicologos-editor.js?v=158"></script>
+<script src="js/conteudo/eventos.js?v=162"></script>
+<script src="js/conteudo/publicar.js?v=158"></script>
+<script src="js/conteudo/listas.js?v=199"></script>
+<script src="js/conteudo/acessos-psicologo.js?v=189"></script>
+<script src="js/conteudo/permissoes.js?v=158"></script>
+<script src="js/conteudo/usuarios.js?v=203"></script>
+<script src="js/conteudo/perfil-extras.js?v=158"></script>
+<script src="js/conteudo/inicio.js?v=158"></script>
+<script src="js/smtp.js?v=158"></script>
+<script src="js/conteudo/barra-celular.js?v=158"></script>
+</body>
+</html>

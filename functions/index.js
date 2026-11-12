@@ -176,20 +176,23 @@ async function avisarCandidatura(snap, c = null) {
   }
 }
 /* ---------- Troca da chave Pix pelo psicólogo (código de 6 números no e-mail) ----------
-   trocas_pix/{id}: o psicólogo cria o pedido (chave nova); aqui geramos o código, guardamos
-   em trocas_pix_segredo (ninguém lê pelo navegador) e mandamos o e-mail. Ele digita o código
+   trocas_pix/{id}: o ADMINISTRADOR (ou o suporte com "Psicólogos (completo)") cria o pedido com a chave nova
+   do psicólogo; aqui geramos o código, guardamos em trocas_pix_segredo (ninguém lê pelo navegador) e mandamos
+   para o e-mail de QUEM PEDIU (não do psicólogo). Ele digita o código
    no painel (campo "codigo" do pedido): conferimos e só então trocamos a chave. */
 const mascarar = e => { const [n, d] = String(e || '').split('@'); return d ? n.slice(0, 2) + '•••@' + d : ''; };
 async function pedirPix(snap) {
   const p = snap.data() || {}, ref = snap.ref;
   try {
     const u = await db().doc('usuarios/' + p.por).get(), ud = u.exists ? u.data() : {};
-    if (ud.papel !== 'psicologo' || ud.psiId !== p.psiId || ud.ativo === false) throw new Error('Sem permissão.');
-    const ag = await db().doc('psicologos_agenda/' + p.psiId).get(), email = (ag.data() || {}).email || ud.email;
-    if (!email) throw new Error('Você não tem e-mail cadastrado. Fale com o suporte.');
+    const extras = (Array.isArray(ud.extras) ? ud.extras : []).map(k => (k === 'psiResumo' ? 'psicologos' : k));
+    const pode = ud.ativo !== false && (ud.papel === 'admin' || (ud.papel === 'suporte' && extras.includes('psicologos')));
+    if (!pode) throw new Error('Sem permissão para trocar a chave Pix.');
+    const email = ud.email;
+    if (!email) throw new Error('Seu usuário não tem e-mail cadastrado.');
     const codigo = String(require('crypto').randomInt(100000, 1000000));
     await db().doc('trocas_pix_segredo/' + ref.id).set({ codigo, expira: Date.now() + 10 * 60e3, tentativas: 0 });
-    await db().collection('mail').add({ para: email, assunto: 'Código para trocar sua chave Pix',
+    await db().collection('mail').add({ para: email, assunto: 'Código para trocar a chave Pix de um psicólogo',
       corpo: `Seu código para confirmar a nova chave Pix na Psicólogos Brasil é ${codigo}. Ele vale por 10 minutos.\n\nSe não foi você, não digite o código e fale com o suporte: sua chave continua a mesma.`, em: Date.now() });
     await ref.update({ status: 'codigo_enviado', emailMasc: mascarar(email) });
   } catch (e) { await ref.update({ status: 'erro', erro: e.message || String(e) }); }

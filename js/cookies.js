@@ -173,6 +173,9 @@
   function linkRodape() {
     const alvo = document.querySelector("footer.site .ft-legal") || document.querySelector("footer .ft-bottom") || document.querySelector("footer");
     if (!alvo || alvo.querySelector("[data-cookies-abrir]")) return;
+    /* v261: no rodapé enxuto o link entra no fim da última linha ("… · Preferências de cookies") */
+    const ultima = alvo.classList && alvo.classList.contains("ft-legal") ? alvo.querySelector("p:last-of-type") : null;
+    if (ultima) { ultima.insertAdjacentHTML("beforeend", '<span class="ft-sep"> · </span><span><button type="button" class="pb-ck-link" data-cookies-abrir>Preferências de cookies</button></span>'); return; }
     const p = document.createElement("p");
     p.innerHTML = '<button type="button" class="pb-ck-link" data-cookies-abrir>Preferências de cookies</button>';
     alvo.appendChild(p);

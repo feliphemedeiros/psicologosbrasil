@@ -154,6 +154,24 @@
       const dv = n => { const p = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]; let s = 0; for (let i = 0; i < n; i++) s += +c[i] * p[i]; const r = s % 11; return r < 2 ? 0 : 11 - r; };
       return dv(12) === +c[12] && dv(13) === +c[13];
     },
+    /* enquanto digita: só deixa entrar o que cabe no tipo escolhido e já põe pontos e traços
+       CPF 000.000.000-00 · CNPJ 00.000.000/0000-00 · Celular (85) 99999-9999 ·
+       E-mail sem espaços, minúsculo · Aleatória: 32 letras/números (0-9, a-f) com os hífens */
+    pixMascara(tipo, v) {
+      v = String(v || '');
+      if (tipo === 'cpf' || tipo === 'cnpj' || tipo === 'celular') {
+        const d = v.replace(/\D/g, '').slice(0, tipo === 'cnpj' ? 14 : 11);
+        if (tipo === 'cpf') return d.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+        if (tipo === 'cnpj') return d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+        return d.length > 2 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}${d.length > 7 ? '-' + d.slice(7) : ''}` : d;
+      }
+      if (tipo === 'email') return v.replace(/\s+/g, '').toLowerCase().slice(0, 77);
+      if (tipo === 'aleatoria') {
+        const h = v.replace(/[^0-9a-f]/gi, '').toLowerCase().slice(0, 32);
+        return [h.slice(0, 8), h.slice(8, 12), h.slice(12, 16), h.slice(16, 20), h.slice(20)].filter(Boolean).join('-');
+      }
+      return v;
+    },
     /* confere e deixa no formato do banco → { ok, valor, erro } */
     pixNormalizar(tipo, v) {
       v = String(v || '').trim();
@@ -171,6 +189,26 @@
         return h.length === 32 ? { ok: true, valor: `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` } : { ok: false, erro: 'Chave aleatória: são 32 letras e números (com ou sem hífens).' };
       }
       return { ok: false, erro: 'Escolha o tipo da chave Pix.' };
+    },
+    /* Pix da clínica: a conta onde o PACIENTE paga (painel → Configurações → Pix da clínica).
+       Modo teste: localStorage pb-pix-clinica-v1 · Firebase: painel_config/pix (só a equipe lê) */
+    async pixClinica() {
+      try {
+        if (typeof NUVEM !== 'undefined' && NUVEM.modo === 'firebase') {
+          const { fs, db } = await NUVEM.firebase();
+          const s = await fs.getDoc(fs.doc(db, 'painel_config', 'pix'));
+          return s.exists() ? s.data() : null;
+        }
+        return JSON.parse(localStorage.getItem('pb-pix-clinica-v1')) || null;
+      } catch (e) { return null; }
+    },
+    /* copia um texto (com plano B para navegador antigo) */
+    async copiar(t) {
+      try { await navigator.clipboard.writeText(t); return true; }
+      catch (e) {
+        const x = document.createElement('textarea'); x.value = t; x.setAttribute('readonly', ''); x.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(x); x.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (er) { ok = false; } x.remove(); return ok;
+      }
     },
     /* para mostrar: 123.456.789-09 · (85) 99999-9999 */
     pixFormatar(tipo, v) {
@@ -354,7 +392,7 @@
     codigo() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 4; i++) s += c[Math.floor(Math.random() * c.length)]; return s; },
     esc(s) { return String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); },
     digitos(s) { return String(s || '').replace(/\D/g, ''); },
-    primeiroNome(s) { return String(s || '').trim().split(/\s+/)[0] || ''; },
+    primeiroNome(s) { const n = String(s || '').trim().split(/\s+/)[0] || ''; return n ? n.charAt(0).toUpperCase() + n.slice(1) : ''; },   /* "joao silva" → "Joao" */
     emailValido(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim()); },
     /* ---------- WhatsApp (Brasil e outros países) ----------
        Número novo é guardado com "+" e o código do país: "+5585999998888", "+351912345678".
@@ -447,7 +485,12 @@
       const n = U.whatsNumero(numero);   /* sem número: abre o WhatsApp para escolher o contato */
       return `https://api.whatsapp.com/send?${n ? `phone=${n}&` : ''}text=${encodeURIComponent(texto)}`;
     },
-    badge(status) { const s = STATUS[status] || { rotulo: status, classe: 'neutro' }; return `<span class="badge badge-${s.classe}">${s.rotulo}</span>`; },
+    /* selo da situação com ícone (relógio, ✓, ✓✓, ×, –) para bater o olho */
+    badge(status) {
+      const s = STATUS[status] || { rotulo: status, classe: 'neutro' };
+      const I = { pend: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/>', ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', info: '<path d="M2.5 12.5 6.5 16.5 14 8.5M10.5 15l1.5 1.5L21.5 7"/>', erro: '<path d="M7 7l10 10M17 7 7 17"/>', neutro: '<path d="M7 12h10"/>' };
+      return `<span class="badge badge-${s.classe}"><svg class="badge-ico" viewBox="0 0 24 24" aria-hidden="true">${I[s.classe] || ''}</svg>${s.rotulo}</span>`;
+    },
 
     /* ---------- DOM ---------- */
     $(sel, el = document) { return el.querySelector(sel); },

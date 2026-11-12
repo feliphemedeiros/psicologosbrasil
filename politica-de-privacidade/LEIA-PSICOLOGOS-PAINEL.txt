@@ -1,0 +1,6 @@
+PSICÓLOGOS NUM MENU SÓ
+
+1) Suba os arquivos deste zip (substituindo os antigos).
+2) APAGUE no servidor:  painel/js/psicologos-painel.js  (não é mais usado)
+   O painel/psicologos.html continua: agora ele só leva para a tela nova
+   (para quem tinha o endereço antigo salvo).

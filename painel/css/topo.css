@@ -175,3 +175,124 @@ html[data-tema="escuro"] .am-item:active, html[data-tema="escuro"] .am-item:focu
   .am-caixa { width: min(520px, calc(100vw - 48px)); border-radius: 20px; padding-bottom: 16px; }
   .am-alca { display: none; }
 }
+
+
+/* ===================== CORES E ÍCONES (v149) =====================
+   Menu do topo com a cor de cada área, abas com ícone colorido,
+   caixinhas de número com ícone e selos de situação com ícone. */
+.area-link[data-area="psicologos"] { --hub-cor: #2f5bd3; --hub-bg: #e6edfc; }
+.area-link[data-area="pacientes"]  { --hub-cor: #0f8f86; --hub-bg: #ddf3f1; }
+.area-link[data-area="artigos"]    { --hub-cor: #c2410c; --hub-bg: #fdeadf; }
+.area-link[data-area="agenda"]     { --hub-cor: #7c3aed; --hub-bg: #eee7fd; }
+.area-link[data-area="usuarios"]   { --hub-cor: #be185d; --hub-bg: #fbe4ef; }
+.area-link[data-area="financeiro"] { --hub-cor: #0e7490; --hub-bg: #dcf0f5; }
+.area-link[data-area="config"]     { --hub-cor: #475569; --hub-bg: #e8ecf1; }
+html[data-tema="escuro"] .area-link[data-area="psicologos"] { --hub-cor: #8fb0ff; --hub-bg: rgba(110, 150, 255, .16); }
+html[data-tema="escuro"] .area-link[data-area="pacientes"]  { --hub-cor: #5fd4c9; --hub-bg: rgba(60, 200, 190, .14); }
+html[data-tema="escuro"] .area-link[data-area="artigos"]    { --hub-cor: #ffa36e; --hub-bg: rgba(255, 140, 80, .14); }
+html[data-tema="escuro"] .area-link[data-area="agenda"]     { --hub-cor: #b99bff; --hub-bg: rgba(160, 120, 255, .16); }
+html[data-tema="escuro"] .area-link[data-area="usuarios"]   { --hub-cor: #ff8fc0; --hub-bg: rgba(255, 110, 170, .14); }
+html[data-tema="escuro"] .area-link[data-area="financeiro"] { --hub-cor: #62cfe6; --hub-bg: rgba(70, 190, 220, .14); }
+html[data-tema="escuro"] .area-link[data-area="config"]     { --hub-cor: #aab4c5; --hub-bg: rgba(170, 180, 200, .12); }
+.area-link[data-area] svg { color: var(--hub-cor); }
+.area-link[data-area]:hover { background: var(--hub-bg) !important; color: var(--hub-cor) !important; }
+.area-link[data-area].atual { background: var(--hub-bg) !important; color: var(--hub-cor) !important; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--hub-cor) 35%, transparent); }
+
+/* paleta das abas e números */
+[data-cor="amarelo"]  { --cor: #c27803; } [data-cor="verde"] { --cor: #15803d; } [data-cor="roxo"] { --cor: #7c3aed; }
+[data-cor="azul"]     { --cor: #2563eb; } [data-cor="ciano"] { --cor: #0e7490; } [data-cor="indigo"] { --cor: #4f46e5; }
+[data-cor="cinza"]    { --cor: #475569; } [data-cor="laranja"] { --cor: #c2410c; } [data-cor="rosa"] { --cor: #be185d; }
+[data-cor="vermelho"] { --cor: #c62828; }
+html[data-tema="escuro"] [data-cor="amarelo"] { --cor: #f2bd57; } html[data-tema="escuro"] [data-cor="verde"] { --cor: #5fd39a; }
+html[data-tema="escuro"] [data-cor="roxo"] { --cor: #b99bff; } html[data-tema="escuro"] [data-cor="azul"] { --cor: #8fb0ff; }
+html[data-tema="escuro"] [data-cor="ciano"] { --cor: #62cfe6; } html[data-tema="escuro"] [data-cor="indigo"] { --cor: #a5a8ff; }
+html[data-tema="escuro"] [data-cor="cinza"] { --cor: #aab4c5; } html[data-tema="escuro"] [data-cor="laranja"] { --cor: #ffa36e; }
+html[data-tema="escuro"] [data-cor="rosa"] { --cor: #ff8fc0; } html[data-tema="escuro"] [data-cor="vermelho"] { --cor: #ff8a80; }
+
+.aba-ico { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 7px; border-radius: 7px; vertical-align: middle;
+  background: color-mix(in srgb, var(--cor) 14%, transparent); color: var(--cor); flex: none; }
+.aba-ico svg, .num-ico svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.aba-ico { position: relative; top: -1px; }
+.abas .aba[data-cor][aria-selected="true"], .eq-abas button[data-cor][aria-selected="true"] { color: var(--cor) !important; border-bottom-color: var(--cor) !important; }
+.abas .aba[data-cor][aria-selected="true"] .aba-ico, .eq-abas button[data-cor][aria-selected="true"] .aba-ico { background: var(--cor); color: #fff; }
+html[data-tema="escuro"] .abas .aba[data-cor][aria-selected="true"] .aba-ico, html[data-tema="escuro"] .eq-abas button[data-cor][aria-selected="true"] .aba-ico { color: #11152a; }
+@media (max-width: 640px) {
+  .abas-quebra .aba[data-cor][aria-selected="true"], .ficha-topo .aba[data-cor][aria-selected="true"] { background: color-mix(in srgb, var(--cor) 10%, transparent) !important; border-color: var(--cor) !important; }
+}
+.ficha-topo .aba[data-cor][aria-selected="true"] { color: var(--cor) !important; border-bottom-color: var(--cor) !important; }
+.ficha-topo .aba[data-cor][aria-selected="true"] .aba-ico { background: var(--cor); color: #fff; }
+html[data-tema="escuro"] .ficha-topo .aba[data-cor][aria-selected="true"] .aba-ico { color: #11152a; }
+/* "Página no site" (link na agenda do psicólogo) igual às outras abas */
+a.aba.aba-pagina, .ficha-topo .aba { display: inline-block !important; gap: 0 !important; }
+/* faixa azul "Você está vendo/editando…": mesma altura nas duas telas (não pula ao trocar de aba) */
+.visao-equipe-in { min-height: 56px; box-sizing: border-box; }
+
+.numero[data-cor] { position: relative; padding-right: 60px; border-top: 3px solid var(--cor); }
+.numero[data-cor] strong { color: var(--cor); }
+.numero .num-ico { display: grid; font-size: 0; }
+.num-ico { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--cor) 13%, transparent); color: var(--cor) !important; }
+.num-ico svg { width: 19px; height: 19px; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; }
+.badge-ico { width: 12px; height: 12px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Antes de o sininho entrar (primeiro instante da tela): esconde o "Sair" antigo e guarda o lugar
+   do sininho e da setinha da conta, para nada pular quando o topo termina de montar */
+.topo-user:not(:has(.notif-btn)) > [data-sair] { display: none !important; }
+.topo-user:not(:has(.notif-btn))::before { content: ""; flex: none; width: 42px; height: 42px; }
+/* o botão da conta já nasce no formato final (bolinha + setinha), sem mostrar nome e "Minha conta" por um instante */
+.topo-user #btn-conta { padding: 4px 8px 4px 4px !important; gap: 4px !important; }
+.topo-user #btn-conta .conta-txt, .topo-user #btn-conta [data-papel] { display: none !important; }
+.topo-user:not(:has(.notif-btn)) > #btn-conta::after { content: ""; flex: none; width: 16px; height: 16px; background-color: var(--muted, var(--suave, #6b7280));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / 16px no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / 16px no-repeat; }
+
+
+/* v165: conferir o Pix (admin responde no sininho) e aviso vermelho */
+.notif-item.vermelho .notif-ico { background: #fdecea; color: #b42318; }
+html[data-tema="escuro"] .notif-item.vermelho .notif-ico { background: rgba(255, 120, 110, .14); color: #ff8a80; }
+.notif-item.notif-conf { cursor: default; }
+.notif-acoes { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.notif-acoes button { font: inherit; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 9px; cursor: pointer; }
+.notif-acoes .notif-sim { background: #1f8f55; color: #fff; border: 0; }
+.notif-acoes .notif-nao { background: transparent; color: #b42318; border: 1.5px solid #f0b4ad; }
+html[data-tema="escuro"] .notif-acoes .notif-nao { color: #ff9a90; border-color: rgba(255, 138, 128, .5); }
+.notif-acoes button:disabled { opacity: .6; cursor: wait; }
+
+/* v201: psicólogo no celular/tablet já tem “Perfil” na barra de baixo: o menu do topo fica só com Modo escuro e Sair */
+@media (max-width: 900px) { .conta-menu .menu-conta-psi { display: none; } }
+
+
+/* =====================================================================
+   v206: DICIONÁRIO DE CORES DO PAINEL — uma cor, um sentido só
+     amarelo  → novo, ainda não visto, aguardando, a pagar
+     verde    → confirmado, pago, ciente, tudo certo
+     vermelho → faltou, erro, atenção
+     azul (marca) → ação principal (botões) e navegação (menu, abas)
+     cinza    → concluído ou neutro (realizado, cancelado, expirado)
+   Regra: a cor nunca vem sozinha. Sempre junto com texto ou ícone
+   (✓ Ciente, ✕ Faltou, "Ainda não viu"), para quem não distingue cores.
+   ===================================================================== */
+
+/* navegação numa cor só (menu do topo, botão "Trocar de área", caixa de áreas e cartões da tela inicial) */
+.area-link[data-area], .areas-btn[data-area], .am-item[data-area], .hub-cartao[data-area] { --hub-cor: var(--sea, #1f35b5) !important; --hub-bg: var(--sea-claro, #eef0fc) !important; }
+html[data-tema="escuro"] .area-link[data-area], html[data-tema="escuro"] .areas-btn[data-area], html[data-tema="escuro"] .am-item[data-area], html[data-tema="escuro"] .hub-cartao[data-area] { --hub-cor: #aab6ff !important; --hub-bg: rgba(141, 156, 255, .16) !important; }
+.area-link[data-area]:not(.atual):not(:hover) svg { color: var(--muted, var(--suave, #646a8a)); }
+
+/* abas e números: cor da marca para navegação */
+[data-cor="marca"] { --cor: #1f35b5; }
+html[data-tema="escuro"] [data-cor="marca"] { --cor: #aab6ff; }
+
+/* "Realizado" = concluído → cinza-escuro (fica diferente de Cancelado/Expirado, cinza-claro) */
+.badge-info { background: #e8ecf2; color: #334155; }
+html[data-tema="escuro"] .badge-info { background: rgba(203, 213, 225, .14); color: #d3dae6; }
+
+/* faixas dos cartões de atendimento: verde (ciente) e vermelha (faltou), mais fortes e iguais no claro e no escuro */
+html:not([data-tema="escuro"]) .atend.st-confirmado:not(.sem-ciente) { box-shadow: inset 6px 0 0 #1f9d5c, var(--sombra); }
+.atend.st-confirmado:not(.sem-ciente), .atend.st-falta { padding-left: 24px; }
+html[data-tema="escuro"] .atend.st-confirmado:not(.sem-ciente) { box-shadow: inset 7px 0 0 #4fd38c; border-color: rgba(84, 211, 145, .4); }
+html[data-tema="escuro"] .atend.st-falta { box-shadow: inset 7px 0 0 #ff8a80; border-color: rgba(255, 138, 128, .4); }
+html[data-tema="escuro"] .atend.st-confirmado.sem-ciente { box-shadow: inset 7px 0 0 #f7b54a; }
+/* caixinha em destaque usa a cor do próprio número (ex.: "Total a pagar" amarelo, "Pago" verde) */
+.numero.destaque[data-cor]:not([data-cor=""]) { border-color: color-mix(in srgb, var(--cor) 45%, transparent) !important; }
+.numero.destaque[data-cor]:not([data-cor=""]) strong { color: var(--cor) !important; }

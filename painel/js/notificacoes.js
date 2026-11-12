@@ -17,6 +17,7 @@
   const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 
   const ICO = {
+    lupa: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
     sino: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5a6 6 0 0 1 12 0c0 4.6 1.6 6.3 2.3 7a.6.6 0 0 1-.4 1H4.1a.6.6 0 0 1-.4-1c.7-.7 2.3-2.4 2.3-7z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
     relogio: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M3.5 9h17M8 3v3M16 3v3M9 14.5l2 2 4-4"/></svg>',
@@ -58,6 +59,26 @@
       DB.listarPsicologos({ todos: true }).catch(() => [])
     ]);
     const nomePsi = id => (psis.find(p => p.id === id) || {}).nome || 'Psicólogo';
+
+    /* Conferir o Pix: o admin vê cada pedido com os botões; o suporte vê a resposta até confirmar */
+    const gruposConf = {};
+    ags.filter(a => a.status === 'pendente' && a.conferencia).forEach(a => { if (!gruposConf[a.grupo]) gruposConf[a.grupo] = []; gruposConf[a.grupo].push(a); });
+    Object.values(gruposConf).forEach(g => {
+      const a = g[0], c = a.conferencia, total = g.reduce((t, x) => t + (Number(x.valor) || 0), 0);
+      const sessao = `${nomePsi(a.psiId)}, ${U.fmtCurta(a.data)} ${U.fmtHora(a.hora)}`;
+      if (c.status === 'pedida' && S.papel === 'admin') itens.push({
+        n: 1, cor: 'amarelo', ico: ICO.lupa, conf: a.grupo,
+        titulo: `Conferir Pix · ${U.moeda(total)}`,
+        sub: `${U.primeiroNome(c.pedidoPor) || 'O suporte'} pediu para conferir o pagamento de ${a.paciente.nome} (sessão com ${sessao}). Veja no extrato do banco.`,
+        link: 'agenda.html#pre'
+      });
+      if ((c.status === 'caiu' || c.status === 'nao') && S.papel !== 'admin') itens.push({
+        n: 1, cor: c.status === 'caiu' ? 'verde' : 'vermelho', ico: ICO.lupa,
+        titulo: c.status === 'caiu' ? `Pix conferido: caiu · ${a.paciente.nome}` : `Pix não caiu · ${a.paciente.nome}`,
+        sub: c.status === 'caiu' ? `${U.primeiroNome(c.respPor)} conferiu ${U.moeda(total)}. Agora é só confirmar o pagamento.` : `${U.primeiroNome(c.respPor)} não achou ${U.moeda(total)} no extrato. Fale com o paciente.`,
+        link: 'agenda.html#pre'
+      });
+    });
 
     const pend = ags.filter(a => a.status === 'pendente' && (!a.expiraEm || a.expiraEm > agora)).sort((a, b) => (a.expiraEm || 9e15) - (b.expiraEm || 9e15));
     if (pend.length) itens.push({
@@ -122,6 +143,7 @@
       </div>`;
     user.insertBefore(wrapN, conta || sair || null);
 
+
     /* menu da conta */
     if (conta) {
       const wrapC = document.createElement('div');
@@ -136,7 +158,7 @@
       const ini = (conta.querySelector('.conta-ava') || {}).textContent || '';
       wrapC.insertAdjacentHTML('beforeend', `<div class="conta-menu" role="menu" hidden>
         <div class="conta-menu-cab"><span class="conta-ava" aria-hidden="true">${esc(ini)}</span><span><b>${esc(S.nome || '')}</b><small>${esc(Auth.nomePapel ? Auth.nomePapel(S) : '')}</small></span></div>
-        <a role="menuitem" href="${esc(href)}">${ICO.conta}Minha conta</a>
+        <a role="menuitem" href="${esc(href)}"${S.papel === 'psicologo' ? ' class="menu-conta-psi"' : ''}>${ICO.conta}Minha conta</a>
         <button role="menuitemcheckbox" type="button" class="menu-tema" data-menu-tema aria-checked="false">${ICO.lua}<span>Modo escuro</span><span class="chave" aria-hidden="true"><span></span></span></button>
         <button role="menuitem" type="button" data-menu-sair>${ICO.sair}Sair</button>
       </div>`);
@@ -166,6 +188,18 @@
     return true;
   }
   function alternar(w) { if (aberto === w) { fechar(); return; } fechar(); aberto = w; w.classList.add('aberto'); w.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'true'); w.querySelector('.notif-painel, .conta-menu').hidden = false; }
+  /* admin respondeu a conferência do Pix direto no sininho */
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-conf-sim], [data-conf-nao]'); if (!b || !DB.responderConferencia) return;
+    const caiu = b.hasAttribute('data-conf-sim'), grupo = b.dataset.confSim || b.dataset.confNao;
+    b.closest('.notif-acoes').querySelectorAll('button').forEach(x => { x.disabled = true; });
+    try {
+      await DB.responderConferencia(grupo, caiu, S.nome);
+      if (U.toast) U.toast(caiu ? 'Pronto: o suporte já vê que o Pix caiu.' : 'Pronto: o suporte vai avisar o paciente.');
+      window.dispatchEvent(new Event('pb:conferencia'));
+    } catch (err) { if (U.toast) U.toast(err.message || 'Não consegui responder.', 'erro'); }
+    atualizar();
+  });
   /* clicou num aviso: fecha a caixa (se o aviso for desta mesma tela, a tela só troca de aba) */
   document.addEventListener('click', e => { if (e.target.closest('.notif-item')) setTimeout(fechar, 0); });
   function fechar() { if (!aberto) return; const w = aberto; aberto = null; w.classList.remove('aberto'); w.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'false'); w.querySelector('.notif-painel, .conta-menu').hidden = true; }
@@ -180,7 +214,10 @@
     const rotulo = total ? `Notificações: ${total} ${total === 1 ? 'pendência' : 'pendências'}` : 'Notificações: tudo em dia';
     btn.title = rotulo; btn.setAttribute('aria-label', rotulo);
     document.querySelector('[data-notif-lista]').innerHTML = ITENS.length
-      ? ITENS.map(i => `<a class="notif-item ${i.cor}" href="${esc(i.link)}"><span class="notif-ico">${i.ico}</span><span class="notif-txt"><b>${esc(i.titulo)}</b><small>${esc(i.sub)}</small></span></a>`).join('')
+      ? ITENS.map(i => i.conf
+        ? `<div class="notif-item ${i.cor} notif-conf"><span class="notif-ico">${i.ico}</span><span class="notif-txt"><b>${esc(i.titulo)}</b><small>${esc(i.sub)}</small>
+            <span class="notif-acoes"><button type="button" class="notif-sim" data-conf-sim="${esc(i.conf)}">✓ Caiu na conta</button><button type="button" class="notif-nao" data-conf-nao="${esc(i.conf)}">Não caiu</button></span></span></div>`
+        : `<a class="notif-item ${i.cor}" href="${esc(i.link)}"><span class="notif-ico">${i.ico}</span><span class="notif-txt"><b>${esc(i.titulo)}</b><small>${esc(i.sub)}</small></span></a>`).join('')
       : '<p class="notif-vazio"><span aria-hidden="true">✓</span> Tudo em dia. Nada esperando por você.</p>';
   }
 
@@ -196,7 +233,7 @@
 
   /* depois de qualquer mudança feita nesta tela (marcar realizado, pagar, confirmar...) */
   function vigiarMudancas() {
-    const nomes = Object.keys(DB).filter(k => typeof DB[k] === 'function' && /^(atualizar|marcar|remarcar|confirmar|cancelar|criar|excluir|salvar)/.test(k));
+    const nomes = Object.keys(DB).filter(k => typeof DB[k] === 'function' && /^(atualizar|marcar|remarcar|confirmar|cancelar|criar|excluir|salvar|pedir|responder)/.test(k));
     nomes.forEach(k => {
       const orig = DB[k];
       try {
@@ -206,7 +243,8 @@
   }
 
   function iniciar() {
-    if (!montar()) return;
+    montar();
+    if (!document.querySelector('.topo-user .notif-btn')) return;
     vigiarMudancas();
     atualizar();
     try { DB.aoMudar(() => atualizar()); } catch (e) { /* sem tempo real */ }
@@ -238,6 +276,8 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pedirSenhaNova); else pedirSenhaNova();
 
-  window.Notificacoes = { atualizar, itens: () => ITENS.slice() };
+  window.Notificacoes = { atualizar, montar, itens: () => ITENS.slice() };
+  /* o sininho e o menu da conta entram já (sem esperar a página toda): assim não aparece o "Sair" antigo por um instante */
+  montar();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
 })();

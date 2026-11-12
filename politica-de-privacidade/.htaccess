@@ -1,0 +1,19 @@
+# Mostra a página 404.html quando um endereço não existe
+ErrorDocument 404 /404.html
+
+# Artigos com endereço curto: psicologosbrasil.com.br/nome-do-artigo/
+# Se o endereço NÃO for um arquivo nem uma pasta que existe (ex.: /contato/),
+# abre a página de artigo, que descobre qual artigo mostrar pelo endereço.
+RewriteEngine On
+
+# Páginas removidas: quem tiver o link antigo (ou vier do Google) cai na página certa, sem erro
+RewriteRule ^terapia-brasileiros-eua/?$ / [R=301,L]
+RewriteRule ^servicos/?$ /psicologos/ [R=301,L]
+
+# Perfil de cada psicólogo com endereço curto: psicologosbrasil.com.br/especialista/nome-do-psicologo/
+# (abre a página de perfil, que descobre quem mostrar pelo endereço)
+RewriteRule ^especialista/?$ psicologos/ [R=301,L]
+RewriteRule ^especialista/([a-z0-9-]+)/?$ psicologos/perfil/index.html [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z0-9-]+)/?$ blog/artigo/index.html [L]

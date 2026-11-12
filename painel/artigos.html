@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Artigos · Painel Psicólogos Brasil</title>
+<link rel="icon" href="../assets/icones/favicon.svg?v=109" type="image/svg+xml">
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nuvem.js"></script>
+<script src="../js/agenda/config.js?v=116"></script>
+<script src="../js/agenda/util.js?v=163"></script>
+<script src="../js/agenda/db.js?v=220"></script>
+<script src="../js/agenda/db-firebase.js?v=220"></script>
+<script src="js/sessao.js?v=206"></script>
+<script src="js/notificacoes.js?v=205"></script>
+<script src="js/exemplo.js"></script>
+<script>/* sem acesso a esta área: volta para a tela de entrada */ if (!Auth.exigir(['artigos'])) document.documentElement.hidden = true;</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="css/conteudo.css?v=199">
+<link rel="stylesheet" href="css/escuro.css?v=120">
+<link rel="stylesheet" href="css/topo.css?v=206">
+<link rel="stylesheet" href="css/campos.css">
+<script src="js/campos.js" defer></script>
+<script src="js/tema.js?v=205"></script>
+</head>
+<body data-pagina="artigos">
+<script>/* já entrou? então não mostra a tela de login nem por um instante (evita a "piscada" ao voltar da agenda) */
+(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(s&&(!s.expira||s.expira>Date.now()))document.documentElement.classList.add('tem-sessao');}catch(e){}})();</script>
+<!-- ============ LOGIN ============ -->
+<div class="login" id="login">
+  <form class="login-card" id="loginForm" autocomplete="on">
+    <div class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></div>
+    <div><h1>Painel Psicólogos Brasil</h1><p class="login-sub">Entre para publicar artigos e psicólogos.</p></div>
+    <label><span id="loginUsuarioRot">Usuário</span><input id="loginUsuario" name="usuario" type="text" autocomplete="username" required></label>
+    <label>Senha<input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></label>
+    <p class="login-erro" id="loginErro" role="alert"></p>
+    <button class="btn primario" type="submit" id="loginBtn">Entrar</button>
+    <button class="login-esq" type="button" id="loginEsqueci" hidden>Esqueci a senha</button>
+    <p class="login-modo" id="loginModo">Carregando…</p>
+  </form>
+</div>
+<div class="app">
+  <header class="topo">
+    <div class="topo-in">
+      <a class="marca" href="index.html">
+        <span class="marca-ico marca-logo"><img src="../assets/imagens/logo.svg?v=109" alt="" width="34" height="34"></span>
+        <span>Psicólogos Brasil <small id="marcaSub">Artigos</small></span>
+      </a>
+      <nav class="areas-nav" data-areas aria-label="Áreas do painel"></nav>
+      <div class="topo-user">
+        <a class="conta-btn" id="btn-conta" href="conta.html" title="Minha conta"><span class="conta-ava" aria-hidden="true"></span><span class="conta-txt"><span data-nome></span><small>Minha conta</small></span><span class="papel" data-papel hidden></span></a>
+        <script>/* preenche o botão da conta já na hora (sem piscar) */(function(){try{var s=JSON.parse(sessionStorage.getItem('pb_painel_sessao'));if(!s)return;var a=document.getElementById('btn-conta'),n=s.nome||'';var i=n.split(/\s+/).filter(function(w){return w.length>2}).slice(0,2).map(function(w){return w[0]}).join('').toUpperCase()||(n.charAt(0)||'•').toUpperCase();a.querySelector('.conta-ava').textContent=i;a.querySelector('[data-nome]').textContent=n;a.setAttribute('aria-label','Minha conta: '+n);if(s.papel==='psicologo')a.href='minha-agenda.html#conta';if(/\/conta\.html$/.test(location.pathname))a.classList.add('atual');}catch(e){}})();</script>
+        <button class="btn pequeno" type="button" data-sair>Sair</button>
+      </div>
+    </div>
+    <nav class="abas nav" role="tablist" aria-label="Seções" hidden>
+      <button class="aba" role="tab" data-view="psicologos">Psicólogos <span class="qtd" id="qtdPsicologos">0</span></button>
+      <button class="aba ativo" role="tab" data-view="artigos">Artigos <span class="qtd" id="qtdArtigos">0</span></button>
+      <button class="aba" role="tab" data-view="usuarios">Usuários</button>
+      <button class="aba" role="tab" data-view="config">Configurações</button>
+      <a class="nav-link" href="agenda.html" id="navAgenda" hidden><span class="qtd" id="qtdPend"></span></a>
+    </nav>
+    <nav class="ficha-topo" id="psiFichaTopo" aria-label="Partes da ficha do psicólogo" hidden></nav>
+    <div class="pasta-box" hidden>
+      <div class="pasta-nome off" id="pastaNome">Não conectada</div>
+      <button class="btn pequeno" id="btnPasta">Conectar pasta</button>
+      <p class="dica" id="pastaDica"></p>
+    </div>
+  </header>
+<script>/* sininho e menu da conta já na hora (sem mostrar o "Sair" antigo por um instante) */try{window.Notificacoes&&Notificacoes.montar()}catch(e){}</script>
+  <div class="visao-equipe" id="psiVisao" hidden><div class="visao-equipe-in"></div></div>
+
+
+  <main class="conteudo">
+    <!-- ================= ARTIGOS ================= -->
+    <section class="view ativa" id="view-artigos">
+      <header class="topbar">
+        <div>
+          <h1>Artigos<span class="qtd-tit" id="qtdArtigosT" aria-label="quantidade de artigos"></span></h1>
+          <p class="sub">Escreva, confira a prévia e gere a página pronta com SEO.</p>
+        </div>
+        <button class="btn primario" id="novoArtigo">+ Novo artigo</button>
+      </header>
+      <div class="lista-tela" id="telaArtigos">
+        <div class="filtros-lista">
+          <label class="busca-l"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span class="sr">Procurar artigo</span><input type="search" id="fa-q" placeholder="Procurar por título, link ou palavra-chave" autocomplete="off"></label>
+          <select id="fa-status" aria-label="Situação"><option value="">Todas as situações</option><option value="publicado">Publicados</option><option value="alterado">Com alterações não publicadas</option><option value="rascunho">Rascunhos</option></select>
+          <select id="fa-cat" aria-label="Categoria"></select>
+          <select id="fa-mes" aria-label="Mês"></select>
+          <select id="fa-ordem" aria-label="Ordem"><option value="recentes">Data: mais novos primeiro</option><option value="antigos">Data: mais antigos primeiro</option><option value="editados">Editados por último</option><option value="titulo">Título (A–Z)</option><option value="seo">Nota de SEO: menor primeiro</option></select>
+          <div class="vista-tog" id="fa-vista" role="group" aria-label="Como mostrar os artigos">
+            <button type="button" data-vista="lista" aria-pressed="true" title="Ver em lista"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3"/><circle cx="4.5" cy="12" r="1.3"/><circle cx="4.5" cy="18" r="1.3"/></svg><span class="sr">Lista</span></button>
+            <button type="button" data-vista="grade" aria-pressed="false" title="Ver em quadros"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg><span class="sr">Quadros</span></button>
+          </div>
+        </div>
+        <div class="tabela-lista" id="listaArtigos"></div>
+        <nav class="paginacao" id="pagArtigos" aria-label="Páginas de artigos"></nav>
+      </div>
+        <div class="cartao" id="cartaoArtigo" hidden>
+          <div class="cartao-topo"><button class="btn pequeno" type="button" data-voltar="artigo">← Todos os artigos</button><span class="cartao-pos" id="posArtigo"></span></div>
+          <div class="ed-vazio" id="artigoVazio">
+            <h2>Nenhum artigo aberto</h2>
+            <p>Clique em “+ Novo artigo” ou escolha um da lista.</p>
+          </div>
+          <div id="artigoEd" hidden>
+            <div class="abas" data-tipo="artigo">
+              <button data-aba="editar" class="ativo">Escrever</button>
+              <button data-aba="previa">Prévia</button>
+              <button data-aba="html">Código HTML</button>
+            </div>
+            <div class="aba-painel ativo" data-aba="editar">
+              <div class="grade art-caixas">
+                <!-- 1. O básico: do que o artigo trata -->
+                <section class="campo cheio seo-box caixa-art">
+                  <div class="seo-topo"><b>O básico</b><span class="capa-dica">Do que o artigo trata</span></div>
+                  <div class="campo">
+                      <label for="a-titulo">Título do artigo</label>
+                      <input type="text" id="a-titulo" placeholder="Ex.: Síndrome da Cabana: por que algumas pessoas têm medo de sair de casa?">
+                    </div>
+                  <div class="campo">
+                      <label for="a-slug">Link do artigo <span class="aj">— gerado pelo título, pode editar</span></label>
+                      <div class="slug-pre"><span id="a-dominio">psicologosbrasil.com.br/</span><input type="text" id="a-slug" placeholder="sindrome-da-cabana"></div>
+                    </div>
+                  <div>
+                      <span class="seo-rot">Palavra-chave principal <span class="aj">— o termo que a pessoa digita no Google. Digite e aperte Enter; pode pôr outras depois. A primeira (★) é a principal.</span></span>
+                      <div class="tags" id="a-tags"><input id="a-tag-input" placeholder="Ex.: ansiedade" aria-label="Adicionar palavra-chave"></div>
+                    </div>
+                </section>
+
+                <!-- 2. Texto do artigo -->
+                <section class="campo cheio seo-box caixa-art caixa-texto">
+                  <div class="seo-topo"><b>Texto do artigo</b><span class="capa-dica">Editor de blocos, como no WordPress. Pode colar do Word ou Google Docs.</span></div>
+                  <div>
+                    <div class="ed-barra">
+                      <button type="button" class="eb-add ico" id="eb-add" title="Adicionar bloco" data-ico="mais"></button>
+                      <button type="button" class="ico" id="eb-desfazer" title="Desfazer (Ctrl+Z)" data-ico="desfazer"></button>
+                      <button type="button" class="ico" id="eb-refazer" title="Refazer (Ctrl+Y)" data-ico="refazer"></button>
+                      <div class="bt" id="a-bt" hidden>
+                        <button type="button" class="bt-tipo" data-bt="tipo" title="Mudar tipo de bloco"><span id="a-bt-tipo">¶</span></button>
+                        <span class="bt-mover"><button type="button" class="ico" data-bt="cima" data-ico="cima" title="Mover para cima"></button><button type="button" class="ico" data-bt="baixo" data-ico="baixo" title="Mover para baixo"></button></span>
+                        <span class="bt-sep" data-para="p h2 h3 h4 blockquote img botao"></span>
+                        <button type="button" class="ico" id="a-bt-alinhar" data-bt="alinhar" title="Alinhamento" data-para="p h2 h3 h4 blockquote img botao"></button>
+                        <span class="bt-sep" data-para="p h2 h3 h4 ul ol blockquote img botao"></span>
+                        <button type="button" data-bt="bold" title="Negrito (Ctrl+B)" data-para="p h2 h3 h4 ul ol blockquote"><b style="font-size:16px">B</b></button>
+                        <button type="button" data-bt="italic" title="Itálico (Ctrl+I)" data-para="p h2 h3 h4 ul ol blockquote"><i style="font-size:16px;font-family:Georgia,serif">I</i></button>
+                        <button type="button" class="ico" data-bt="link" data-ico="link" title="Link" data-para="p h2 h3 h4 ul ol blockquote botao video"></button>
+                        <button type="button" class="ico" data-bt="mais" data-ico="seta" title="Mais formatação" data-para="p h2 h3 h4 ul ol blockquote"></button>
+                        <button type="button" data-bt="alt" title="Descrição da imagem" data-para="img">Texto alt</button>
+                        <span class="bt-sep"></span>
+                        <button type="button" class="ico" data-bt="opcoes" data-ico="pontos" title="Opções"></button>
+                      </div>
+                      <div class="pop" id="a-pop" hidden></div>
+                      <span class="eb-dica" id="eb-dica">Digite <kbd>/</kbd> numa linha vazia para escolher um bloco</span>
+                    </div>
+                    <div class="ed-wrap" id="a-ed-wrap">
+                      <div class="editor" id="a-texto" contenteditable="true"></div>
+                      <button type="button" class="ins ico" id="a-ins" data-ico="mais" title="Adicionar bloco" hidden></button>
+                      <div class="menu-blocos" id="a-menu" hidden>
+                        <input type="text" id="a-menu-busca" placeholder="Procurar um bloco…">
+                        <div class="mb-lista" id="a-menu-lista"></div>
+                      </div>
+                    </div>
+                    <input type="file" id="a-img-file" accept="image/*" hidden>
+                  </div>
+                </section>
+
+                <!-- 3. Capa e publicação -->
+                <section class="campo cheio seo-box caixa-art">
+                  <div class="seo-topo"><b>Capa e publicação</b><span class="capa-dica">Capa sempre 1600 × 900 (16:9)</span></div>
+                  <p class="capa-sub">Aparece na lista de Artigos, na página inicial e no topo do artigo. Imagem de outro tamanho é recortada no centro para caber.</p>
+                    <div class="imagem-campo">
+                      <div class="imagem-prev capa-prev" id="a-capa-prev">Sem capa</div>
+                      <div class="imagem-acoes">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                          <button class="btn pequeno" type="button" id="a-capa-btn">Escolher capa</button>
+                          <button class="btn pequeno perigo" type="button" id="a-capa-rem">Remover</button>
+                        </div>
+                        <input type="text" id="a-capa-alt" aria-label="Descrição da capa" placeholder="Descreva a imagem (ajuda no Google e na acessibilidade)">
+                        <input type="file" id="a-capa-file" accept="image/*" hidden>
+                      </div>
+                    </div>
+                  <div class="caixa-grade">
+                    <div class="campo">
+                  <label for="a-categoria">Categoria</label>
+                  <select id="a-categoria"></select>
+                </div>
+                    <div class="campo">
+                  <label for="a-data">Data de publicação</label>
+                  <input type="date" id="a-data">
+                </div>
+                  </div>
+                  <details class="autor-det" id="a-autor-det">
+                    <summary><span class="autor-res-rot">Autor:</span> <b id="a-autor-resumo">—</b> <span class="autor-selo" id="a-autor-selo">principal</span> <span class="autor-trocar">+ Usar outro autor</span></summary>
+                    <p class="autor-aviso" id="a-autor-aviso" hidden>Este artigo será publicado com <b>outro autor</b>, não com o autor principal.</p>
+                    <div class="caixa-grade">
+                      <div class="campo">
+                  <label for="a-autor">Autor do artigo</label>
+                  <input type="text" id="a-autor" list="a-autor-lista" autocomplete="off">
+                  <datalist id="a-autor-lista"></datalist>
+                  <span class="aj autor-dica">Clique e escolha um psicólogo cadastrado: cargo, CRP, OPP e foto vêm sozinhos. Para outra pessoa, é só digitar o nome.</span>
+                </div>
+                      <div class="campo">
+                  <label for="a-autorTrat">Cargo <span class="aj">— aparece embaixo do nome</span></label>
+                  <select id="a-autorTrat"><option>Psicólogo</option><option>Psicóloga</option></select>
+                </div>
+                      <div class="campo">
+                        <label for="a-autorCrp">CRP do autor <span class="aj">— só o número</span></label>
+                        <input type="text" id="a-autorCrp" inputmode="numeric" maxlength="9" placeholder="Ex.: 11/14186">
+                      </div>
+                      <div class="campo">
+                        <label for="a-autorOpp">OPP do autor <span class="aj">— opcional, para quem tem registro em Portugal</span></label>
+                        <input type="text" id="a-autorOpp" inputmode="numeric" placeholder="Ex.: 12345">
+                      </div>
+                      <div class="campo">
+                  <label>Foto do autor <span class="aj">— redonda, ao lado do nome</span></label>
+                  <div class="imagem-campo">
+                    <div class="imagem-prev autor-prev" id="a-autorFoto-prev">Sem foto</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <button class="btn pequeno" type="button" id="a-autorFoto-btn">Escolher foto</button>
+                      <button class="btn pequeno perigo" type="button" id="a-autorFoto-rem">Remover</button>
+                    </div>
+                    <input type="file" id="a-autorFoto-file" accept="image/*" hidden>
+                  </div>
+                </div>
+                    </div>
+                    <div class="autor-voltar" id="a-autor-voltar-box" hidden><button class="btn pequeno perigo" type="button" id="a-autor-voltar">Excluir e voltar para o autor principal</button></div>
+                  </details>
+                </section>
+
+                <!-- 4. Google (SEO) -->
+                <section class="campo cheio seo-box caixa-art">
+                  <div class="seo-topo"><b>Google (SEO)</b><span class="seo-nota" id="a-seo-nota">0 / 100</span></div>
+                  <div class="campo">
+                  <label for="a-tituloSeo">Título para o Google <span class="aj">— opcional</span></label>
+                  <input type="text" id="a-tituloSeo" placeholder="Se ficar vazio, usa o título">
+                  <div class="contador" id="a-tituloSeo-c"></div>
+                </div>
+                  <div class="campo">
+                  <label for="a-descricao">Resumo para o Google <span class="aj">— aparece embaixo do título na busca</span></label>
+                  <textarea id="a-descricao" rows="2" placeholder="Uma ou duas frases que fazem a pessoa querer clicar."></textarea>
+                  <div class="resumo-pe"><button class="btn pequeno" type="button" id="a-resumo-auto">Usar o começo do texto</button><div class="contador" id="a-descricao-c"></div></div>
+                </div>
+                  <div>
+                      <span class="seo-rot">Como aparece no Google</span>
+                      <div class="snippet">
+                        <div class="sn-url"><span class="sn-ico"><img src="../assets/icones/favicon.svg?v=109" alt="" width="18" height="18"></span><div><div class="sn-site">Psicólogos Brasil</div><div class="sn-link" id="sn-link"></div></div></div>
+                        <div class="sn-titulo" id="sn-titulo"></div>
+                        <div class="sn-desc" id="sn-desc"></div>
+                      </div>
+                    </div>
+                  <div>
+                      <span class="seo-rot">Análise</span>
+                      <ul class="seo-checks" id="a-checks"></ul>
+                    </div>
+                </section>
+
+                <!-- 5. Extras (opcional) -->
+                <details class="campo cheio seo-box caixa-art caixa-extras" id="a-extras">
+                  <summary class="seo-topo"><b>Extras <span class="aj">— opcional</span></b><span class="extras-dir"><span class="seo-nota bom" id="a-schema-status">BlogPosting</span><span class="extras-abrir">Mostrar</span></span></summary>
+                  <p class="capa-sub" style="margin:0">Perguntas frequentes e schema. A maioria dos artigos não precisa.</p>
+                  <p class="schema-intro">O schema do artigo (título, autor, data, imagem) e a trilha Início › Artigos já são criados automaticamente. Aqui você acrescenta mais.</p>
+                    <div>
+                      <span class="seo-rot">Perguntas frequentes (FAQ) <span class="aj">— aparecem no fim do artigo e viram schema FAQPage</span></span>
+                      <div id="a-faq"></div>
+                      <div class="botoes" style="margin-top:8px"><button type="button" class="btn pequeno" id="a-faq-add">+ Adicionar pergunta</button></div>
+                    </div>
+                    <div>
+                      <span class="seo-rot">Schema personalizado (JSON-LD) <span class="aj">— cole o código; pode ser com ou sem a tag &lt;script&gt;, um ou vários</span></span>
+                      <textarea class="codigo" id="a-schema" spellcheck="false" placeholder='{&#10;  "@context": "https://schema.org",&#10;  "@type": "HowTo",&#10;  "name": "..."&#10;}'></textarea>
+                      <div class="contador" id="a-schema-c" style="text-align:left"></div>
+                    </div>
+                    <details id="a-schema-ver" class="schema-ver">
+                      <summary>Ver o schema completo que vai na página</summary>
+                      <textarea class="codigo" id="a-schema-final" readonly spellcheck="false"></textarea>
+                    </details>
+                    <div class="botoes" style="margin-top:0">
+                      <button type="button" class="btn pequeno" id="a-schema-copiar">Copiar schema completo</button>
+                      <a class="btn pequeno" href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Testar no Google ↗</a>
+                    </div>
+                </details>
+              </div>
+            </div>
+            <div class="aba-painel" data-aba="previa">
+              <div class="disp">
+                <button class="btn pequeno" data-larg="100%">🖥 Computador</button>
+                <button class="btn pequeno" data-larg="390px">📱 Celular</button>
+              </div>
+              <iframe class="previa-frame" id="a-previa" sandbox="allow-same-origin" title="Prévia do artigo"></iframe>
+            </div>
+            <div class="aba-painel" data-aba="html">
+              <p class="sub" style="margin:0 0 10px">Este é o arquivo <b id="a-html-caminho"></b> completo. Você normalmente não precisa mexer aqui: o botão “Salvar” já cria tudo.</p>
+              <textarea class="codigo html-saida" id="a-html" readonly></textarea>
+              <div class="botoes"><button class="btn pequeno" id="a-copiar">Copiar HTML</button></div>
+            </div>
+            <!-- barra presa embaixo da tela enquanto o artigo está aberto -->
+            <div class="rodape-ed rodape-fixo" id="a-barra">
+              <div class="barra-esq">
+                <button type="button" class="seo-flutua" id="a-seo-flutua" title="Ver a análise de SEO"><span class="seo-flutua-rot">SEO</span><span class="seo-nota" id="a-seo-nota-fixa">0 / 100</span></button>
+                <div class="info" id="a-info"></div>
+              </div>
+              <div class="acoes">
+                <button class="btn perigo" id="a-excluir">Excluir</button>
+                <button class="btn" id="a-desativar" hidden>Desativar</button>
+                <button class="btn" id="a-zip">Baixar .zip</button>
+                <button class="btn" type="button" id="a-ver-previa">Prévia</button>
+                <button class="btn primario" id="a-gerar">Salvar na pasta do site</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </section>
+  </main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/conteudo/base.js?v=169"></script>
+<script src="js/conteudo/artigos-editor.js?v=158"></script>
+<script src="js/conteudo/psicologos-editor.js?v=158"></script>
+<script src="js/conteudo/eventos.js?v=162"></script>
+<script src="js/conteudo/publicar.js?v=158"></script>
+<script src="js/conteudo/listas.js?v=199"></script>
+<script src="js/conteudo/acessos-psicologo.js?v=189"></script>
+<script src="js/conteudo/permissoes.js?v=158"></script>
+<script src="js/conteudo/usuarios.js?v=203"></script>
+<script src="js/conteudo/perfil-extras.js?v=158"></script>
+<script src="js/conteudo/inicio.js?v=158"></script>
+<script src="js/conteudo/barra-celular.js?v=158"></script>
+</body>
+</html>
