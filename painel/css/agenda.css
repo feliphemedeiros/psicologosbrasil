@@ -1298,6 +1298,7 @@ html[data-tema="escuro"] .faixa-bts .btn-nao { color: #ff9a90; border-color: rgb
 
 /* v173: a busca do topo faz o papel das buscas de cada aba (Pré-reservas, Agenda, E-mails) */
 .bp-por-aba [data-painel="pre"] .lista-busca,
+.bp-por-aba [data-painel="conhecer"] .lista-busca,
 .bp-por-aba [data-painel="caixa"] .lista-busca,
 .bp-por-aba [data-painel="agenda"] .campo-busca { display: none !important; }
 
@@ -1494,3 +1495,271 @@ html[data-tema="escuro"] .card-pend.pix-feita:not(.conferindo):not(.conf-caiu) .
 .btn.btn-whats.zap-feito:hover { opacity: .9; filter: none; }
 html[data-tema="escuro"] .btn.btn-whats.zap-feito { color: #5fd39a !important; border-color: rgba(95, 211, 154, .4) !important; }
 html[data-tema="escuro"] .btn.btn-whats.zap-feito.btn-whats-psi { color: #b9c3ff !important; border-color: rgba(141, 156, 255, .4) !important; }
+
+/* v264: caixa "Modo de teste" do login com as contas em e-mail */
+#aviso-contas .contas-teste { display: grid; gap: 4px; margin: 4px 0 8px; }
+#aviso-contas .ct-mais { font-size: .9em; opacity: .85; }
+#aviso-contas code { word-break: break-all; }
+#aviso-contas .ct-reset { display: block; margin-top: 8px; font-size: .9em; text-decoration: underline; color: inherit; }
+#aviso-contas .ct-reset:disabled { text-decoration: none; opacity: .9; cursor: default; }
+
+/* =====================================================================
+   v266: aba "Conversas 15 min" (Conheça o psicólogo em 15 minutos)
+   ===================================================================== */
+.cn-filtro { display: flex; gap: 6px; margin: 0 0 14px; flex-wrap: wrap; }
+.cn-f { font: inherit; font-size: 13.5px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--borda); background: var(--card); color: var(--muted); cursor: pointer; }
+.cn-f[aria-selected="true"] { background: var(--sea); border-color: var(--sea); color: #fff; }
+html[data-tema="escuro"] .cn-f[aria-selected="true"] { background: var(--sea-botao, #3d52d9); border-color: var(--sea-botao, #3d52d9); }
+
+.card-cn { display: flex; flex-direction: column; }
+.cn-st { font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: var(--neutro-bg); color: var(--neutro); }
+.cn-st-novo { background: var(--sea); color: #fff; }
+.cn-st-contato { background: var(--info-bg); color: var(--info); }
+.cn-st-marcada { background: var(--ok-bg); color: var(--ok); }
+.cn-st-paciente { background: var(--ok); color: #fff; }
+.cn-st-nao { background: var(--neutro-bg); color: var(--neutro); }
+html[data-tema="escuro"] .cn-st-novo, html[data-tema="escuro"] .cn-st-paciente { color: #0e1120; }
+.card-cn.cnc-novo { border-color: color-mix(in srgb, var(--sea) 45%, var(--borda)); }
+.card-cn.cnc-paciente, .card-cn.cnc-nao { opacity: .85; }
+.cn-info dd { min-width: 0; }
+.cn-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.cn-chip { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--sea-claro); color: var(--sea); }
+.cn-chip.leve { background: var(--neutro-bg); color: var(--neutro); font-weight: 600; }
+.cn-chip.ok { background: var(--ok-bg); color: var(--ok); }
+.cn-sobre { margin: 10px 0 0; font-size: 13.5px; border: 1px solid var(--borda); border-radius: 10px; padding: 8px 12px; background: var(--bg); }
+.cn-sobre summary { cursor: pointer; font-weight: 700; color: var(--sea); }
+.cn-sobre p { margin: 8px 0 2px; white-space: pre-line; color: var(--texto); }
+.cn-marcada { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--info-bg); color: var(--info); display: grid; gap: 2px; font-size: 13.5px; }
+.cn-marcada span { color: var(--texto); font-weight: 600; }
+.cn-marcada small { color: var(--muted); }
+.cn-marcada.ok { background: var(--ok-bg); color: var(--ok); }
+.cn-marcada.falta { background: var(--erro-bg); color: var(--erro); }
+.card-cn .btn-passo { width: 100%; justify-content: center; gap: 8px; min-height: 46px; margin-top: 10px; font-weight: 800; }
+.card-cn .btn-primario.btn-passo .passo-n { background: rgba(255, 255, 255, .22); }
+.card-cn .btn-wa-pre { margin-top: 14px; }
+.card-cn .cn-acoes { margin-top: 10px; }
+.card-cn .cn-acoes .btn { flex: 1; }
+.card-cn .cn-acoes-fim { justify-content: center; margin-top: 8px; }
+.card-cn .cn-acoes-fim .btn-link { font-size: 13px; color: var(--muted); }
+.tag-plano.conhecer { background: var(--sea-claro); color: var(--sea); }
+
+/* janela "Escolher psicólogo e horário" */
+.cn-m-quem { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--borda); font-size: 13.5px; }
+.cn-m-quem b { font-size: 15px; }
+.cn-m-quem span { color: var(--muted); }
+.cn-m-quem span b { font-size: inherit; color: var(--texto); }
+.cn-m-lista { display: grid; gap: 10px; margin-top: 12px; }
+.cn-m-psi { border: 1px solid var(--borda); border-radius: 12px; padding: 12px; }
+.cn-m-psi-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
+.cn-m-psi-topo > b { font-size: 15px; }
+.cn-m-sem { font-size: 12.5px; }
+.cn-m-vazio { font-size: 13px; }
+.cn-m-aviso { font-size: 12.5px; color: var(--pend); margin-bottom: 6px; }
+.cn-m-horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
+.cn-m-h { font: inherit; font-weight: 800; font-size: 14px; padding: 7px 4px; border-radius: 10px; border: 1.5px solid var(--borda); background: var(--card); color: var(--texto); cursor: pointer; display: grid; gap: 1px; text-align: center; }
+.cn-m-h small { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: capitalize; }
+.cn-m-h.ok { border-color: color-mix(in srgb, var(--sea) 40%, var(--borda)); color: var(--sea); }
+.cn-m-h.on { background: var(--sea); border-color: var(--sea); color: #fff; }
+.cn-m-h.on small { color: rgba(255, 255, 255, .85); }
+html[data-tema="escuro"] .cn-m-h.on { background: var(--sea-botao, #3d52d9); border-color: var(--sea-botao, #3d52d9); }
+@media (hover: hover) and (pointer: fine) { .cn-m-h:hover:not(.on) { border-color: var(--sea); } }
+.cn-m-todos { width: 100%; }
+.cn-m-escolha { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--ok-bg); border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent); }
+.cn-m-escolha p { margin: 0 0 8px; }
+.cn-m-escolha .campo { margin: 0; }
+.hub-info .tag-cn { color: var(--sea); font-weight: 700; }
+
+/* psicólogo: conversa de 15 min na agenda */
+.atend.st-confirmado.tipo-conhecer:not(.sem-ciente) { border-color: color-mix(in srgb, var(--sea) 35%, var(--borda)); background: var(--info-bg); box-shadow: inset 6px 0 0 var(--sea), var(--sombra); }
+.badge-cn { background: var(--sea-claro); color: var(--sea); }
+.atend-resumo { margin-top: 6px; font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.atend-resumo b { color: var(--texto); font-weight: 700; }
+.atend-resumo details summary { cursor: pointer; color: var(--sea); font-weight: 700; }
+.atend-resumo details p { margin: 4px 0 0; color: var(--texto); white-space: pre-line; }
+
+/* =====================================================================
+   v267: Minha agenda → "Conversas 15 min"
+   ===================================================================== */
+.cv-liga { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1.5px solid var(--borda); border-radius: 16px; padding: 16px 18px; box-shadow: var(--sombra); margin-bottom: 18px; cursor: pointer; }
+.cv-liga.on { border-color: color-mix(in srgb, var(--ok) 45%, var(--borda)); }
+.cv-liga-txt b { display: block; font-size: 16px; }
+.cv-liga-txt small { color: var(--muted); font-size: 13px; }
+.cv-liga input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.cv-sw { margin-left: auto; flex: none; width: 52px; height: 30px; border-radius: 999px; background: #c5c9d8; position: relative; transition: background .2s; }
+.cv-sw span { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: left .2s; }
+.cv-liga.on .cv-sw { background: var(--ok); }
+.cv-liga.on .cv-sw span { left: 25px; }
+.cv-liga input:focus-visible ~ .cv-sw { outline: 3px solid rgba(31, 53, 181, .35); outline-offset: 3px; }
+.cv-liga[aria-busy="true"] { opacity: .6; cursor: wait; }
+html[data-tema="escuro"] .cv-sw { background: #3a4166; }
+
+.cv-grade { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 20px; align-items: start; }
+.cv-grade .bloco { margin-bottom: 0; }
+.cv-desligado .cv-grade { opacity: .75; }
+.cal-dia.tem-cv { background: var(--sea-claro); border-color: color-mix(in srgb, var(--sea) 35%, var(--borda)); }
+.cal-dia.tem-cv small { color: var(--sea); font-weight: 700; }
+.cal-dia.tem-cv.sel, .cal-dia.sel { background: var(--sea); border-color: var(--sea); color: #fff; }
+.cal-dia.mudou::after { content: ""; position: absolute; left: 6px; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--sun); }
+.cv-ponto { background: var(--ok); }
+.legenda i.l-cv { background: var(--sea-claro); border-color: color-mix(in srgb, var(--sea) 35%, var(--borda)); }
+.legenda i.l-cv-on { background: var(--sea); border-color: var(--sea); }
+.legenda i.l-ses { background: repeating-linear-gradient(135deg, #eef0f4 0 3px, #dfe2ea 3px 6px); border-style: dashed; }
+.legenda i.l-marc { background: var(--ok-bg); border-color: #8fd1ab; }
+.cv-topo-bts { display: flex; gap: 14px; flex-wrap: wrap; }
+.cv-dica { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
+.cv-linhas { display: grid; gap: 6px; }
+.cv-linha { display: grid; grid-template-columns: 40px repeat(4, minmax(0, 1fr)); gap: 6px; align-items: center; }
+.cv-linha > b { font-size: 13px; color: var(--muted); font-weight: 700; }
+.cv-h { font: inherit; font-weight: 800; font-size: 14px; min-height: 40px; padding: 4px; border-radius: 10px; border: 1.5px solid var(--borda); background: var(--card); color: var(--texto); cursor: pointer; display: grid; place-content: center; text-align: center; line-height: 1.1; }
+.cv-h.on { background: var(--sea); border-color: var(--sea); color: #fff; }
+.cv-h.meio { background: var(--sea-claro); border-color: color-mix(in srgb, var(--sea) 40%, var(--borda)); color: var(--sea); }
+.cv-h:disabled { opacity: .35; cursor: default; }
+.cv-h.ses { background: repeating-linear-gradient(135deg, #f1f2f6 0 6px, #e9ebf2 6px 12px); color: #8a90a8; border-style: dashed; font-size: 12px; cursor: default; }
+.cv-h.marc { background: var(--ok-bg); border-color: #8fd1ab; color: var(--ok); font-size: 12px; cursor: default; }
+.cv-h.marc small { font-size: 10.5px; font-weight: 600; }
+html[data-tema="escuro"] .cv-h.on { background: var(--sea-botao, #3d52d9); border-color: var(--sea-botao, #3d52d9); }
+html[data-tema="escuro"] .cv-h.ses { background: repeating-linear-gradient(135deg, #1d2238 0 6px, #232945 6px 12px); color: #7d84a6; }
+@media (hover: hover) and (pointer: fine) { .cv-h:not(.ses):not(.marc):not(:disabled):hover { border-color: var(--sea); } }
+#cv-barra { margin: 16px 0 20px; }
+.cv-repetir { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; margin-top: 4px; cursor: pointer; }
+.cv-it { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--borda); font-size: 14px; }
+.cv-it:first-child { border-top: 0; }
+.cv-it b { display: block; }
+.cv-it small { color: var(--muted); }
+.cv-it details { margin-top: 6px; font-size: 13px; }
+.cv-it summary { cursor: pointer; color: var(--sea); font-weight: 700; }
+.cv-it details p { margin: 4px 0 0; }
+.cv-it .cv-sobre { white-space: pre-line; }
+@media (max-width: 900px) { .cv-grade { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .cv-liga { padding: 14px; }
+  .cv-linha { grid-template-columns: 30px repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .cv-h { font-size: 13px; min-height: 42px; }
+  .cv-it { grid-template-columns: 1fr; gap: 4px; }
+}
+
+/* v267: limite de conversas por paciente (aba Conversas 15 min da equipe) */
+.cn-limite { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--borda); }
+.cn-limite-t { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; }
+.cn-limite-t span { color: var(--sea); }
+.cn-limite-barra { height: 6px; border-radius: 999px; background: var(--neutro-bg); margin: 7px 0; overflow: hidden; }
+.cn-limite-barra i { display: block; height: 100%; background: var(--sea); border-radius: 999px; }
+.cn-limite ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 12.5px; color: var(--muted); }
+.cn-limite li b { color: var(--texto); }
+.cn-limite.cheio .cn-limite-t span { color: var(--erro); }
+.cn-limite.cheio .cn-limite-barra i { background: var(--erro); }
+.cn-bloq { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--erro-bg); color: var(--erro); font-size: 13.5px; font-weight: 800; }
+.cn-bloq small { display: block; font-weight: 500; color: var(--texto); margin-top: 4px; }
+.card-cn .cn-acoes-fim { gap: 18px; }
+.cv-horas .legenda .l-meio { background: var(--sea-claro); border: 1.5px solid color-mix(in srgb, var(--sea) 40%, var(--borda)); }
+.cv-grade { margin-bottom: 20px; }
+
+/* v269: conversa de 15 min mais enxuta; sala travada até o "Estou ciente" */
+.atend-resumo .atend-motivos { color: var(--texto); font-weight: 600; }
+.atend-resumo details p { margin: 4px 0 0; white-space: normal; }
+.atend-resumo details p b { color: var(--texto); }
+.btn-sala-travada { display: inline-flex; align-items: center; justify-content: center; gap: 6px; opacity: .5; cursor: not-allowed; }
+
+/* =====================================================================
+   v270: cor do cartão = tipo do atendimento
+   verde = sessão paga · azul = conversa de 15 min
+   faixa amarela na lateral = falta clicar em "Estou ciente"
+   ===================================================================== */
+html:not([data-tema="escuro"]) .atend.st-confirmado,
+html:not([data-tema="escuro"]) .atend.st-confirmado.sem-ciente { background: var(--ok-bg); border-color: #a9dcbf; box-shadow: inset 6px 0 0 #2fa866, var(--sombra); }
+html:not([data-tema="escuro"]) .atend.st-confirmado.tipo-conhecer,
+html:not([data-tema="escuro"]) .atend.st-confirmado.tipo-conhecer.sem-ciente { background: var(--info-bg); border-color: #b9c2f0; box-shadow: inset 6px 0 0 var(--sea), var(--sombra); }
+html[data-tema="escuro"] .atend.st-confirmado,
+html[data-tema="escuro"] .atend.st-confirmado.sem-ciente { background: rgba(84, 211, 145, .10); border-color: rgba(84, 211, 145, .4); box-shadow: inset 6px 0 0 #3fbf7a; }
+html[data-tema="escuro"] .atend.st-confirmado.tipo-conhecer,
+html[data-tema="escuro"] .atend.st-confirmado.tipo-conhecer.sem-ciente { background: rgba(141, 156, 255, .12); border-color: rgba(141, 156, 255, .42); box-shadow: inset 6px 0 0 #8d9cff; }
+/* falta o "Estou ciente": só a faixa da lateral fica amarela */
+html:not([data-tema="escuro"]) .atend.st-confirmado.sem-ciente.sem-ciente,
+html:not([data-tema="escuro"]) .atend.st-confirmado.tipo-conhecer.sem-ciente.sem-ciente { box-shadow: inset 7px 0 0 #e08a00, var(--sombra); }
+html[data-tema="escuro"] .atend.st-confirmado.sem-ciente.sem-ciente,
+html[data-tema="escuro"] .atend.st-confirmado.tipo-conhecer.sem-ciente.sem-ciente { box-shadow: inset 7px 0 0 #f2a93b; }
+/* sala travada: tocar mostra o aviso e faz o "Estou ciente" piscar */
+.btn-sala-travada { cursor: pointer; }
+.atend [data-acao="ciente"].pisca { animation: cientePisca .9s ease-in-out 2; }
+@keyframes cientePisca { 0%, 100% { box-shadow: 0 0 0 0 rgba(23, 134, 77, 0); } 50% { box-shadow: 0 0 0 6px rgba(23, 134, 77, .35); } }
+@media (prefers-reduced-motion: reduce) { .atend [data-acao="ciente"].pisca { animation: none; } }
+
+/* v273: mensagem ao paciente só depois do "Estou ciente" do psicólogo */
+.btn-travado-psi { display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: var(--neutro-bg); color: var(--muted); border: 1.5px dashed var(--borda); cursor: not-allowed; font-weight: 700; }
+.card-cn .btn-travado-psi { width: 100%; margin-top: 8px; min-height: 42px; font-size: 13.5px; }
+.lem-acoes .btn-travado-psi { font-size: 13px; }
+.lem-mesmo-assim { display: block; grid-column: 1 / -1; font-size: 12.5px; font-weight: 700; color: var(--pend); margin-top: 2px; }
+html[data-tema="escuro"] .btn-travado-psi { background: rgba(255, 255, 255, .04); }
+.lem-acoes .btn-travado-psi { order: 2; white-space: normal; line-height: 1.2; text-align: center; padding-inline: 8px; }
+.lem-acoes .lem-mesmo-assim { order: 3; }
+
+/* v276: próximo horário de conversa livre no cartão do pedido */
+.cn-prox { margin-top: 10px; font-size: 13px; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: var(--ok-bg); }
+.cn-prox b { color: var(--ok); }
+.cn-prox.fora { background: var(--pend-bg); }
+.cn-prox.fora b { color: var(--pend); }
+.cn-prox.sem { background: var(--erro-bg); color: var(--erro); font-weight: 600; }
+.cn-prox small { font-size: 11.5px; }
+
+/* v278: cartões de pedido com os botões sempre embaixo, na mesma altura */
+.card-cn { height: 100%; }
+.card-cn .cn-rodape { margin-top: auto; display: flex; flex-direction: column; }
+.card-cn .cn-rodape > :first-child { margin-top: 12px; }
+
+/* v283: etiquetas do pedido — no celular, 3 + "+N" */
+.cn-chip-mais { display: none; border: 0; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; background: var(--sea); color: #fff; }
+@media (max-width: 640px) {
+  .cn-chips:not(.aberto) .cn-chip-extra { display: none; }
+  .cn-chips:not(.aberto) .cn-chip-mais { display: inline-block; }
+}
+html[data-tema="escuro"] .cn-chip-mais { background: var(--sea-botao, #3d52d9); }
+
+/* v285: rodapé do pedido — "A pessoa desistiu?" + botão, separado por uma linha */
+.cn-desistiu { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borda); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.cn-desistiu-bts { display: flex; gap: 8px; flex-wrap: wrap; }
+.cn-btn-nao, .cn-btn-ok, .cn-btn-neutro { font: inherit; font-size: 13px; font-weight: 700; border-radius: 10px; padding: 8px 13px; background: transparent; cursor: pointer; min-height: 38px; }
+.cn-btn-nao { border: 1.5px solid color-mix(in srgb, var(--erro) 45%, transparent); color: var(--erro); }
+.cn-btn-ok { border: 1.5px solid color-mix(in srgb, var(--ok) 50%, transparent); color: var(--ok); }
+.cn-btn-neutro { border: 1.5px solid var(--borda); color: var(--sea); }
+@media (hover: hover) and (pointer: fine) {
+  .cn-btn-nao:hover { background: var(--erro-bg); }
+  .cn-btn-ok:hover { background: var(--ok-bg); }
+  .cn-btn-neutro:hover { border-color: var(--sea); }
+}
+html[data-tema="escuro"] .cn-btn-nao { color: #ff8a80; border-color: rgba(255, 138, 128, .45); }
+html[data-tema="escuro"] .cn-btn-ok { color: #54d391; border-color: rgba(84, 211, 145, .45); }
+
+/* v286: motivo de "não seguiu" */
+.cn-mot-tit { margin: 14px 0 8px; font-weight: 700; }
+.cn-mot-ops { display: flex; flex-wrap: wrap; gap: 8px; }
+.cn-mot { font: inherit; font-size: 14px; font-weight: 600; padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--borda); background: var(--card); color: var(--texto); cursor: pointer; min-height: 40px; }
+.cn-mot[aria-checked="true"] { background: var(--sea); border-color: var(--sea); color: #fff; }
+html[data-tema="escuro"] .cn-mot[aria-checked="true"] { background: var(--sea-botao, #3d52d9); border-color: var(--sea-botao, #3d52d9); }
+.cn-motivo-nao { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.cn-motivo-nao b { color: var(--texto); }
+
+/* =====================================================================
+   v288: equipe no celular/tablet — barra flutuante embaixo + folha "Mais"
+   ===================================================================== */
+@media (max-width: 900px) {
+  .nav-flutuante .nf-cont.nf-verde { background: #1f9d5c; color: #fff; }
+  .nav-equipe button { font-size: 10px; }
+}
+@media (min-width: 901px) { .folha-mais { display: none !important; } }
+.folha-mais { width: 100vw; max-width: 100vw; margin: auto 0 0; padding: 0; border: 0; border-radius: 24px 24px 0 0; background: var(--card); color: var(--texto); box-shadow: 0 -10px 40px rgba(16, 24, 64, .25); }
+.folha-mais[open] { animation: fmSobe .26s cubic-bezier(.2, .8, .2, 1); }
+.folha-mais::backdrop { background: rgba(10, 14, 35, .45); }
+@keyframes fmSobe { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .folha-mais[open] { animation: none; } }
+.fm-in { padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); display: grid; gap: 4px; }
+.fm-alca { width: 44px; height: 5px; border-radius: 999px; background: var(--borda); margin: 2px auto 8px; }
+.fm-cab { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 6px; }
+.fm-cab h3 { margin: 0; font-size: 17px; }
+.fm-x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--sea-claro); color: var(--sea); font-size: 22px; line-height: 1; cursor: pointer; }
+.fm-op { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border-radius: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fm-op:active, .fm-op:focus-visible { background: var(--bg); }
+.fm-op b { display: block; font-size: 15px; }
+.fm-op small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+.fm-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--sea-claro); color: var(--sea); }
+.fm-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html.fm-aberta { overflow: hidden; }

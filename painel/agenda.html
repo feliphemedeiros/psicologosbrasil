@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/agenda.css?v=219">
+  <link rel="stylesheet" href="css/agenda.css?v=288">
   <link rel="stylesheet" href="css/escuro.css?v=120">
-  <link rel="stylesheet" href="css/topo.css?v=206">
+  <link rel="stylesheet" href="css/topo.css?v=284">
   <link rel="stylesheet" href="css/campos.css">
   <script src="js/campos.js" defer></script>
   <script src="js/tema.js?v=205"></script>
@@ -32,6 +32,7 @@
     </div>
     <nav class="abas abas-quebra" role="tablist" aria-label="Seções">
       <button class="aba" role="tab" data-aba="pre">Pré-reservas<span class="contador" data-cont="pre"></span></button>
+      <button class="aba" role="tab" data-aba="conhecer">Conversas 15 min<span class="contador" data-cont="cn"></span></button>
       <button class="aba" role="tab" data-aba="lembretes">Lembretes<span class="contador contador-verde" data-cont="lem"></span></button>
       <button class="aba" role="tab" data-aba="calendario">Calendário</button>
       <button class="aba" role="tab" data-aba="agenda">Agenda</button>
@@ -61,6 +62,25 @@
       </div>
       <div id="lista-pre"></div>
       <nav class="paginacao" id="pre-pag" aria-label="Páginas de pré-reservas"></nav>
+    </section>
+
+    <!-- CONVERSAS DE 15 MIN ("Conheça o psicólogo em 15 minutos", página /conhecer/ do site) -->
+    <section data-painel="conhecer" hidden>
+      <div class="secao-topo">
+        <div>
+          <h1>Conversas de 15 min</h1>
+          <p>Quem respondeu o “Conheça o psicólogo em 15 minutos” no site. Fale com a pessoa no WhatsApp, escolha um psicólogo que combine e marque a conversa: o horário sai da agenda do psicólogo.</p>
+        </div>
+      </div>
+      <div class="cn-filtro" role="tablist" aria-label="Mostrar pedidos">
+        <button type="button" role="tab" class="cn-f" data-cn-f="abertos" aria-selected="true">Em aberto<span data-cn-n="abertos"></span></button>
+        <button type="button" role="tab" class="cn-f" data-cn-f="fechados" aria-selected="false">Concluídos<span data-cn-n="fechados"></span></button>
+      </div>
+      <div class="lista-busca">
+        <input type="search" id="cn-q" placeholder="Procurar por nome, WhatsApp, e-mail ou motivo" aria-label="Procurar pedido" autocomplete="off">
+      </div>
+      <div id="lista-cn"></div>
+      <nav class="paginacao" id="cn-pag" aria-label="Páginas de pedidos"></nav>
     </section>
 
     <!-- LEMBRETES -->
@@ -151,15 +171,16 @@
 
   <script src="../js/firebase-config.js"></script>
   <script src="../js/nuvem.js"></script>
-  <script src="../js/agenda/config.js?v=116"></script>
+  <script src="js/exemplo.js"></script>
+  <script src="../js/agenda/config.js?v=267"></script>
   <script src="../js/agenda/util.js?v=163"></script>
-  <script src="../js/agenda/db.js?v=220"></script>
-  <script src="../js/agenda/db-firebase.js?v=220"></script>
-  <script src="../js/agenda/servicos.js?v=178"></script>
-  <script src="js/sessao.js?v=206"></script>
-  <script src="js/notificacoes.js?v=205"></script>
+  <script src="../js/agenda/db.js?v=286"></script>
+  <script src="../js/agenda/db-firebase.js?v=286"></script>
+  <script src="../js/agenda/servicos.js?v=274"></script>
+  <script src="js/sessao.js?v=267"></script>
+  <script src="js/notificacoes.js?v=288"></script>
   <script src="js/paginacao.js"></script>
   <script src="js/escolher-psi.js?v=114"></script>
-  <script src="js/agenda-equipe.js?v=219"></script>
+  <script src="js/agenda-equipe.js?v=288"></script>
 </body>
 </html>

@@ -53,7 +53,7 @@
     });
     $('.abas').classList.add('abas-quebra');   /* celular: as 5 abas em botões, todas à vista (sem arrastar) */
     /* o nome do psicólogo bem visível ao lado do título de cada parte */
-    const titulos = { atendimentos: 'Atendimentos', disponibilidade: 'Disponibilidade', resumo: 'Resumo', conta: 'Conta' };
+    const titulos = { atendimentos: 'Atendimentos', disponibilidade: 'Disponibilidade', conversas: 'Conversas 15 min', resumo: 'Resumo', conta: 'Conta' };
     window.marcarNomePsi = nome => {
       const ini = String(nome || '').split(/\s+/).filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '•';
       const pill = `<span class="psi-pill" title="Você está mexendo na agenda de ${esc(nome)}"><span class="psi-pill-ava" aria-hidden="true">${esc(ini)}</span>${esc(nome)}</span>`;
@@ -75,8 +75,8 @@
   /* legenda das cores dos atendimentos: verde só depois do "Estou ciente" */
   { const leg = document.querySelector('[data-painel="atendimentos"] [data-clique]');
     if (leg) leg.innerHTML = VISAO_EQUIPE
-      ? 'Cartão <strong style="color:var(--pend)">amarelo</strong> com “Ainda não viu”: pago, mas o psicólogo ainda não confirmou. Faixa <strong style="color:var(--ok)">verde</strong> com “✓ Ciente”: o psicólogo já viu. Faixa <strong style="color:var(--erro)">vermelha</strong> com “Faltou”: o paciente não entrou.'
-      : `Cartão <strong style="color:var(--pend)">amarelo</strong>: sessão paga que você ainda não confirmou. ${clique(true)} em “Estou ciente” e ele ganha a faixa <strong style="color:var(--ok)">verde</strong> com “✓ Ciente”. Faixa <strong style="color:var(--erro)">vermelha</strong> com “Faltou”: o paciente não entrou.`; }
+      ? 'Cartão <strong style="color:var(--ok)">verde</strong>: sessão paga. Cartão <strong style="color:var(--sea)">azul</strong>: conversa de 15 min. Faixa <strong style="color:var(--pend)">amarela</strong> na lateral com “Ainda não viu”: o psicólogo ainda não confirmou. Faixa <strong style="color:var(--erro)">vermelha</strong> com “Faltou”: o paciente não entrou.'
+      : `Cartão <strong style="color:var(--ok)">verde</strong>: sessão paga. Cartão <strong style="color:var(--sea)">azul</strong>: conversa de 15 min. Faixa <strong style="color:var(--pend)">amarela</strong> na lateral: falta você ${TOQUE ? 'tocar' : 'clicar'} em “Estou ciente” (a sala só libera depois disso).`; }
 
   /* ---------------- abas ---------------- */
   function ativar(aba) {
@@ -112,9 +112,10 @@
       atendimentos: '<path d="M8 3v3M16 3v3M4 9h16"/><rect x="4" y="5" width="16" height="16" rx="3"/><path d="m9 15 2 2 4-4"/>',
       disponibilidade: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
       resumo: '<path d="M5 20V11M12 20V5M19 20v-6"/>',
+      conversas: '<path d="M20 11.5a8 8 0 0 1-11.9 7L4 20l1.5-4A8 8 0 1 1 20 11.5z"/><path d="M12 8v4l2.5 1.5"/>',
       conta: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/>'
     };
-    const itens = [['atendimentos', 'Atendimentos'], ['disponibilidade', 'Disponibilidade'], ['resumo', 'Resumo'], ['conta', 'Perfil']]
+    const itens = [['atendimentos', 'Agenda'], ['disponibilidade', 'Horários'], ['conversas', '15 min'], ['resumo', 'Resumo'], ['conta', 'Perfil']]
       .filter(([k]) => k === 'conta' || $(`[data-painel="${k}"]`));
     const nav = document.createElement('nav');
     nav.className = 'nav-flutuante'; nav.setAttribute('aria-label', 'Minha agenda');
@@ -192,6 +193,16 @@
     box.classList.toggle('atend-grade', gradeAt());
   }
 
+  /* v266: conversa de 15 min ("Conheça o psicólogo"): o que a pessoa respondeu no site, para o psicólogo chegar sabendo */
+  function resumoConversa(r) {
+    /* v269: enxuto — só os motivos à vista; o resto abre em "Ver respostas" */
+    const linha = (rot, l) => (l && l.length ? `<p><b>${rot}:</b> ${esc(Array.isArray(l) ? l.join(', ') : l)}</p>` : '');
+    const resto = linha('Para', r.tipoSessao) + linha('Objetivos', r.objetivos) + linha('Prefere', r.preferencias) + (r.sobre ? `<p><b>O que contou:</b> ${esc(r.sobre)}</p>` : '');
+    return `<div class="atend-resumo">
+      ${(r.motivos || []).length ? `<span class="atend-motivos">${esc(r.motivos.join(' · '))}</span>` : ''}
+      ${resto ? `<details><summary>Ver respostas</summary>${resto}</details>` : ''}
+    </div>`;
+  }
   function cartao(a) {
     const inicio = U.dataHora(a.data, a.hora, a.fuso).getTime();
     const jaComecou = Date.now() >= inicio - 10 * 60e3;
@@ -202,7 +213,10 @@
       acoes += a.psiCiente
         ? `<span class="ciente-ok ciente-sim" title="${VISAO_EQUIPE ? 'O psicólogo já clicou em “Estou ciente”' : 'Você já confirmou que viu esta sessão'}"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Ciente</span>`
         : VISAO_EQUIPE ? `<span class="ciente-nao" title="O psicólogo ainda não clicou em “Estou ciente” nesta sessão"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A10.6 10.6 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.3 2.4-2.6 3.7M6.3 6.4C4.3 7.8 2.8 9.8 2 12c1 2.5 5 7 10 7 1.6 0 3.1-.4 4.4-1.1"/></svg>Ainda não viu</span>` : `<button class="btn btn-ok btn-peq" data-acao="ciente" data-id="${a.id}">Estou ciente</button>`;
-      acoes += `<a class="btn ${jaComecou ? 'btn-primario' : 'btn-secundario'} btn-peq" href="${esc(a.linkMeet)}" target="_blank" rel="noopener">Entrar na sala</a>`;
+      /* v269: a sala só libera depois do "Estou ciente" (a equipe, vendo a agenda do psicólogo, entra sempre) */
+      acoes += a.psiCiente || VISAO_EQUIPE
+        ? `<a class="btn ${jaComecou ? 'btn-primario' : 'btn-secundario'} btn-peq" href="${esc(a.linkMeet)}" target="_blank" rel="noopener">Entrar na sala</a>`
+        : `<button type="button" class="btn btn-secundario btn-peq btn-sala-travada" data-acao="sala-travada" aria-disabled="true" title="Clique em “Estou ciente” para liberar a sala"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Entrar na sala</button>`;
       if (passou) {
         acoes += `<button class="btn btn-secundario btn-peq" data-acao="realizado" data-id="${a.id}">Realizado</button>`;
         acoes += `<button class="btn btn-perigo btn-peq" data-acao="falta" data-id="${a.id}">Faltou</button>`;
@@ -210,17 +224,18 @@
     }
     const det = {
       pendente: 'Horário reservado, aguardando o pagamento do paciente',
-      confirmado: a.tipo === 'mensal' ? `Plano mensal · sessão ${a.sessao} de ${a.totalSessoes}` : 'Sessão avulsa',
+      confirmado: a.tipo === 'conhecer' ? '' : a.tipo === 'mensal' ? `Plano mensal · sessão ${a.sessao} de ${a.totalSessoes}` : 'Sessão avulsa',
       realizado: 'Sessão realizada',
       falta: 'Paciente faltou'
     }[a.status];
     return `
-      <div class="atend st-${a.status}${a.status === 'confirmado' && !a.psiCiente ? ' sem-ciente' : ''}">
+      <div class="atend st-${a.status}${a.tipo === 'conhecer' ? ' tipo-conhecer' : ''}${a.status === 'confirmado' && !a.psiCiente ? ' sem-ciente' : ''}">
         <div class="atend-hora">${U.fmtHora(a.hora)}<small>até ${U.fmtHora(U.horaFim(a.hora, a.duracao))}</small></div>
         <div>
           <div class="atend-nome">${a.status === 'pendente' ? 'Pré-reserva' : esc(a.paciente.nome)}</div>
-          <div class="atend-det">${a.status === 'confirmado' ? '<span class="badge confirmado badge-pago" title="O paciente já pagou esta sessão"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Pagamento confirmado</span>' : U.badge(a.status)}<span>${det}</span></div>
+          <div class="atend-det">${a.status === 'confirmado' && a.tipo === 'conhecer' ? '<span class="badge badge-cn">Conversa 15 min</span>' : a.status === 'confirmado' ? '<span class="badge confirmado badge-pago" title="O paciente já pagou esta sessão"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Pagamento confirmado</span>' : U.badge(a.status)}${a.status === 'confirmado' && !a.psiCiente ? '<span class="pill-falta">Falta confirmar</span>' : ''}${det ? `<span>${det}</span>` : ''}</div>
           ${(n => n ? `<div class="nota-fuso">🌍 ${esc(n)}</div>` : '')(U.notaFuso(a, VISAO_EQUIPE))}
+          ${a.tipo === 'conhecer' && a.resumo ? resumoConversa(a.resumo) : ''}
         </div>
         <div class="atend-acoes">${acoes}</div>
       </div>`;
@@ -245,7 +260,7 @@
       titulo: 'Confirme seus atendimentos',
       corpo: `<p class="baixa-intro">${l.length === 1 ? 'Esta sessão já passou' : `Estas ${l.length} sessões já passaram`} e ainda não ${l.length === 1 ? 'foi marcada' : 'foram marcadas'}. Diga se o atendimento <b>foi realizado</b> ou se o <b>paciente faltou</b>: o seu repasse só entra para pagamento depois disso.</p>
         <div class="baixa-lista">${l.map(a => `<div class="baixa-linha" data-id="${esc(a.id)}">
-          <div class="baixa-quem"><b>${esc(U.fmtCurta(a.data))} · ${esc(U.intervalo(a.hora, a.duracao))}</b><small>${esc(a.paciente.nome)} · ${a.tipo === 'mensal' ? `Plano mensal ${a.sessao}/${a.totalSessoes}` : 'Avulsa'}</small></div>
+          <div class="baixa-quem"><b>${esc(U.fmtCurta(a.data))} · ${esc(U.intervalo(a.hora, a.duracao))}</b><small>${esc(a.paciente.nome)} · ${a.tipo === 'conhecer' ? 'Conversa de 15 min' : a.tipo === 'mensal' ? `Plano mensal ${a.sessao}/${a.totalSessoes}` : 'Avulsa'}</small></div>
           <div class="baixa-bts">
             <button type="button" class="btn btn-ok btn-peq" data-b="realizado">Realizado</button>
             <button type="button" class="btn btn-secundario btn-peq" data-b="falta">Faltou</button>
@@ -284,6 +299,7 @@
     const b = e.target.closest('[data-acao]');
     if (!b) return;
     if (b.dataset.acao === 'abrir-baixa') { abrirBaixa(); return; }
+    if (b.dataset.acao === 'sala-travada') { U.toast(`${TOQUE ? 'Toque' : 'Clique'} em “Estou ciente” para liberar a sala.`); const c = b.closest('.atend'); const ok = c && c.querySelector('[data-acao="ciente"]'); if (ok) { ok.classList.remove('pisca'); void ok.offsetWidth; ok.classList.add('pisca'); } return; }
     const id = b.dataset.id;
     if (b.dataset.acao === 'ciente') { await DB.marcarCiente(id, S.nome); U.toast('Pronto! A equipe já sabe que você viu.'); }
     if (b.dataset.acao === 'realizado') { await DB.atualizarStatus(id, 'realizado', S.nome); U.toast('Sessão marcada como realizada.'); }

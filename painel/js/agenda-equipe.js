@@ -393,6 +393,7 @@
   /* =====================================================================
      LEMBRETES: sessões nas próximas 24 h e planos mensais chegando ao fim
      ===================================================================== */
+  const CAD_P = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   const ICO_ZAP = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>';
   let LEM = { proximas: [], fins: [], pendentes: 0 };
   async function renderLembretes() {
@@ -407,11 +408,18 @@
     const box = $('#lista-lembretes'); if (!box) return;
     const t = Date.now(), T = Servicos.textos;
     const hora = ms => { const m = Math.round((ms - t) / 60000); return m < 60 ? `em ${m} min` : `em ${Math.floor(m / 60)}h${m % 60 ? U.pad(m % 60) : ''}`; };
-    const tagPlano = a => a.tipo === 'mensal' ? `<span class="tag-plano mensal" title="Plano mensal: sessão ${a.sessao} de ${a.totalSessoes}">Mensal · ${a.sessao}/${a.totalSessoes}</span>` : '<span class="tag-plano">Avulsa</span>';
+    const tagPlano = a => a.tipo === 'conhecer' ? '<span class="tag-plano conhecer">Conversa 15 min</span>' : a.tipo === 'mensal' ? `<span class="tag-plano mensal" title="Plano mensal: sessão ${a.sessao} de ${a.totalSessoes}">Mensal · ${a.sessao}/${a.totalSessoes}</span>` : '<span class="tag-plano">Avulsa</span>';
     const quando = a => { const ms = U.dataHora(a.data, a.hora, a.fuso).getTime(); return `<div class="lem-quando">${esc(U.fmtQuando(ms))}<small>${esc(U.fmtLonga(a.data))} · ${esc(U.intervalo(a.hora, a.duracao))}</small>${(n => n ? `<small class="nota-fuso">🌍 ${esc(n)}</small>` : '')(U.notaFuso(a, true))}<small class="lem-falta">Começa ${hora(ms)}</small></div>`; };
     const feitoEm = ms => `${U.fmtQuando(ms)}`;
     const botao = (a, tipo, rotulo, numero, texto) => {
       const f = (a.lembretes || {})[tipo];
+      /* v273: a mensagem ao paciente libera depois que o psicólogo clica em "Estou ciente".
+         Faltando menos de 2 horas, aparece "enviar mesmo assim" para o paciente não ficar sem aviso. */
+      if (tipo === 'paciente' && !a.psiCiente && !f) {
+        const perto = U.dataHora(a.data, a.hora, a.fuso).getTime() - Date.now() < 2 * 3600e3;
+        return `<span class="btn btn-travado-psi" title="Libera quando o psicólogo clicar em “Estou ciente”">${CAD_P}Paciente: espera o psicólogo</span>`
+          + (perto ? `<a class="lem-mesmo-assim" target="_blank" rel="noopener" href="${U.linkWhats(numero, texto)}" data-lembrete="${tipo}" data-id="${a.id}">Falta menos de 2 h: enviar ao paciente mesmo assim</a>` : '');
+      }
       return `<a class="btn ${f ? 'feito' : 'btn-whats'}${tipo === 'psicologo' ? ' btn-whats-psi' : ''}" target="_blank" rel="noopener" href="${U.linkWhats(numero, texto)}" data-lembrete="${tipo}" data-id="${a.id}" title="${f ? 'Já enviado ' + esc(feitoEm(f)) + '. Clique para enviar de novo.' : 'Abre o WhatsApp com a mensagem pronta'}">${f ? '✓ ' : ICO_ZAP}${rotulo}</a>`;
     };
     const fins = LEM.fins.map(a => {
@@ -482,7 +490,7 @@
       : ids.map(id => { const it = porPsi[id].sort((a, b) => a.hora.localeCompare(b.hora)); return `<div class="cm-psi"><h3>${esc(nomePsi(id))}<span>${it.length} atendimento${it.length === 1 ? '' : 's'}</span></h3>${it.map(a => `
         <div class="cm-it" data-cal-ag="${esc(a.id)}">
           <span class="cm-h">${esc(U.intervalo(a.hora, a.duracao))}${(n => n ? `<small class="nota-fuso">🌍 ${esc(n)}</small>` : '')(U.notaFuso(a, true))}</span>
-          <span class="cm-p"><b>${esc(a.paciente.nome)}</b><small>${a.tipo === 'mensal' ? `Plano mensal · ${a.sessao}/${a.totalSessoes}` : 'Sessão avulsa'} · ${esc(U.fmtTelefone(a.paciente.whatsapp))}</small>${Auth.pode('pacientesFicha') ? `<a href="pacientes.html#p:${encodeURIComponent(U.chavePaciente(a.paciente))}" data-ficha>Ver ficha do paciente</a>` : ''}</span>
+          <span class="cm-p"><b>${esc(a.paciente.nome)}</b><small>${a.tipo === 'conhecer' ? 'Conversa de 15 min' : a.tipo === 'mensal' ? `Plano mensal · ${a.sessao}/${a.totalSessoes}` : 'Sessão avulsa'} · ${esc(U.fmtTelefone(a.paciente.whatsapp))}</small>${Auth.pode('pacientesFicha') ? `<a href="pacientes.html#p:${encodeURIComponent(U.chavePaciente(a.paciente))}" data-ficha>Ver ficha do paciente</a>` : ''}</span>
           ${U.badge(a.status)}
         </div>`).join('')}</div>`; }).join(''));
   }
@@ -516,7 +524,7 @@
           <td class="mono c-hora">${U.intervalo(a.hora, a.duracao)}${(n => n ? `<small class="nota-fuso">🌍 ${esc(n)}</small>` : '')(U.notaFuso(a, true))}</td>
           <td class="c-psi">${fPsi.value ? esc(nomePsi(a.psiId)) : `<button type="button" class="link-psi" data-filtrar-psi="${esc(a.psiId)}" title="Ver só os atendimentos de ${esc(U.primeiroNome(nomePsi(a.psiId)))}">${esc(nomePsi(a.psiId))}</button>`}</td>
           <td class="c-pac">${esc(a.paciente.nome)}</td>
-          <td class="c-plano">${a.tipo === 'mensal' ? `Mensal ${a.sessao}/${a.totalSessoes}` : 'Avulsa'}</td>
+          <td class="c-plano">${a.tipo === 'conhecer' ? 'Conversa 15 min' : a.tipo === 'mensal' ? `Mensal ${a.sessao}/${a.totalSessoes}` : 'Avulsa'}</td>
           <td class="c-sit">${U.badge(a.status)}</td>
           <td class="c-viu${a.status === 'confirmado' ? '' : ' c-viu-vazio'}">${a.status === 'confirmado' ? (a.psiCiente ? '<span class="ciente-ok">✓ Ciente</span>' : '<span class="ciente-nao" title="O psicólogo ainda não clicou em “Estou ciente”"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A10.6 10.6 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.3 2.4-2.6 3.7M6.3 6.4C4.3 7.8 2.8 9.8 2 12c1 2.5 5 7 10 7 1.6 0 3.1-.4 4.4-1.1"/></svg>Ainda não viu</span>') : '<span class="muted">—</span>'}</td>
         </tr>`).join('')}
@@ -550,7 +558,7 @@
         if (!ok) return false;
         await DB.cancelar([a.id], S.nome); U.toast('Sessão cancelada.'); render();
       } });
-      acoes.push({ texto: 'Remarcar', onClick: () => { setTimeout(() => abrirRemarcar(a), 50); } });
+      if (a.tipo !== 'conhecer') acoes.push({ texto: 'Remarcar', onClick: () => { setTimeout(() => abrirRemarcar(a), 50); } });
       acoes.push({ texto: 'Faltou', onClick: async () => {
         const ok = await U.confirmar('Paciente faltou?', `Confirma que <b>${esc(a.paciente.nome)}</b> não entrou na sessão de ${esc(U.fmtCurta(a.data))}, ${esc(U.fmtHora(a.hora))}, com ${esc(psi?.nome || 'o psicólogo')}?<br><br>Pela regra, falta sem aviso conta como sessão feita: o repasse ao psicólogo continua.`, 'Marcar falta', true);
         if (!ok) return false;
@@ -559,7 +567,7 @@
       acoes.push({ texto: 'Realizado', classe: 'btn-primario', onClick: async () => { await DB.atualizarStatus(a.id, 'realizado', S.nome); U.toast('Marcado como realizado.'); render(); } });
     }
     if (a.status === 'falta') {
-      acoes.push({ texto: 'Remarcar', classe: 'btn-primario', onClick: () => { setTimeout(() => abrirRemarcar(a), 50); } });
+      if (a.tipo !== 'conhecer') acoes.push({ texto: 'Remarcar', classe: 'btn-primario', onClick: () => { setTimeout(() => abrirRemarcar(a), 50); } });
     }
     if (['realizado', 'falta'].includes(a.status)) {
       acoes.push({ texto: 'Voltar para confirmado', onClick: async () => {
@@ -581,7 +589,7 @@
             <dt>Quando</dt><dd>${U.fmtLonga(a.data)}, ${U.intervalo(a.hora, a.duracao)}${(n => n ? `<small class="nota-fuso">🌍 ${esc(n)}</small>` : '')(U.notaFuso(a, true))}</dd>
             <dt>Psicólogo</dt><dd>${esc(psi?.nome)}</dd>
             <dt>Paciente</dt><dd>${esc(a.paciente.nome)}<br><span class="muted">${esc(U.fmtTelefone(a.paciente.whatsapp))} · ${esc(a.paciente.email)}</span>${Auth.pode('pacientesFicha') ? `<br><a href="pacientes.html#p:${encodeURIComponent(U.chavePaciente(a.paciente))}">Ver ficha do paciente →</a>` : ''}</dd>
-            <dt>Plano</dt><dd>${a.tipo === 'mensal' ? `Mensal, sessão ${a.sessao} de ${a.totalSessoes}` : 'Avulsa'} · ${U.moeda(a.valor)} esta sessão</dd>
+            <dt>Plano</dt><dd>${a.tipo === 'conhecer' ? 'Conversa de 15 min (Conheça o psicólogo) · sem valor' : `${a.tipo === 'mensal' ? `Mensal, sessão ${a.sessao} de ${a.totalSessoes}` : 'Avulsa'} · ${U.moeda(a.valor)} esta sessão`}</dd>
             ${a.linkMeet ? `<dt>Sala</dt><dd><a href="${esc(a.linkMeet)}" target="_blank" rel="noopener">${esc(a.linkMeet)}</a></dd>` : ''}
             ${a.aceite && a.aceite.em ? `<dt>Termos</dt><dd>Aceitou os Termos de uso em ${esc(U.fmtQuando(a.aceite.em))}${a.aceite.versao ? ` <span class="muted">(versão de ${esc(a.aceite.versao.split('-').reverse().join('/'))})</span>` : ''}</dd>` : ''}
           </dl>
@@ -769,6 +777,474 @@
   };
 
   /* =====================================================================
+     CONVERSAS DE 15 MIN (v266)
+     Pedidos do "Conheça o psicólogo em 15 minutos" (página /conhecer/ do site).
+     1) WhatsApp com a pessoa → 2) escolher psicólogo e horário → conversa marcada
+     (vira um atendimento "conhecer", sem valor, que ocupa o horário inteiro do psicólogo)
+     → depois da conversa: "Virou paciente" ou "Não seguiu".
+     ===================================================================== */
+  const CN_POR_PAGINA = 6;
+  /* v286: por que a pessoa não seguiu (opcional, um toque) */
+  const MOTIVOS_NAO = { nao_respondeu: 'Não respondeu', caro: 'Achou caro', horario: 'Não tinha horário bom', outro_lugar: 'Escolheu outro lugar', outro: 'Outro motivo' };
+  function perguntarMotivoNao(p) {
+    let motivo = '';
+    const m = U.modal({
+      titulo: 'Não seguiu?',
+      corpo: `<p>O pedido de <b>${esc(nomeBonito(p.paciente.nome))}</b> vai para “Concluídos”.</p>
+        <p class="cn-mot-tit">Por quê? <span class="muted">(opcional)</span></p>
+        <div class="cn-mot-ops" role="radiogroup" aria-label="Motivo">${Object.entries(MOTIVOS_NAO).map(([k, t]) => `<button type="button" role="radio" aria-checked="false" class="cn-mot" data-mot="${k}">${esc(t)}</button>`).join('')}</div>`,
+      acoes: [
+        { texto: 'Voltar' },
+        { texto: 'Mover para Concluídos', classe: 'btn-primario', onClick: async () => {
+          try { await DB.atualizarConhecer(p.id, { status: 'nao', motivo }, S.nome); U.toast('Pedido movido para Concluídos.'); renderConhecer(); }
+          catch (err) { U.toast(err.message || 'Não consegui.', 'erro'); return false; }
+        } }
+      ]
+    });
+    m.corpo.addEventListener('click', e => {
+      const b = e.target.closest('[data-mot]'); if (!b) return;
+      motivo = motivo === b.dataset.mot ? '' : b.dataset.mot;   /* tocar de novo desmarca */
+      m.corpo.querySelectorAll('[data-mot]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.mot === motivo)));
+    });
+  }
+  const CN_FECHADOS = ['paciente', 'nao'];
+  const CN_ROTULO = { novo: 'Novo', contato: 'Em contato', marcada: 'Conversa marcada', paciente: 'Virou paciente', nao: 'Não seguiu' };
+  let CN = [], cnPag = 1, cnFiltro = 'abertos', CN_AG = {}, PERFIS = null, CONVERSAS = [];
+  /* v267: limite de conversas por paciente (mesmo WhatsApp ou mesmo e-mail) */
+  const LIMITE_CN = C.limiteConversas || 10;
+  const mesmaPessoaCn = (a, b) => { const wa = U.whatsNumero(a && a.whatsapp), wb = U.whatsNumero(b && b.whatsapp), ea = String((a && a.email) || '').trim().toLowerCase(), eb = String((b && b.email) || '').trim().toLowerCase(); return !!((wa && wa === wb) || (ea && ea === eb)); };
+  const usadasCn = p => CONVERSAS.filter(a => ['confirmado', 'realizado', 'falta'].includes(a.status) && mesmaPessoaCn(a.paciente, p.paciente)).sort((x, y) => (x.data + x.hora).localeCompare(y.data + y.hora));
+  function limiteCnHTML(p) {
+    const u = usadasCn(p); if (!u.length) return '';
+    const cheio = u.length >= LIMITE_CN, rot = { confirmado: 'marcada', realizado: 'realizada', falta: 'faltou' };
+    return `<div class="cn-limite${cheio ? ' cheio' : ''}">
+        <div class="cn-limite-t">Conversas usadas <span>${u.length} de ${LIMITE_CN}</span></div>
+        <div class="cn-limite-barra"><i style="width:${Math.min(100, Math.round(u.length / LIMITE_CN * 100))}%"></i></div>
+        <ul>${u.map(a => `<li><b>${esc(nomePsi(a.psiId))}</b> · ${esc(U.fmtDDMM(a.data))} · ${rot[a.status] || a.status}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  /* perfis do site (temas, público, tratamento) para sugerir quem combina com as respostas */
+  async function carregarPerfis() {
+    if (PERFIS) return PERFIS;
+    let l = [];
+    try { if (window.NUVEM) l = await NUVEM.lista('psicologos'); } catch (e) { l = []; }
+    if (!l.length && !window.FIREBASE_CONFIG) { try { l = (JSON.parse(localStorage.getItem('pb-painel-v1')) || {}).psicologos || []; } catch (e) { l = []; } }
+    PERFIS = {};
+    l.forEach(p => { const id = p.agendaId || p.slug; if (id) PERFIS[id] = p; });
+    return PERFIS;
+  }
+
+  const raizes = t => norm(t).split(/[^a-z0-9+]+/).filter(w => w.length >= 3 && !['com', 'para', 'das', 'dos'].includes(w)).map(w => w.slice(0, 5));
+  const PUBLICO = { Casal: 'casa', 'Criança': 'cria', Adolescente: 'adole', 'Família': 'famil', Individual: 'adult' };
+  /* nota de 0 a N e os motivos da indicação (o que aparece em verde no cartão) */
+  function combinar(pedido, psi) {
+    const pf = PERFIS[psi.id] || {};
+    const temas = (pf.temas || []).map(norm), publico = (pf.publico || []).map(norm);
+    let nota = 0; const porque = [];
+    (pedido.motivos || []).filter(m => m !== 'Outro').forEach(m => {
+      const r = raizes(m);
+      if (temas.some(t => r.some(x => t.split(/[^a-z0-9+]+/).some(w => w.startsWith(x))))) { nota += 3; porque.push(m); }
+    });
+    const pub = PUBLICO[pedido.tipoSessao];
+    if (pub && publico.length) {
+      if (publico.some(p => p.startsWith(pub))) { nota += pedido.tipoSessao === 'Individual' ? 1 : 3; if (pedido.tipoSessao !== 'Individual') porque.push(`Atende ${pedido.tipoSessao.toLowerCase()}`); }
+      else nota -= 5;
+    }
+    const prefs = pedido.preferencias || [], trat = norm(pf.tratamento || '');
+    if (prefs.includes('Psicóloga mulher')) { if (trat === 'psicologa') { nota += 2; porque.push('Psicóloga'); } else nota -= 2; }
+    if (prefs.includes('Psicólogo homem')) { if (trat === 'psicologo') { nota += 2; porque.push('Psicólogo'); } else nota -= 2; }
+    if (prefs.includes('LGBTQIA+ friendly') && temas.some(t => t.includes('lgbt'))) { nota += 2; porque.push('LGBTQIA+'); }
+    return { nota, porque };
+  }
+  /* o horário cabe no que a pessoa pediu? */
+  function noPeriodo(data, hora, pedido) {
+    const h = Number(String(hora).slice(0, 2)), dow = new Date(data + 'T12:00:00').getDay();
+    switch (pedido.horario) {
+      case 'Manhãs': return h < 12;
+      case 'Tardes': return h >= 12 && h < 18;
+      case 'Noites': return h >= 18;
+      case 'Fim de semana': return dow === 0 || dow === 6;
+      default: return true;
+    }
+  }
+
+  /* v276: horários de conversa livres de todos os psicólogos (para a mensagem e o cartão dizerem o horário real) */
+  let LIVRES = null, LIVRES_EM = 0;
+  async function carregarLivres(forcar) {
+    if (!forcar && LIVRES && Date.now() - LIVRES_EM < 60e3) return LIVRES;
+    const novo = {}; let conv = {};
+    try { conv = DB.listarConversas15 ? await DB.listarConversas15() : {}; } catch (e) { conv = {}; }
+    await Promise.all(Object.keys(conv).filter(id => conv[id] && conv[id].ativo && PSIS[id] && PSIS[id].ativo !== false)
+      .map(async id => { try { novo[id] = await DB.livres15(id); } catch (e) { novo[id] = []; } }));
+    LIVRES = novo; LIVRES_EM = Date.now();
+    return LIVRES;
+  }
+  /* o horário de conversa mais cedo para esta pessoa: primeiro no período que ela marcou; senão, o mais cedo de todos */
+  function proximoCn(p) {
+    if (!LIVRES) return null;
+    const ja = new Set(usadasCn(p).map(a => a.psiId)), todos = [];
+    Object.entries(LIVRES).forEach(([id, l]) => { if (!ja.has(id)) l.forEach(x => todos.push({ ...x, psiId: id })); });
+    todos.sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+    return todos.find(x => noPeriodo(x.data, x.hora, p)) || todos[0] || null;
+  }
+  const periodoDe = h => { const n = Number(String(h).slice(0, 2)); return n < 12 ? ' de manhã' : n < 18 ? ' à tarde' : ' à noite'; };
+  const diaCn = d => { const hoje = U.hojeISO(); return d === hoje ? 'hoje' : d === U.addDias(hoje, 1) ? 'amanhã' : `${U.fmtLonga(d).split(',')[0]} (${U.fmtDDMM(d)})`; };
+  function proximoCnHTML(p) {
+    if (!cnAberto(p) || p.status === 'marcada' || !LIVRES) return '';
+    const x = proximoCn(p);
+    if (!x) {
+      /* v278: diz o motivo quando o único psicólogo com horário já conversou com esta pessoa */
+      const ja = [...new Set(usadasCn(p).map(a => a.psiId))].filter(id => (LIVRES[id] || []).length);
+      return ja.length
+        ? `<div class="cn-prox sem">Só ${esc(ja.map(nomePsi).join(' e '))} ${ja.length > 1 ? 'têm' : 'tem'} horário livre, e esta pessoa já conversou com ${esc(ja.map(id => U.primeiroNome(nomePsi(id))).join(' e '))}. Peça a outros psicólogos para abrirem horários.</div>`
+        : `<div class="cn-prox sem">Nenhum horário de conversa livre agora. Peça aos psicólogos para abrirem horários.</div>`;
+    }
+    return `<div class="cn-prox${noPeriodo(x.data, x.hora, p) ? '' : ' fora'}">Próximo horário livre: <b>${esc(diaCn(x.data))}, ${esc(U.fmtHora(x.hora))}</b> · ${esc(nomePsi(x.psiId))}${noPeriodo(x.data, x.hora, p) ? '' : ' <small>(fora do período que a pessoa pediu)</small>'}</div>`;
+  }
+
+  async function renderConhecer() {
+    if (!DB.listarConhecer) return;
+    try { CN = await DB.listarConhecer(); } catch (e) { CN = []; }
+    CN.sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+    /* conversa marcada: busca o atendimento para saber se já aconteceu */
+    CN_AG = {};
+    try { CONVERSAS = DB.listarConversas ? await DB.listarConversas() : []; } catch (e) { CONVERSAS = []; }
+    CN.forEach(p => { const a = p.agId && CONVERSAS.find(x => x.id === p.agId); if (a) CN_AG[p.id] = a; });
+    if (CN.some(p => cnAberto(p) && p.status !== 'marcada')) await carregarLivres();
+    /* v280: o número da aba soma os pedidos novos + as conversas em que o psicólogo já confirmou e falta avisar o paciente */
+    const novos = CN.filter(p => p.status === 'novo').length;
+    const avisar = CONVERSAS.filter(a => a.status === 'confirmado' && a.psiCiente && !(a.lembretes || {}).horario && U.dataHora(a.data, a.hora, a.fuso).getTime() + (a.duracao || 15) * 60e3 > Date.now()).length;
+    const cont = $('[data-cont="cn"]');
+    cont.textContent = (novos + avisar) || '';
+    cont.title = [novos ? `${novos} pedido${novos > 1 ? 's' : ''} novo${novos > 1 ? 's' : ''}` : '', avisar ? `${avisar} para avisar o paciente` : ''].filter(Boolean).join(' · ');
+    desenharConhecer();
+  }
+  const cnAberto = p => !CN_FECHADOS.includes(p.status);
+  const textoCn = p => norm(`${p.paciente.nome} ${p.paciente.email} ${p.paciente.whatsapp} ${U.digitos(p.paciente.whatsapp)} ${(p.motivos || []).join(' ')} ${p.tipoSessao} ${CN_AG[p.id] ? nomePsi(CN_AG[p.id].psiId) : ''}`);
+  /* v283: no celular, só as 3 primeiras etiquetas e um "+N" que abre o resto */
+  const CHIPS_VIS = 3;
+  const chipsCn = (l, cls = '') => (l || []).length ? `<span class="cn-chips">${l.map((x, i) => `<span class="cn-chip${cls}${i >= CHIPS_VIS ? ' cn-chip-extra' : ''}">${esc(x)}</span>`).join('')}${l.length > CHIPS_VIS ? `<button type="button" class="cn-chip cn-chip-mais" data-mais-chips aria-label="Ver mais ${l.length - CHIPS_VIS}">+${l.length - CHIPS_VIS}</button>` : ''}</span>` : '<span class="muted">—</span>';
+  document.addEventListener('click', e => { const b = e.target.closest('[data-mais-chips]'); if (!b) return; b.closest('.cn-chips').classList.add('aberto'); b.remove(); });
+
+  function desenharConhecer() {
+    const box = $('#lista-cn');
+    const abertos = CN.filter(cnAberto), fechados = CN.filter(p => !cnAberto(p));
+    $('[data-cn-n="abertos"]').textContent = abertos.length ? ` · ${abertos.length}` : '';
+    $('[data-cn-n="fechados"]').textContent = fechados.length ? ` · ${fechados.length}` : '';
+    $$('[data-cn-f]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.cnF === cnFiltro)));
+    const base = cnFiltro === 'abertos' ? abertos : fechados;
+    $('#cn-q').closest('.lista-busca').hidden = !CN.length;
+    if (!CN.length) {
+      box.innerHTML = `<div class="vazio"><strong>Nenhum pedido ainda.</strong>Quando alguém responder o “Conheça o psicólogo em 15 minutos” no site, o pedido aparece aqui.</div>`;
+      $('#cn-pag').innerHTML = ''; return;
+    }
+    const q = norm($('#cn-q').value.trim());
+    const vis = base.filter(p => !q || q.split(/\s+/).every(t => textoCn(p).includes(t)));
+    const r = Paginacao.fatiar(vis, cnPag, CN_POR_PAGINA); cnPag = r.pag;
+    $('#cn-pag').innerHTML = Paginacao.html(r, ['pedido', 'pedidos']);
+    if (!vis.length) {
+      box.innerHTML = `<div class="vazio"><strong>${q ? 'Nenhum pedido com essa busca.' : cnFiltro === 'abertos' ? 'Nenhum pedido em aberto.' : 'Nenhum pedido concluído ainda.'}</strong>${q ? 'Confira o nome, o WhatsApp ou o e-mail.' : cnFiltro === 'abertos' ? 'Tudo em dia por aqui.' : 'Quando um pedido virar paciente ou não seguir, ele vem para cá.'}</div>`;
+      return;
+    }
+    box.innerHTML = `<div class="cards">${r.itens.map(cartaoCn).join('')}</div>`;
+  }
+
+  function cartaoCn(p) {
+    const a = CN_AG[p.id] && CN_AG[p.id].status !== 'cancelado' ? CN_AG[p.id] : null;
+    const st = p.status;
+    const contato = p.contato || null;
+    const nome = nomeBonito(p.paciente.nome);
+    const zap1 = `<a class="btn btn-whats btn-passo btn-wa-pre${contato ? ' feito' : ''}" target="_blank" rel="noopener" data-cn-zap="${esc(p.id)}" href="${U.linkWhats(p.paciente.whatsapp, txtCnOla(p))}">${contato
+      ? `<span class="passo-n passo-ok" aria-hidden="true">✓</span>Mensagem enviada<small>${esc(U.primeiroNome(contato.por || ''))} · ${esc(U.fmtQuando(contato.em))} · abrir de novo</small>`
+      : `<span class="passo-n" aria-hidden="true">1</span>${ICO_ZAP}Falar com ${esc(U.primeiroNome(nome))} no WhatsApp`}</a>`;
+    let meio = '', acoes = '';
+    if (st === 'marcada' && a) {
+      const quando = `${U.fmtLonga(a.data)}, ${U.intervalo(a.hora, a.duracao)}`;
+      const feito = a.status === 'realizado', faltou = a.status === 'falta';
+      meio = `<div class="cn-marcada${feito ? ' ok' : faltou ? ' falta' : ''}">
+          <b>${feito ? '✓ Conversa feita' : faltou ? 'Não compareceu' : 'Conversa marcada'}</b>
+          <span>${esc(nomePsi(a.psiId))} · ${esc(quando)}</span>
+          ${!feito && !faltou ? `<small>${a.psiCiente ? '✓ Psicólogo ciente' : 'O psicólogo ainda não clicou em “Estou ciente”'}</small>` : ''}
+        </div>`;
+      if (feito) acoes = `<div class="acoes cn-acoes"><button class="btn btn-ok" data-cn="paciente" data-id="${esc(p.id)}">Virou paciente</button><button class="btn btn-secundario" data-cn="nao" data-id="${esc(p.id)}">Não seguiu</button></div>`;
+      else if (faltou) acoes = `<div class="acoes cn-acoes"><button class="btn btn-primario" data-cn="remarcar" data-id="${esc(p.id)}">Marcar de novo</button><button class="btn btn-secundario" data-cn="nao" data-id="${esc(p.id)}">Não seguiu</button></div>`;
+      else acoes = (a.psiCiente
+        ? ((a.lembretes || {}).horario
+          ? `<a class="btn btn-whats btn-passo btn-wa-pre feito" target="_blank" rel="noopener" href="${U.linkWhats(p.paciente.whatsapp, txtCnMarcada(p, a))}"><span class="passo-n passo-ok" aria-hidden="true">✓</span>Horário enviado ao paciente<small>${esc(U.fmtQuando(a.lembretes.horario))} · abrir de novo</small></a>`
+          : `<a class="btn btn-whats btn-passo" target="_blank" rel="noopener" data-cn-horario="${esc(a.id)}" href="${U.linkWhats(p.paciente.whatsapp, txtCnMarcada(p, a))}">${ICO_ZAP}Mandar o horário e o link ao paciente</a>`)
+        : `<a class="btn btn-whats btn-whats-psi btn-passo" target="_blank" rel="noopener" data-feito="Enviado ao psicólogo" href="${U.linkWhats((PSIS[a.psiId] || {}).whatsapp || '', txtCnPsi(p, a))}">${ICO_ZAP}Avisar o psicólogo no WhatsApp</a>
+          <span class="btn btn-passo btn-travado-psi" title="Libera quando o psicólogo clicar em “Estou ciente”">${CAD_P}Paciente: libera quando o psicólogo confirmar</span>`) + `
+        <div class="acoes cn-acoes"><button class="btn btn-secundario" data-cn="detalhes" data-ag="${esc(a.id)}">Detalhes</button><button class="btn btn-perigo" data-cn="desmarcar" data-id="${esc(p.id)}">Desmarcar</button></div>`;
+    } else if (cnAberto(p) && usadasCn(p).length >= LIMITE_CN) {
+      acoes = `<div class="cn-bloq">Limite de conversas atingido<small>Ofereça uma primeira sessão com o psicólogo de que a pessoa mais gostou.</small></div>
+        <div class="cn-desistiu"><span>Como terminou?</span><span class="cn-desistiu-bts"><button type="button" class="cn-btn-ok" data-cn="paciente" data-id="${esc(p.id)}">Virou paciente</button><button type="button" class="cn-btn-nao" data-cn="nao" data-id="${esc(p.id)}">Não seguiu</button></span></div>`;
+    } else if (cnAberto(p)) {
+      acoes = `${zap1}
+        <button class="btn btn-primario btn-passo" data-cn="marcar" data-id="${esc(p.id)}"><span class="passo-n" aria-hidden="true">2</span>${ICO_RELOGIO}${usadasCn(p).length ? 'Marcar outra conversa' : 'Escolher psicólogo e horário'}</button>
+        <div class="cn-desistiu"><span>A pessoa desistiu?</span><button type="button" class="cn-btn-nao" data-cn="nao" data-id="${esc(p.id)}">Não quis seguir</button></div>`;
+    } else {
+      acoes = `<div class="cn-desistiu"><span>Pedido encerrado</span><button type="button" class="cn-btn-neutro" data-cn="contato" data-id="${esc(p.id)}">Reabrir pedido</button></div>`;
+    }
+    return `
+      <article class="card card-cn cnc-${st}">
+        <div class="card-topo">
+          <span class="cn-st cn-st-${st}">${CN_ROTULO[st] || st}</span>
+          <span class="direita" title="${esc(U.fmtDataHoraCompleta(p.criadoEm))}">Pediu ${esc(U.fmtQuando(p.criadoEm))}</span>
+        </div>
+        <h3>${esc(nome)}</h3>
+        <div class="contato">${esc(U.fmtTelefone(p.paciente.whatsapp))} · ${esc(p.paciente.email)}</div>
+        <dl class="info cn-info">
+          <dt>Para</dt><dd>${esc(p.tipoSessao || '—')}</dd>
+          <dt>Motivos</dt><dd>${chipsCn(p.motivos)}</dd>
+          ${(p.objetivos || []).length ? `<dt>Objetivos</dt><dd>${chipsCn(p.objetivos, ' leve')}</dd>` : ''}
+          ${(p.preferencias || []).length ? `<dt>Prefere</dt><dd>${chipsCn(p.preferencias, ' leve')}</dd>` : ''}
+          <dt>Horário</dt><dd>${esc(p.horario || '—')}</dd>
+        </dl>
+        ${p.sobre ? `<details class="cn-sobre"><summary>O que a pessoa contou</summary><p>${esc(p.sobre)}</p></details>` : ''}
+        ${st === 'nao' && p.motivoNao && MOTIVOS_NAO[p.motivoNao] ? `<p class="cn-motivo-nao">Motivo: <b>${esc(MOTIVOS_NAO[p.motivoNao])}</b></p>` : ''}
+        <div class="cn-rodape">
+          ${meio}
+          ${proximoCnHTML(p)}
+          ${limiteCnHTML(p)}
+          ${acoes}
+        </div>
+      </article>`;
+  }
+
+  /* ---------- textos do WhatsApp ---------- */
+  /* v274: nome de quem manda a mensagem — conta genérica ("Equipe de suporte") vira "da equipe" */
+  const quemAtende = () => { const n = U.primeiroNome(S.nome || ''); return !n || /^(equipe|suporte|admin|administrador)$/i.test(n) ? '' : n; };
+  /* v276: primeira mensagem curta, com o horário real mais cedo (hoje, amanhã ou o próximo dia livre) */
+  function txtCnOla(p) {
+    const quem = quemAtende(), x = proximoCn(p);
+    let quando;
+    if (!x) quando = 'Já estamos vendo os horários e te mandamos as opções em seguida, tá bom?';
+    else {
+      const d = diaCn(x.data);
+      quando = d === 'hoje' ? `Temos horário ainda hoje${periodoDe(x.hora)}. Pode ser?`
+        : d === 'amanhã' ? `Temos horário já amanhã${periodoDe(x.hora)}. Pode ser?`
+        : `O próximo horário livre é ${d}${periodoDe(x.hora)}. Pode ser?`;
+    }
+    return `Olá, ${U.primeiroNome(nomeBonito(p.paciente.nome))}! ${quem ? `Aqui é ${quem}, da equipe Psicólogos Brasil.` : 'Aqui é da equipe Psicólogos Brasil.'} `
+      + `Recebemos suas respostas e já separamos psicólogos que combinam com você.\n\n`
+      + `A conversa é rápida, 15 minutos por vídeo, para vocês se conhecerem. ${quando}`;
+  }
+  function txtCnMarcada(p, a) {
+    return `Pronto, ${U.primeiroNome(nomeBonito(p.paciente.nome))}! Sua conversa de 15 minutos está marcada.\n\n`
+      + `Psicólogo(a): ${nomePsi(a.psiId)}\nQuando: ${U.fmtLonga(a.data)}, às ${U.fmtHora(a.hora)} (horário de Brasília)\nPor vídeo: ${a.linkMeet || '(mandamos o link em seguida)'}\n\n`
+      + `É só entrar pelo link no horário. Se precisar mudar, fale com a gente por aqui.`;
+  }
+  function txtCnPsi(p, a) {
+    const r = a.resumo || {};
+    return `Olá, ${U.primeiroNome(nomePsi(a.psiId))}! Marcamos uma conversa de 15 minutos (Conheça o psicólogo) com ${nomeBonito(p.paciente.nome)}.\n\n`
+      + `Quando: ${U.fmtLonga(a.data)}, às ${U.fmtHora(a.hora)}\nLink: ${a.linkMeet || '—'}\n`
+      + `${(r.motivos || []).length ? `Motivos: ${r.motivos.join(', ')}\n` : ''}\nO resumo completo das respostas está na sua agenda no painel. Depois da conversa, marque “Realizado”.`;
+  }
+
+  /* ---------- escolher psicólogo e horário ---------- */
+  async function abrirMarcarCn(id) {
+    const p = CN.find(x => x.id === id); if (!p) return;
+    await carregarPerfis();
+    let CONV = {};
+    try { CONV = await DB.listarConversas15(); } catch (e) { CONV = {}; }
+    const jaFalou = new Set(usadasCn(p).map(a => a.psiId));
+    if (usadasCn(p).length >= LIMITE_CN) return U.toast(`Esta pessoa já usou as ${LIMITE_CN} conversas de 15 min.`, 'erro');
+    const candidatos = Object.values(PSIS).filter(x => x.ativo !== false && CONV[x.id] && CONV[x.id].ativo && !jaFalou.has(x.id))
+      .map(x => ({ psi: x, ...combinar(p, x) }))
+      .sort((a, b) => b.nota - a.nota || a.psi.nome.localeCompare(b.psi.nome, 'pt-BR'));
+    let escolha = null, mostrarTodos = false;
+    const m = U.modal({
+      titulo: 'Escolher psicólogo e horário',
+      largo: true,
+      corpo: `
+        <div class="cn-m-quem"><b>${esc(nomeBonito(p.paciente.nome))}</b><span>${esc(p.tipoSessao || '')}${(p.motivos || []).length ? ' · ' + esc(p.motivos.join(', ')) : ''}</span><span>Horário: <b>${esc(p.horario || 'qualquer')}</b>${(p.preferencias || []).length ? ' · Prefere: ' + esc(p.preferencias.join(', ')) : ''}</span></div>
+        <p class="ajuda">Só aparecem psicólogos que abriram horários de conversa (Minha agenda → Conversas 15 min)${jaFalou.size ? ' e com quem a pessoa ainda não conversou' : ''}. Os horários em azul estão no período que a pessoa pediu. Conversa ${usadasCn(p).length + 1} de ${LIMITE_CN}.</p>
+        <div class="cn-m-lista" data-cn-lista><span class="muted">Carregando horários livres…</span></div>
+        <div class="cn-m-escolha" data-cn-escolha hidden></div>`,
+      acoes: [
+        { texto: 'Voltar' },
+        { texto: 'Marcar conversa', classe: 'btn-ok', onClick: async ({ corpo }) => {
+          if (!escolha) { U.toast('Escolha um horário.', 'erro'); return false; }
+          const link = ($('#cn-link', corpo) || {}).value?.trim() || '';
+          if (!/^https:\/\/\S+$/.test(link)) { U.toast('Informe o link da videochamada (começa com https://).', 'erro'); return false; }
+          try {
+            const a = await DB.marcarConversa(p.id, { psiId: escolha.psiId, data: escolha.data, hora: escolha.hora, linkMeet: link, por: S.nome });
+            LIVRES = null;
+            await render();
+            setTimeout(() => posMarcarCn(p, a), 50);
+          } catch (e) { U.toast(e.message || 'Não consegui marcar.', 'erro'); return false; }
+        } }
+      ]
+    });
+    m.el.classList.add('modal-cn');
+    const lista = $('[data-cn-lista]', m.corpo), boxEsc = $('[data-cn-escolha]', m.corpo);
+    const HORAS_MAX = 7;
+    const cache = {};
+    async function horariosDe(psiId) {
+      if (!cache[psiId]) {
+        try {
+          cache[psiId] = (await DB.livres15(psiId)).map(x => ({ ...x, ok: noPeriodo(x.data, x.hora, p) }));
+        } catch (e) { cache[psiId] = []; }
+      }
+      return cache[psiId];
+    }
+    async function desenhar() {
+      /* primeiro só quem combina (até 4); o resto fica em "Ver todos" */
+      const bons = candidatos.filter(c => c.nota > 0);
+      const base = mostrarTodos ? candidatos : (bons.length ? bons : candidatos).slice(0, 4);
+      const itens = await Promise.all(base.map(async c => ({ ...c, horas: await horariosDe(c.psi.id) })));
+      /* quem tem horário no período pedido vem antes */
+      itens.sort((a, b) => (b.horas.some(h => h.ok) - a.horas.some(h => h.ok)) || b.nota - a.nota);
+      lista.innerHTML = itens.map(c => {
+        const noPer = c.horas.filter(h => h.ok), fora = c.horas.filter(h => !h.ok);
+        const mostra = (noPer.length ? noPer : fora).slice(0, HORAS_MAX);
+        return `<div class="cn-m-psi">
+          <div class="cn-m-psi-topo"><b>${esc(c.psi.nome)}</b>${c.porque.length ? `<span class="cn-chips">${c.porque.slice(0, 4).map(x => `<span class="cn-chip ok">✓ ${esc(x)}</span>`).join('')}</span>` : '<span class="muted cn-m-sem">Sem temas em comum</span>'}</div>
+          ${!c.horas.length ? '<div class="muted cn-m-vazio">Sem horários de conversa livres nos próximos dias.</div>' : `
+          ${!noPer.length ? `<div class="cn-m-aviso">Nenhum horário ${p.horario === 'Fim de semana' ? 'no fim de semana' : 'de ' + esc((p.horario || '').toLowerCase())}. Estes são os próximos livres:</div>` : ''}
+          <div class="cn-m-horas">${mostra.map(h => `<button type="button" class="cn-m-h${h.ok ? ' ok' : ''}${escolha && escolha.psiId === c.psi.id && escolha.data === h.data && escolha.hora === h.hora ? ' on' : ''}" data-psi="${esc(c.psi.id)}" data-d="${h.data}" data-h="${h.hora}"><small>${esc(U.fmtCurta(h.data).split(',')[0])} ${esc(U.fmtDDMM(h.data))}</small>${esc(U.fmtHora(h.hora))}</button>`).join('')}</div>`}
+        </div>`;
+      }).join('') + (!mostrarTodos && candidatos.length > base.length ? `<button type="button" class="btn btn-secundario cn-m-todos" data-cn-todos>Ver todos os psicólogos (${candidatos.length})</button>` : '')
+        + (!candidatos.length ? `<div class="vazio"><strong>Nenhum psicólogo com horário de conversa.</strong>${jaFalou.size ? 'A pessoa já conversou com todos os que abriram horários. ' : ''}Peça para os psicólogos ligarem “Aceito fazer conversas de 15 min” na aba Conversas 15 min da agenda deles e abrirem horários.</div>` : '');
+    }
+    function mostrarEscolha() {
+      if (!escolha) { boxEsc.hidden = true; return; }
+      const psi = PSIS[escolha.psiId] || {};
+      const sala = psi.salaMeet || '';
+      boxEsc.hidden = false;
+      boxEsc.innerHTML = `<p><b>Escolhido:</b> ${esc(psi.nome)} · ${esc(U.fmtLonga(escolha.data))}, ${esc(U.intervalo(escolha.hora, C.duracaoConhecer || 15))}</p>
+        <div class="campo"><label for="cn-link">Link da videochamada</label>
+          <input type="text" id="cn-link" value="${esc(sala)}" ${sala ? '' : 'placeholder="https://meet.google.com/abc-defg-hij"'}>
+          <p class="ajuda">${sala ? `✓ Sala fixa de ${esc(U.primeiroNome(psi.nome))}, cadastrada na ficha do psicólogo.` : `${esc(U.primeiroNome(psi.nome))} ainda não tem sala cadastrada: cole o link aqui.`}</p></div>`;
+    }
+    lista.addEventListener('click', e => {
+      if (e.target.closest('[data-cn-todos]')) { mostrarTodos = true; lista.innerHTML = '<span class="muted">Carregando horários livres…</span>'; desenhar(); return; }
+      const b = e.target.closest('.cn-m-h'); if (!b) return;
+      escolha = { psiId: b.dataset.psi, data: b.dataset.d, hora: b.dataset.h };
+      lista.querySelectorAll('.cn-m-h').forEach(x => x.classList.toggle('on', x === b));
+      mostrarEscolha();
+      boxEsc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    await desenhar();
+  }
+
+  function posMarcarCn(p, a) {
+    const psi = PSIS[a.psiId] || {};
+    U.modal({
+      titulo: 'Conversa marcada',
+      corpo: `
+        <div class="sucesso-ico" aria-hidden="true">✓</div>
+        <p style="text-align:center">${esc(nomeBonito(p.paciente.nome))} com <strong>${esc(psi.nome || nomePsi(a.psiId))}</strong><br>${esc(U.fmtLonga(a.data))}, ${esc(U.intervalo(a.hora, a.duracao))}.</p>
+        <p style="text-align:center" class="muted">O horário já saiu da agenda do psicólogo. Agora avise o psicólogo: quando ele clicar em “Estou ciente”, o botão para mandar o horário ao paciente libera no cartão.</p>
+        <div class="acoes" style="justify-content:center">
+          <a class="btn btn-whats btn-whats-psi" data-feito="Enviado ao psicólogo" target="_blank" rel="noopener" href="${U.linkWhats(psi.whatsapp || '', txtCnPsi(p, a))}">Avisar o psicólogo no WhatsApp</a>
+        </div>`,
+      acoes: [{ texto: 'Fechar', classe: 'btn-primario' }]
+    });
+  }
+
+  $('#cn-q').addEventListener('input', () => { cnPag = 1; desenharConhecer(); });
+  Paginacao.ligar($('#cn-pag'), n => { cnPag = n; desenharConhecer(); }, $('#lista-cn'));
+  $$('[data-cn-f]').forEach(b => b.addEventListener('click', () => { cnFiltro = b.dataset.cnF; cnPag = 1; desenharConhecer(); }));
+  $('#lista-cn').addEventListener('click', async e => {
+    /* v279: mandou o horário e o link da conversa ao paciente → fica marcado (e sai do sininho) */
+    const hz = e.target.closest('[data-cn-horario]');
+    if (hz) { try { await DB.marcarLembrete(hz.dataset.cnHorario, 'horario', S.nome); setTimeout(renderConhecer, 300); window.dispatchEvent(new Event('pb:conferencia')); } catch (err) { /* o WhatsApp abre mesmo assim */ } return; }
+    /* 1) abriu o WhatsApp: marca "em contato" (o link abre normalmente) */
+    const z = e.target.closest('[data-cn-zap]');
+    if (z) {
+      const p = CN.find(x => x.id === z.dataset.cnZap);
+      if (p && !p.contato) { try { await DB.atualizarConhecer(p.id, { status: p.status === 'novo' ? 'contato' : p.status }, S.nome); setTimeout(renderConhecer, 300); } catch (err) { /* o WhatsApp abre mesmo assim */ } }
+      return;
+    }
+    const b = e.target.closest('[data-cn]'); if (!b) return;
+    const acao = b.dataset.cn, p = CN.find(x => x.id === b.dataset.id);
+    if (acao === 'detalhes') { abrirDetalhes(b.dataset.ag); return; }
+    if (!p) return;
+    if (acao === 'marcar') { abrirMarcarCn(p.id); return; }
+    if (acao === 'remarcar') {
+      try { await DB.desmarcarConversa(p.id, S.nome); LIVRES = null; await renderConhecer(); abrirMarcarCn(p.id); } catch (err) { U.toast(err.message || 'Não consegui.', 'erro'); }
+      return;
+    }
+    if (acao === 'desmarcar') {
+      const ok = await U.confirmar('Desmarcar conversa', `Desmarcar a conversa de <b>${esc(nomeBonito(p.paciente.nome))}</b>? O horário volta a ficar livre na agenda do psicólogo.`, 'Desmarcar', true);
+      if (!ok) return;
+      try { await DB.desmarcarConversa(p.id, S.nome); LIVRES = null; U.toast('Conversa desmarcada.'); render(); } catch (err) { U.toast(err.message || 'Não consegui.', 'erro'); }
+      return;
+    }
+    if (['paciente', 'nao', 'contato'].includes(acao)) {
+      if (acao === 'nao') { perguntarMotivoNao(p); return; }
+      try {
+        await DB.atualizarConhecer(p.id, { status: acao }, S.nome);
+        U.toast(acao === 'paciente' ? 'Ótimo! Pedido marcado como “virou paciente”.' : acao === 'nao' ? 'Pedido movido para Concluídos.' : 'Pedido reaberto.');
+        renderConhecer();
+      } catch (err) { U.toast(err.message || 'Não consegui.', 'erro'); }
+    }
+  });
+
+  /* =====================================================================
+     v288: CELULAR/TABLET — barra flutuante embaixo (igual à do psicólogo)
+     Pré-reservas · 15 min · Lembretes · Agenda · Mais (Calendário, E-mails, Buscar paciente)
+     ===================================================================== */
+  {
+    const IC = {
+      pre: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+      conhecer: '<path d="M20 11.5a8 8 0 0 1-11.9 7L4 20l1.5-4A8 8 0 1 1 20 11.5z"/><path d="M8.5 11.5h7M8.5 8.5h4"/>',
+      lembretes: '<path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+      agenda: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>',
+      mais: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+      calendario: '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+      caixa: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7.5 8 6 8-6"/>',
+      busca: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
+    };
+    const svgNf = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+    const ITENS = [['pre', 'Pré-reservas', 'pre'], ['conhecer', '15 min', 'cn'], ['lembretes', 'Lembretes', 'lem'], ['agenda', 'Agenda', ''], ['mais', 'Mais', '']];
+    const NO_MAIS = ['calendario', 'caixa'];
+    const nav = document.createElement('nav');
+    nav.className = 'nav-flutuante nav-equipe'; nav.setAttribute('aria-label', 'Agenda da equipe');
+    nav.innerHTML = ITENS.map(([k, t, c]) => `<button type="button" data-nf="${k}"${k === 'mais' ? ' aria-haspopup="dialog"' : ''}><span class="nf-ico">${svgNf(k)}${c ? `<span class="nf-cont${c === 'lem' ? ' nf-verde' : ''}" data-nf-cont="${c}"></span>` : ''}</span><span class="nf-txt">${t}</span></button>`).join('');
+    document.body.appendChild(nav);
+    document.body.classList.add('com-nav-flutuante');
+    /* os números das abas de cima aparecem também na barra */
+    const copiarNumeros = () => nav.querySelectorAll('[data-nf-cont]').forEach(x => { const o = document.querySelector(`.abas [data-cont="${x.dataset.nfCont}"]`); x.textContent = o ? o.textContent : ''; });
+    document.querySelectorAll('.abas [data-cont]').forEach(o => new MutationObserver(copiarNumeros).observe(o, { childList: true, characterData: true, subtree: true }));
+    copiarNumeros();
+    const marcar = aba => nav.querySelectorAll('[data-nf]').forEach(b => { const on = b.dataset.nf === aba || (b.dataset.nf === 'mais' && NO_MAIS.includes(aba)); b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    document.addEventListener('pb:aba', e => marcar(e.detail));
+    marcar(ABA_ATUAL);
+    const ir = aba => { ativar(aba); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    nav.addEventListener('click', e => {
+      const b = e.target.closest('[data-nf]'); if (!b) return;
+      if (b.dataset.nf === 'mais') abrirMais(); else ir(b.dataset.nf);
+    });
+    function abrirMais() {
+      let dlg = document.getElementById('folha-mais');
+      if (!dlg) {
+        dlg = document.createElement('dialog');
+        dlg.id = 'folha-mais'; dlg.className = 'folha-mais'; dlg.setAttribute('aria-labelledby', 'folha-mais-tit');
+        const op = (k, t, d) => `<button type="button" class="fm-op" data-fm="${k}"><span class="fm-ico">${svgNf(k)}</span><span><b>${t}</b><small>${d}</small></span></button>`;
+        dlg.innerHTML = `<div class="fm-in"><span class="fm-alca" aria-hidden="true"></span>
+          <div class="fm-cab"><h3 id="folha-mais-tit">Mais</h3><button type="button" class="fm-x" data-fm-fechar aria-label="Fechar">×</button></div>
+          ${op('calendario', 'Calendário', 'O mês inteiro, dia por dia')}
+          ${op('caixa', 'E-mails enviados', 'O que saiu para pacientes e psicólogos')}
+          ${op('busca', 'Buscar paciente', 'Nome, WhatsApp, e-mail ou código')}</div>`;
+        document.body.appendChild(dlg);
+        dlg.addEventListener('click', e => {
+          if (e.target === dlg || e.target.closest('[data-fm-fechar]')) { dlg.close(); return; }
+          const b = e.target.closest('[data-fm]'); if (!b) return;
+          dlg.close();
+          if (b.dataset.fm === 'busca') { ir('calendario'); setTimeout(() => { const q = $('#bp-q'); if (q) q.focus(); }, 350); }
+          else ir(b.dataset.fm);
+        });
+        dlg.addEventListener('close', () => document.documentElement.classList.remove('fm-aberta'));
+      }
+      document.documentElement.classList.add('fm-aberta');
+      dlg.showModal();
+    }
+  }
+
+  /* =====================================================================
      ATUALIZAÇÃO
      ===================================================================== */
   async function render() {
@@ -777,6 +1253,7 @@
     await carregarPsis();
     preencherFiltroPsi();
     await renderPre();
+    await renderConhecer();
     await renderLembretes();
     await renderCalendario();
     await renderAgenda();
@@ -841,6 +1318,7 @@
   const CEL = matchMedia('(max-width: 640px)').matches;
   const BP_ABA = {
     pre: { ph: 'Procurar pré-reserva: paciente, código, WhatsApp ou psicólogo', curto: 'Procurar pré-reserva', alvo: '#pre-q' },
+    conhecer: { ph: 'Procurar pedido: nome, WhatsApp, e-mail ou motivo', curto: 'Procurar pedido', alvo: '#cn-q' },
     lembretes: { ph: 'Procurar lembrete: paciente, psicólogo ou WhatsApp', curto: 'Procurar lembrete', dom: '#lista-lembretes' },
     calendario: { ph: 'Buscar paciente: nome, WhatsApp, e-mail ou código', curto: 'Buscar paciente', paciente: true },
     agenda: { ph: 'Procurar na agenda: paciente, código, e-mail ou WhatsApp', curto: 'Procurar na agenda', alvo: '#f-q' },
@@ -896,5 +1374,5 @@
   });
 
   DB.aoMudar(render);                 // paciente marcou no site em outra aba
-  setInterval(() => { renderPre(); renderLembretes(); }, 60 * 1000);  // atualiza o "vence…" e os lembretes
+  setInterval(() => { renderPre(); renderLembretes(); renderConhecer(); }, 60 * 1000);  // atualiza o "vence…" e os lembretes
 })();

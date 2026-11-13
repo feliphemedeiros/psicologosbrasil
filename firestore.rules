@@ -179,6 +179,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if equipe() || donoPsi(psiId);
     }
+    // v267: horários de conversa de 15 min ("Conheça o psicólogo"): o psicólogo abre, a equipe lê e marca
+    match /conversas15/{psiId} {
+      allow read, write: if equipe() || donoPsi(psiId);
+    }
     match /disponibilidade_motivos/{psiId} {
       allow read, write: if equipe() || donoPsi(psiId);
     }

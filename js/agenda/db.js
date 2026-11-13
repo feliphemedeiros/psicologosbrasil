@@ -17,6 +17,48 @@
   const CHAVE = 'pb_agenda_dados_v1';
   /* Status que ocupam o horário (ninguém mais pode marcar por cima) */
   const OCUPA = ['pendente', 'confirmado', 'realizado', 'falta'];
+  /* v267: conversas de 15 min — horários próprios do psicólogo (aba "Conversas 15 min") */
+  const minutos = h => Number(String(h).slice(0, 2)) * 60 + Number(String(h).slice(3, 5));
+  const cruza = (ini, dur, ocup) => ocup.some(([i, f]) => ini < f && ini + dur > i);
+  const mesmaPessoa = (a, b) => {
+    const wa = U.whatsNumero(a && a.whatsapp), wb = U.whatsNumero(b && b.whatsapp);
+    const ea = String((a && a.email) || '').trim().toLowerCase(), eb = String((b && b.email) || '').trim().toLowerCase();
+    return !!((wa && wa === wb) || (ea && ea === eb));
+  };
+  const CONVERSA_CONTA = ['confirmado', 'realizado', 'falta'];   /* o que conta no limite de conversas por paciente */
+  /* intervalos ocupados (em minutos) de um psicólogo num dia: sessões e conversas */
+  function ocupacoesDia(ags, psiId, data, ignorarIds = []) {
+    const t = agora();
+    return ags.filter(a => a.psiId === psiId && a.data === data && OCUPA.includes(a.status) && !ignorarIds.includes(a.id)
+        && !(a.status === 'pendente' && a.expiraEm && a.expiraEm < t))
+      .map(a => [minutos(a.hora), minutos(a.hora) + (a.duracao || C.duracaoSessao)]);
+  }
+  /* horários de conversa livres: os que o psicólogo abriu, sem sessão ou conversa por cima e ainda no futuro */
+  function calcLivres15(conv, ags, psiId, fuso) {
+    if (!conv || !conv.ativo) return [];
+    const dur = C.duracaoConhecer || 15, limite = agora() + 30 * 60e3, hoje = U.hojeISO(fuso || U.FUSO_BR), fim = U.addDias(hoje, C.diasVisiveis);
+    const l = [];
+    Object.keys(conv.datas || {}).filter(d => d >= hoje && d <= fim).sort().forEach(data => {
+      const ocup = ocupacoesDia(ags, psiId, data);
+      (conv.datas[data] || []).slice().sort().forEach(h => {
+        if (U.dataHora(data, h, fuso).getTime() > limite && !cruza(minutos(h), dur, ocup)) l.push({ data, hora: h });
+      });
+    });
+    return l;
+  }
+  /* limite de conversas por paciente e "já conversou com este psicólogo" */
+  function conferirLimite(conversas, paciente, psiId) {
+    const minhas = conversas.filter(a => a.tipo === 'conhecer' && CONVERSA_CONTA.includes(a.status) && mesmaPessoa(a.paciente, paciente));
+    const lim = C.limiteConversas || 10;
+    if (minhas.length >= lim) throw new Error(`Esta pessoa já usou as ${lim} conversas de 15 min.`);
+    if (minhas.some(a => a.psiId === psiId)) throw new Error('Esta pessoa já fez (ou tem marcada) uma conversa com este psicólogo. Escolha outro.');
+  }
+  /* v266: "Conheça o psicólogo em 15 minutos" — situações do pedido e o resumo que vai para o psicólogo */
+  /* nome com a primeira letra maiúscula ("joao da silva" → "Joao da Silva") */
+  const nomeProprio = n => String(n || '').trim().replace(/\s+/g, ' ').split(' ').map((w, i) => { const l = w.toLocaleLowerCase('pt-BR'); return i > 0 && ['de', 'da', 'do', 'das', 'dos', 'e'].includes(l) ? l : l.charAt(0).toLocaleUpperCase('pt-BR') + l.slice(1); }).join(' ');
+  const MOTIVOS_NAO = { nao_respondeu: 'Não respondeu', caro: 'Achou caro', horario: 'Não tinha horário bom', outro_lugar: 'Escolheu outro lugar', outro: 'Outro motivo' };
+  const CONHECER_STATUS = { novo: 'Pedido novo', contato: 'Em contato pelo WhatsApp', marcada: 'Conversa marcada', paciente: 'Virou paciente', nao: 'Não seguiu' };
+  const resumoConhecer = p => ({ tipoSessao: p.tipoSessao || '', motivos: p.motivos || [], objetivos: p.objetivos || [], preferencias: p.preferencias || [], horario: p.horario || '', sobre: p.sobre || '' });
   /* Status que entram no repasse (falta sem aviso conta como realizada) */
   const FATURA = ['realizado', 'falta'];
 
@@ -35,12 +77,12 @@
     /* Os mesmos psicólogos de demonstração do site (id = final do endereço do perfil,
        ex.: psicologos/perfil/?p=helena-prado). */
     const psicologos = [
-      { id: 'helena-prado',  nome: 'Helena Prado',  crp: '11/10234', abordagem: 'TCC',                          email: 'helena@exemplo.com',  whatsapp: '5588900000001', usuario: 'helena',  senha: 'helena123',  doisFatores: true,  ativo: true, comissao: 30, valor: 120 },
-      { id: 'lucas-almeida', nome: 'Lucas Almeida', crp: '06/18872', abordagem: 'Abordagem Centrada na Pessoa', email: 'lucas@exemplo.com',   whatsapp: '5588900000002', usuario: 'lucas',   senha: 'lucas123',   doisFatores: true, ativo: true, comissao: 30, valor: 110 },
-      { id: 'beatriz-sales', nome: 'Beatriz Sales', crp: '05/44120', abordagem: 'Fenomenológico-Existencial',   email: 'beatriz@exemplo.com', whatsapp: '5588900000003', usuario: 'beatriz', senha: 'beatriz123', doisFatores: true, ativo: true, comissao: 30, valor: 130 },
-      { id: 'tiago-moreira', nome: 'Tiago Moreira', crp: '08/20931', abordagem: 'Psicanálise',                  email: 'tiago@exemplo.com',   whatsapp: '5588900000004', usuario: 'tiago',   senha: 'tiago123',   doisFatores: true, ativo: true, comissao: 30, valor: 150 },
-      { id: 'aline-duarte',  nome: 'Aline Duarte',  crp: '11/15560', abordagem: 'TCC',                          email: 'aline@exemplo.com',   whatsapp: '5588900000005', usuario: 'aline',   senha: 'aline123',   doisFatores: true, ativo: true, comissao: 25, valor: 115 },
-      { id: 'sam-oliveira',  nome: 'Sam Oliveira',  crp: '04/33018', abordagem: 'Gestalt-terapia',              email: 'sam@exemplo.com',     whatsapp: '5588900000006', usuario: 'sam',     senha: 'sam123',     doisFatores: true, ativo: true, comissao: 25, valor: 100 }
+      { id: 'helena-prado',  nome: 'Helena Prado',  crp: '11/10234', abordagem: 'TCC',                          email: 'helena@teste.com',  whatsapp: '5588900000001', usuario: 'helena',  senha: 'helena123',  doisFatores: true,  ativo: true, comissao: 30, valor: 120 },
+      { id: 'lucas-almeida', nome: 'Lucas Almeida', crp: '06/18872', abordagem: 'Abordagem Centrada na Pessoa', email: 'lucas@teste.com',   whatsapp: '5588900000002', usuario: 'lucas',   senha: 'lucas123',   doisFatores: true, ativo: true, comissao: 30, valor: 110 },
+      { id: 'beatriz-sales', nome: 'Beatriz Sales', crp: '05/44120', abordagem: 'Fenomenológico-Existencial',   email: 'beatriz@teste.com', whatsapp: '5588900000003', usuario: 'beatriz', senha: 'beatriz123', doisFatores: true, ativo: true, comissao: 30, valor: 130 },
+      { id: 'tiago-moreira', nome: 'Tiago Moreira', crp: '08/20931', abordagem: 'Psicanálise',                  email: 'tiago@teste.com',   whatsapp: '5588900000004', usuario: 'tiago',   senha: 'tiago123',   doisFatores: true, ativo: true, comissao: 30, valor: 150 },
+      { id: 'aline-duarte',  nome: 'Aline Duarte',  crp: '11/15560', abordagem: 'TCC',                          email: 'aline@teste.com',   whatsapp: '5588900000005', usuario: 'aline',   senha: 'aline123',   doisFatores: true, ativo: true, comissao: 25, valor: 115 },
+      { id: 'sam-oliveira',  nome: 'Sam Oliveira',  crp: '04/33018', abordagem: 'Gestalt-terapia',              email: 'sam@teste.com',     whatsapp: '5588900000006', usuario: 'sam',     senha: 'sam123',     doisFatores: true, ativo: true, comissao: 25, valor: 100 }
     ];
 
     /* horários de exemplo: preenche os próximos 45 dias seguindo um padrão por dia da semana */
@@ -101,10 +143,10 @@
     ];
 
     return {
-      versao: 3,
+      versao: 4,
       usuarios: [
-        { id: 'u-admin',   usuario: 'admin',   senha: 'admin123',   papel: 'admin',   nome: 'Administrador',     email: 'admin@psicologosbrasil.com.br', doisFatores: false },
-        { id: 'u-suporte', usuario: 'suporte', senha: 'suporte123', papel: 'suporte', nome: 'Equipe de suporte', email: 'suporte@psicologosbrasil.com.br', doisFatores: false }
+        { id: 'u-admin',   usuario: 'admin',   senha: 'admin123',   papel: 'admin',   nome: 'Administrador',     email: 'admin@teste.com', doisFatores: false },
+        { id: 'u-suporte', usuario: 'suporte', senha: 'suporte123', papel: 'suporte', nome: 'Equipe de suporte', email: 'suporte@teste.com', doisFatores: false }
       ],
       psicologos, disponibilidade, agendamentos,
       caixaSaida: [],
@@ -118,7 +160,7 @@
   function carregar() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) { d = null; }
-    if (!d || d.versao !== 3) { d = semente(); salvar(d); }  // versão 3 = psicólogos iguais aos do site
+    if (!d || d.versao !== 4) { d = semente(); salvar(d); }  // versão 4 = contas de teste com e-mail @teste.com (mudar o número zera os dados de teste de todo mundo)
     if (expirarPendentes(d)) salvar(d);
     return d;
   }
@@ -147,8 +189,11 @@
       .filter(a => a.psiId === psiId && a.data === data && OCUPA.includes(a.status) && !ignorarIds.includes(a.id))
       .map(a => a.hora));
     const limite = U.somarHorasEquipe(agora(), U.equipe().antecedenciaHoras);   /* antecedência mínima, no horário da equipe */
+    const conversasDia = d.agendamentos.filter(a => a.psiId === psiId && a.data === data && a.tipo === 'conhecer' && OCUPA.includes(a.status) && !ignorarIds.includes(a.id))
+      .map(a => [minutos(a.hora), minutos(a.hora) + (a.duracao || 15)]);
     return ((disp.datas || {})[data] || [])
-      .filter(h => !bloqueadas.has(h) && !ocupadas.has(h) && U.dataHora(data, h, psi.fuso).getTime() > limite)   /* horário no fuso do psicólogo */
+      .filter(h => !bloqueadas.has(h) && !ocupadas.has(h) && U.dataHora(data, h, psi.fuso).getTime() > limite   /* horário no fuso do psicólogo */
+        && !cruza(minutos(h), C.duracaoSessao, conversasDia))   /* v267: conversa de 15 min no meio da sessão */
       .sort();
   }
 
@@ -489,7 +534,7 @@
       if (!p.consentimento) throw new Error('Marque a autorização para podermos falar com você.');
       const pedido = {
         id: U.id('cn'), criadoEm: agora(), status: 'novo',
-        paciente: { nome, whatsapp, email },
+        paciente: { nome: nomeProprio(nome), whatsapp, email },
         tipoSessao: txt(p.tipoSessao, 30), motivos: lista(p.motivos, 25), objetivos: lista(p.objetivos, 15),
         preferencias: lista(p.preferencias, 12), horario: txt(p.horario, 30), sobre: txt(p.sobre, 1500),
         origem: txt(p.origem, 120), consentimento: true
@@ -501,6 +546,79 @@
       return clone(pedido);
     },
     async listarConhecer() { const d = carregar(); return clone(d.conhecer || []); },
+    /* v266: aba "Conversas 15 min" do painel da equipe.
+       Situação do pedido: novo → contato → marcada → paciente (virou paciente) | nao (não seguiu). */
+    async atualizarConhecer(id, { status, motivo } = {}, por = '') {
+      const d = carregar();
+      const p = (d.conhecer || []).find(x => x.id === id);
+      if (!p) throw new Error('Pedido não encontrado.');
+      if (!CONHECER_STATUS[status]) throw new Error('Situação inválida.');
+      const t = agora();
+      if (status === 'contato' && !p.contato) p.contato = { em: t, por };
+      p.status = status;
+      /* v286: motivo de "não seguiu" (opcional); reabrir ou virar paciente apaga o motivo */
+      p.motivoNao = status === 'nao' && MOTIVOS_NAO[motivo] ? motivo : null;
+      p.historico = [...(p.historico || []), { em: t, texto: `${CONHECER_STATUS[status]}${p.motivoNao ? ': ' + MOTIVOS_NAO[p.motivoNao] : ''} (por ${por})` }];
+      salvar(d);
+      return clone(p);
+    },
+    /* v267: horários de conversa do psicólogo */
+    async obterConversas15(psiId) { const c = (carregar().conversas15 || {})[psiId]; return clone(c || { ativo: false, datas: {} }); },
+    async listarConversas15() { return clone(carregar().conversas15 || {}); },
+    async salvarConversas15(psiId, { ativo, mudancas = {} } = {}) {
+      const d = carregar();
+      d.conversas15 = d.conversas15 || {};
+      const c = d.conversas15[psiId] = d.conversas15[psiId] || { ativo: false, datas: {} };
+      if (typeof ativo === 'boolean') c.ativo = ativo;
+      Object.entries(mudancas).forEach(([data, hs]) => { const l = [...new Set(hs)].filter(h => /^\d{2}:\d{2}$/.test(h)).sort(); if (l.length) c.datas[data] = l; else delete c.datas[data]; });
+      const hoje = U.hojeISO(); Object.keys(c.datas).forEach(k => { if (k < hoje) delete c.datas[k]; });   /* dias que já passaram saem */
+      salvar(d);
+      return clone(c);
+    },
+    async livres15(psiId) {
+      const d = carregar();
+      const psi = d.psicologos.find(p => p.id === psiId && p.ativo);
+      if (!psi) return [];
+      return calcLivres15((d.conversas15 || {})[psiId], d.agendamentos, psiId, psi.fuso);
+    },
+    async listarConversas({ psiId } = {}) { return clone(carregar().agendamentos.filter(a => a.tipo === 'conhecer' && (!psiId || a.psiId === psiId))); },
+    /* marca a conversa de 15 min: vira um atendimento "conhecer" (sem valor) que ocupa o horário inteiro do psicólogo */
+    async marcarConversa(id, { psiId, data, hora, linkMeet = '', por = '' }) {
+      const d = carregar();
+      const p = (d.conhecer || []).find(x => x.id === id);
+      if (!p) throw new Error('Pedido não encontrado.');
+      if (p.agId && d.agendamentos.some(a => a.id === p.agId && a.status === 'confirmado')) throw new Error('Esta pessoa já tem uma conversa marcada. Desmarque antes de marcar outra.');
+      const psi = d.psicologos.find(x => x.id === psiId && x.ativo);
+      if (!psi) throw new Error('Psicólogo não encontrado.');
+      conferirLimite(d.agendamentos, p.paciente, psiId);
+      if (!calcLivres15((d.conversas15 || {})[psiId], d.agendamentos, psiId, psi.fuso).some(x => x.data === data && x.hora === hora)) throw new Error('Esse horário de conversa acabou de ser ocupado. Escolha outro.');
+      const t = agora();
+      const a = {
+        id: U.id('ag'), codigo: U.codigo(), grupo: U.id('g'), sessao: 1, totalSessoes: 1,
+        psiId, data, hora, duracao: C.duracaoConhecer || 15, tipo: 'conhecer', valor: 0,
+        paciente: { ...clone(p.paciente), nome: nomeProprio(p.paciente.nome) }, fuso: psi.fuso || U.FUSO_BR, fusoPaciente: psi.fuso || U.FUSO_BR,
+        status: 'confirmado', criadoEm: t, expiraEm: null, confirmadoEm: t, linkMeet, psiCiente: false,
+        conhecerId: p.id, resumo: resumoConhecer(p),
+        historico: [{ em: t, texto: `Conversa de 15 min marcada por ${por}` }]
+      };
+      d.agendamentos.push(a);
+      if (!p.contato) p.contato = { em: t, por };
+      p.status = 'marcada'; p.agId = a.id; p.psiId = psiId;
+      p.historico = [...(p.historico || []), { em: t, texto: `Conversa marcada com ${psi.nome}: ${U.fmtCurta(data)}, ${U.fmtHora(hora)} (por ${por})` }];
+      salvar(d);
+      return clone(a);
+    },
+    async desmarcarConversa(id, por = '') {
+      const d = carregar();
+      const p = (d.conhecer || []).find(x => x.id === id);
+      if (!p) throw new Error('Pedido não encontrado.');
+      const a = p.agId && d.agendamentos.find(x => x.id === p.agId);
+      if (a && a.status === 'confirmado') { a.status = 'cancelado'; hist(a, `Conversa desmarcada por ${por}`); }
+      p.status = 'contato'; p.agId = null; p.psiId = null;
+      p.historico = [...(p.historico || []), { em: agora(), texto: `Conversa desmarcada (por ${por})` }];
+      salvar(d);
+      return clone(p);
+    },
     async criarPreReserva({ psiId, data, hora, tipo = 'avulsa', paciente }) {
       const d = carregar();
       const nome = String(paciente?.nome || '').trim();
@@ -655,7 +773,7 @@
       const a = d.agendamentos.find(x => x.id === id);
       if (!a) throw new Error('Agendamento não encontrado.');
       a.lembretes = { ...(a.lembretes || {}), [tipo]: agora() };
-      hist(a, { paciente: 'Lembrete enviado ao paciente', psicologo: 'Lembrete enviado ao psicólogo', renovacao: 'Renovação do plano oferecida ao paciente' }[tipo] + ` (por ${por})`);
+      hist(a, { paciente: 'Lembrete enviado ao paciente', psicologo: 'Lembrete enviado ao psicólogo', renovacao: 'Renovação do plano oferecida ao paciente', horario: 'Horário e link da conversa enviados ao paciente' }[tipo] + ` (por ${por})`);
       salvar(d);
       return clone(a);
     },
@@ -722,7 +840,7 @@
     /* ---------- relatório de repasse ---------- */
     async relatorioMes(mes, { psiId } = {}) {
       const d = carregar();
-      const doMes = d.agendamentos.filter(a => a.data.startsWith(mes) && (!psiId || a.psiId === psiId));
+      const doMes = d.agendamentos.filter(a => a.data.startsWith(mes) && (!psiId || a.psiId === psiId) && a.tipo !== 'conhecer');   /* conversa de 15 min não entra no financeiro */
       return d.psicologos
         .filter(p => !psiId || p.id === psiId)
         .map(p => {

@@ -80,8 +80,80 @@
   const TOTAL = 6;                              /* a barra conta as 6 perguntas; o contato é o fechamento */
   const GUARDA = 'pb_conhecer_v1';               /* respostas guardadas na aba (se recarregar, não perde) */
 
+
+  /* ---------- v277: WhatsApp com país (igual à caixa "Agende sua sessão" do perfil) ---------- */
+  const bandeira = (p, cls) => p.iso === 'XX'
+    ? `<span class="${cls} agc-band-mundo" aria-hidden="true">🌍</span>`
+    : `<img class="${cls}" src="${base}assets/imagens/bandeiras/${p.iso.toLowerCase()}.webp" alt="" width="32" height="24" decoding="async">`;
+  const paisAtual = () => (window.U && U.paisTel) ? U.paisTel(R.pais || (U.paisPeloFuso ? U.paisPeloFuso() : 'BR')) : { iso: 'BR', ddi: '55', nome: 'Brasil', ex: '(85) 99999-9999' };
+  function campoTel() {
+    const pt = paisAtual();
+    return `<div class="cn-campo cn-campo-tel"><label for="cn-whats" class="cn-rot">WhatsApp${pt.iso === 'BR' ? ' com DDD' : ''}</label>
+      <div class="agc-tel cn-tel">
+        <button type="button" class="agc-tel-pais" data-pais-trocar aria-haspopup="dialog" aria-label="País do seu WhatsApp: ${esc(pt.nome)}${pt.ddi ? ' +' + pt.ddi : ''}. Trocar">${bandeira(pt, 'agc-tel-band')}<span class="agc-tel-ddi">${pt.ddi ? '+' + pt.ddi : '+'}</span><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <input id="cn-whats" name="whatsapp" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="22" value="${esc(R.whatsapp)}" placeholder="${esc(pt.ex)}" required>
+      </div></div>`;
+  }
+  function mascaraTel(inp) {
+    const pt = paisAtual();
+    if (pt.iso !== 'BR') {
+      const max = pt.iso === 'XX' ? 15 : pt.max, dg = U.digitos(inp.value).slice(0, max);
+      inp.value = (pt.iso === 'US' || pt.iso === 'CA') && dg.length > 3 ? `(${dg.slice(0, 3)}) ${dg.slice(3, 6)}${dg.length > 6 ? '-' + dg.slice(6) : ''}` : dg.replace(/(\d{3})(?=\d)/g, '$1 ');
+      return;
+    }
+    const n = U.digitos(inp.value).replace(/^55(?=\d{11})/, '').slice(0, 11);
+    let t = n;
+    if (n.length > 2) t = `(${n.slice(0, 2)}) ${n.slice(2)}`;
+    if (n.length > 7) t = `(${n.slice(0, 2)}) ${n.slice(2, n.length === 11 ? 7 : 6)}-${n.slice(n.length === 11 ? 7 : 6)}`;
+    inp.value = t;
+  }
+  const REGIAO_PAIS = { BR: 'América do Sul', AR: 'América do Sul', CL: 'América do Sul', UY: 'América do Sul', PY: 'América do Sul',
+    US: 'América do Norte e Central', CA: 'América do Norte e Central', MX: 'América do Norte e Central',
+    PT: 'Europa', GB: 'Europa', IE: 'Europa', ES: 'Europa', FR: 'Europa', IT: 'Europa', DE: 'Europa', CH: 'Europa', NL: 'Europa', BE: 'Europa',
+    AO: 'África', MZ: 'África', JP: 'Ásia e Oceania', AU: 'Ásia e Oceania', AE: 'Ásia e Oceania', XX: 'Outros' };
+  function abrirPaises(atual, aoEscolher) {
+    let dlg = document.getElementById('agc-pais-dlg');
+    if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'agc-pais-dlg'; dlg.className = 'agc-fuso-dlg agc-pais-dlg'; dlg.setAttribute('aria-labelledby', 'agc-pais-dlg-tit'); document.body.appendChild(dlg); }
+    const sugerido = U.paisPeloFuso ? U.paisPeloFuso() : 'BR';
+    const norm = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const ordem = ['América do Sul', 'Europa', 'América do Norte e Central', 'África', 'Ásia e Oceania', 'Outros'];
+    const lista = U.PAISES_TEL.map(p => ({ ...p, regiao: REGIAO_PAIS[p.iso] || 'Outros' }));
+    const opcao = p => { const on = p.iso === atual; return `<button type="button" class="agc-fuso-op agc-pais-op" role="option" aria-selected="${on}" data-pais="${p.iso}">
+      <span class="agc-pais-band">${bandeira(p, 'agc-pais-img')}</span>
+      <span class="agc-pais-nome"><b>${esc(p.nome)}${p.iso === sugerido && p.iso !== 'XX' ? ' <em>pelo seu fuso</em>' : ''}</b><small>${p.iso === 'XX' ? 'Digite o código do país e o número' : `Ex.: ${esc(p.ex)}`}</small></span>
+      <span class="agc-pais-ddi">${p.ddi ? '+' + p.ddi : ''}</span>${on ? '<i aria-hidden="true">✓</i>' : ''}</button>`; };
+    dlg.innerHTML = `<div class="agc-fuso-dlg-in">
+      <span class="agc-fuso-alca" aria-hidden="true"></span>
+      <div class="agc-fuso-dlg-cab"><h3 id="agc-pais-dlg-tit">País do seu WhatsApp</h3><button type="button" class="agc-fuso-x" data-fechar aria-label="Fechar">×</button></div>
+      <label class="agc-fuso-busca"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" placeholder="Digite o país ou o código (ex.: 351)" aria-label="Buscar país ou código" autocomplete="off" enterkeyhint="search"></label>
+      <div class="agc-fuso-ops" role="listbox" aria-labelledby="agc-pais-dlg-tit"></div></div>`;
+    const caixa = dlg.querySelector('.agc-fuso-ops'), busca = dlg.querySelector('input');
+    const desenhar = () => {
+      const q = norm(busca.value.trim()), qd = q.replace(/[^0-9]/g, '');
+      const achados = lista.filter(p => !q || (qd && qd === q.replace(/[+\s]/g, '') ? p.ddi.startsWith(qd) : norm(`${p.nome} ${p.iso} ${p.regiao}`).includes(q)));
+      if (!achados.length) { caixa.innerHTML = `<p class="agc-fuso-vazio">Não achamos "${esc(busca.value.trim())}". Escolha <b>Outro país</b> no fim da lista e digite o código do país junto com o número.</p>`; return; }
+      caixa.innerHTML = ordem.map(nome => ({ nome, itens: achados.filter(p => p.regiao === nome) })).filter(g => g.itens.length)
+        .map(g => `<p class="agc-fuso-grupo">${esc(g.nome)}</p>${g.itens.map(opcao).join('')}`).join('');
+    };
+    desenhar();
+    busca.addEventListener('input', desenhar);
+    busca.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const b = caixa.querySelector('[data-pais]'); if (b) b.click(); } });
+    dlg.querySelector('[data-fechar]').onclick = () => dlg.close();
+    dlg.onclick = e => {
+      if (e.target === dlg) { dlg.close(); return; }
+      const b = e.target.closest('[data-pais]'); if (!b) return;
+      const iso = b.dataset.pais; dlg.close(); if (iso !== atual) aoEscolher(iso);
+    };
+    dlg.onclose = () => document.documentElement.classList.remove('agc-sem-rolagem');
+    document.documentElement.classList.add('agc-sem-rolagem');
+    dlg.showModal();
+    const sel = caixa.querySelector('.agc-fuso-op[aria-selected="true"]');
+    if (sel) sel.scrollIntoView({ block: 'center' });
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) busca.focus({ preventScroll: true });
+  }
   /* ---------- estado ---------- */
-  let R = { tipoSessao: '', motivos: [], objetivos: [], preferencias: [], horario: '', sobre: '', nome: '', whatsapp: '', email: '', consentimento: false };
+  let R = { tipoSessao: '', motivos: [], objetivos: [], preferencias: [], horario: '', sobre: '', nome: '', whatsapp: '', pais: '', email: '', consentimento: false };
   let passo = -1;                               /* -1 = tela de abertura */
   try { const s = JSON.parse(sessionStorage.getItem(GUARDA)); if (s && s.R) { R = Object.assign(R, s.R); passo = Math.min(Math.max(-1, s.passo | 0), ETAPAS.length - 1); } } catch (e) { /* começa do zero */ }
   const guardar = () => { try { sessionStorage.setItem(GUARDA, JSON.stringify({ R, passo })); } catch (e) { /* sem problema */ } };
@@ -138,19 +210,19 @@
   function telaAbertura() {
     return `
     <section class="cn-tela cn-abertura">
-      <p class="cn-kicker">Sem custo · Sem compromisso</p>
+      <p class="cn-kicker">Rápido · Sem compromisso</p>
       <h1 class="cn-h1">Conheça o seu psicólogo <em>em 15 minutos</em></h1>
-      <p class="cn-lead">Responda 6 perguntas rápidas. A gente indica os psicólogos certos para você e marca a primeira conversa, por nossa conta.</p>
+      <p class="cn-lead">Responda 6 perguntas rápidas. A gente indica os psicólogos certos para você e marca uma conversa rápida para vocês se conhecerem.</p>
       <ol class="cn-como">
         <li><span>1</span><div><b>Você responde</b><small>Leva uns 2 minutos</small></div></li>
         <li><span>2</span><div><b>A equipe indica</b><small>Psicólogos que combinam com você</small></div></li>
-        <li><span>3</span><div><b>Vocês conversam</b><small>15 minutos por vídeo, grátis</small></div></li>
+        <li><span>3</span><div><b>Vocês conversam</b><small>15 minutos por vídeo, para se conhecerem</small></div></li>
       </ol>
       <div class="cn-abertura-acoes">
         <button type="button" class="cn-cta" data-comecar>Começar agora${svg('seta', 20)}</button>
         <a class="cn-link" href="${base}psicologos/">Já tenho psicólogo</a>
       </div>
-      <p class="cn-garantias"><span>${svg('ok', 15)}Sem pagamento</span><span>${svg('ok', 15)}Psicólogos com CRP</span><span>${svg('ok', 15)}Por vídeo, de onde estiver</span></p>
+      <p class="cn-garantias"><span>${svg('ok', 15)}Sem compromisso</span><span>${svg('ok', 15)}Psicólogos com CRP</span><span>${svg('ok', 15)}Por vídeo, de onde estiver</span></p>
     </section>`;
   }
 
@@ -184,10 +256,9 @@
       corpo = `<form class="cn-form" id="cn-form" novalidate>
         <label class="cn-campo"><span>Nome</span><input id="cn-nome" name="nome" autocomplete="name" maxlength="80" value="${esc(R.nome)}" placeholder="Seu nome completo" required></label>
         <div class="cn-form-2">
-          <label class="cn-campo"><span>WhatsApp</span><input id="cn-whats" name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" value="${esc(R.whatsapp)}" placeholder="(85) 99999-9999 ou +351…" required></label>
+          ${campoTel()}
           <label class="cn-campo"><span>E-mail</span><input id="cn-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="120" value="${esc(R.email)}" placeholder="voce@email.com" required></label>
         </div>
-        <p class="cn-form-nota">Fora do Brasil? Use o código do país (ex.: +351…).</p>
         <label class="cn-consent"><input type="checkbox" id="cn-consent" ${R.consentimento ? 'checked' : ''}><span>Autorizo o uso destas respostas para me indicarem psicólogos e o contato por WhatsApp e e-mail. <a href="${base}politica-de-privacidade/" target="_blank" rel="noopener">Privacidade</a></span></label>
         <p class="cn-erro" id="cn-erro" role="alert" hidden></p>
       </form>`;
@@ -229,7 +300,7 @@
       <ul class="cn-fim-lista">
         <li>${svg('relogio', 17)}Estamos aqui ${esc(horarioEquipe())}</li>
         <li>${svg('whats', 17)}Salve nosso número no celular</li>
-        <li>${svg('presente', 17)}Conversa de 15 minutos sem custo</li>
+        <li>${svg('calendario', 17)}Conversa de 15 minutos por vídeo</li>
       </ul>
       <div class="cn-abertura-acoes">
         <a class="cn-cta" href="${base}psicologos/">Ver os psicólogos${svg('seta', 20)}</a>
@@ -311,10 +382,18 @@
   palco.addEventListener('input', ev => {
     if (ev.target.id === 'cn-sobre') { R.sobre = ev.target.value; atualizarBotao(); guardar(); }
     if (ev.target.id === 'cn-nome') R.nome = ev.target.value;
-    if (ev.target.id === 'cn-whats') R.whatsapp = ev.target.value;
+    if (ev.target.id === 'cn-whats') { if (window.U && U.paisTel) mascaraTel(ev.target); R.whatsapp = ev.target.value; }
     if (ev.target.id === 'cn-email') R.email = ev.target.value;
     if (ev.target.id === 'cn-consent') R.consentimento = ev.target.checked;
     guardar();
+  });
+  palco.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-pais-trocar]'); if (!b || !window.U || !U.PAISES_TEL) return;
+    R.nome = ($('#cn-nome') || {}).value || R.nome; R.email = ($('#cn-email') || {}).value || R.email;
+    abrirPaises(paisAtual().iso, iso => {
+      R.pais = iso; R.whatsapp = ''; guardar();
+      const box = palco.querySelector('.cn-campo-tel'); if (box) { box.outerHTML = campoTel(); const i = $('#cn-whats'); if (i) i.focus(); }
+    });
   });
   palco.addEventListener('change', ev => { if (ev.target.id === 'cn-consent') { R.consentimento = ev.target.checked; guardar(); } });
 
@@ -326,7 +405,12 @@
     erro.hidden = true;
     R.nome = $('#cn-nome').value.trim(); R.whatsapp = $('#cn-whats').value.trim(); R.email = $('#cn-email').value.trim(); R.consentimento = $('#cn-consent').checked;
     if (R.nome.length < 3) return mostrar('Informe seu nome.', '#cn-nome');
-    if (window.U && !U.whatsValido(U.whatsNormalizar(R.whatsapp))) return mostrar('Confira o WhatsApp: número com DDD (Brasil) ou com o código do país.', '#cn-whats');
+    let zap = R.whatsapp;
+    if (window.U && U.paisTel) {
+      const pt = paisAtual();
+      zap = pt.iso === 'XX' ? '+' + U.digitos(R.whatsapp).replace(/^00/, '') : U.whatsNormalizar(R.whatsapp, pt.ddi);
+      if (!U.digitos(R.whatsapp) || !U.whatsValido(zap) || (pt.iso === 'BR' && !/^\+55\d{10,11}$/.test(zap))) return mostrar(pt.iso === 'BR' ? 'Informe o WhatsApp com DDD.' : pt.iso === 'XX' ? 'Digite o código do país e o número (ex.: 4475001234567).' : `Confira o WhatsApp: em ${pt.nome}, o número tem ${pt.min === pt.max ? pt.min : `${pt.min} a ${pt.max}`} dígitos (ex.: ${pt.ex}).`, '#cn-whats');
+    } else if (window.U && !U.whatsValido(U.whatsNormalizar(R.whatsapp))) return mostrar('Confira o WhatsApp: número com DDD (Brasil) ou com o código do país.', '#cn-whats');
     if (window.U && !U.emailValido(R.email)) return mostrar('Confira o e-mail.', '#cn-email');
     if (!R.consentimento) return mostrar('Marque a autorização para podermos falar com você.', '#cn-consent');
     if (!window.DB || !DB.enviarConhecer) return mostrar('Não consegui enviar agora. Tente de novo em instantes ou fale com a gente pelo WhatsApp.');
@@ -337,7 +421,7 @@
       const p = await DB.enviarConhecer({
         tipoSessao: R.tipoSessao, motivos: R.motivos, objetivos: R.objetivos, preferencias: R.preferencias,
         horario: R.horario, sobre: R.sobre, origem, consentimento: true,
-        nome: R.nome, whatsapp: R.whatsapp, email: R.email
+        nome: R.nome, whatsapp: zap, email: R.email
       });
       try { sessionStorage.removeItem(GUARDA); } catch (e) { /* ok */ }
       document.body.classList.add('cn-no-fim');

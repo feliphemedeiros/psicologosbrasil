@@ -589,6 +589,7 @@
     atividade: '<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
     dinheiro: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6.5 9.5v5M17.5 9.5v5"/>',
     falta: '<circle cx="12" cy="12" r="8.5"/><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6"/>',
+    conversa: '<path d="M20 11.5a8 8 0 0 1-11.9 7L4 20l1.5-4A8 8 0 1 1 20 11.5z"/><path d="M8.5 11.5h7M8.5 8.5h4"/>',
     empresa: '<path d="M4 20.5h16M6 20.5v-15l7-2v17M13 8.5h5v12"/><path d="M9 8h1M9 11.5h1M9 15h1"/>'
   };
   const ico = (n, cls) => `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 24 24">${IC[n] || ''}</svg></span>`;
@@ -598,7 +599,8 @@
     pre: ['relogio', 'marca'], lembretes: ['sino', 'marca'], calendario: ['calendario', 'marca'], agenda: ['lista', 'marca'], caixa: ['email', 'marca'],
     apagar: ['carteira', 'marca'], pagos: ['ok', 'marca'], resumo: ['grafico', 'marca'],
     atendimentos: ['atendimento', 'marca'], disponibilidade: ['relogio', 'marca'], conta: ['pessoa', 'marca'], pagina: ['mundo', 'marca'],
-    pessoas: ['pessoas', 'marca'], atividades: ['atividade', 'marca']
+    pessoas: ['pessoas', 'marca'], atividades: ['atividade', 'marca'],
+    conhecer: ['conversa', 'marca'], conversas: ['conversa', 'marca']   /* v267: conversas de 15 min */
   };
   /* caixinhas de número: palavra no rótulo → [ícone, cor] */
   const NUMEROS = [

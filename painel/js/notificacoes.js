@@ -38,7 +38,7 @@
       const novas = ags.filter(a => !a.psiCiente && fim(a) > agora);
       if (novas.length) itens.push({
         n: novas.length, cor: 'azul', ico: ICO.novo,
-        titulo: novas.length === 1 ? 'Sessão nova ou remarcada' : `${novas.length} sessões novas ou remarcadas`,
+        titulo: (cv => novas.length === 1 ? (cv ? 'Conversa de 15 min nova' : 'Sessão nova ou remarcada') : cv ? `${novas.length} conversas de 15 min novas` : novas.some(a => a.tipo === 'conhecer') ? `${novas.length} atendimentos novos` : `${novas.length} sessões novas ou remarcadas`)(novas.every(a => a.tipo === 'conhecer')),
         sub: novas.length === 1 ? `${novas[0].paciente.nome} · ${U.fmtQuando(ms(novas[0]))}. ${window.matchMedia('(hover: none) and (pointer: coarse)').matches ? 'Toque' : 'Clique'} em "Estou ciente".` : `A próxima: ${U.fmtQuando(ms(novas[0]))}. ${window.matchMedia('(hover: none) and (pointer: coarse)').matches ? 'Toque' : 'Clique'} em "Estou ciente" em cada uma.`,
         link: 'minha-agenda.html#atendimentos'
       });
@@ -100,6 +100,16 @@
       });
     });
 
+    /* v279: conversa de 15 min — o psicólogo clicou em "Estou ciente": é hora de mandar o horário e o link ao paciente */
+    const cvProntas = ags.filter(a => a.tipo === 'conhecer' && a.status === 'confirmado' && a.psiCiente && !(a.lembretes || {}).horario && fim(a) > agora)
+      .sort((a, b) => ms(a) - ms(b));
+    if (cvProntas.length) itens.push({
+      n: cvProntas.length, cor: 'verde', ico: ICO.msg,
+      titulo: cvProntas.length === 1 ? `Conversa de 15 min: avise ${cvProntas[0].paciente.nome}` : `${cvProntas.length} conversas de 15 min para avisar o paciente`,
+      sub: cvProntas.length === 1 ? `${nomePsi(cvProntas[0].psiId)} confirmou a conversa de ${U.fmtQuando(ms(cvProntas[0]))}. Envie o horário e o link ao paciente.` : 'Os psicólogos já confirmaram. Envie o horário e o link aos pacientes.',
+      link: 'agenda.html#conhecer'
+    });
+
     const lem = U.lembretes(ags);
     if (lem.pendentes) itens.push({
       n: lem.pendentes, cor: 'verde', ico: ICO.msg,
@@ -153,7 +163,8 @@
       conta.classList.add('conta-menu-btn');
       conta.setAttribute('aria-haspopup', 'true');
       conta.setAttribute('aria-expanded', 'false');
-      conta.insertAdjacentHTML('beforeend', `<span class="conta-seta" aria-hidden="true">${ICO.seta}</span>`);
+      /* v268: no lugar da setinha, os 3 risquinhos do menu do site, que viram X ao abrir */
+      conta.insertAdjacentHTML('beforeend', `<span class="conta-seta cm-ico" aria-hidden="true"><i class="cm-l cm-1"></i><i class="cm-l cm-2"></i><i class="cm-l cm-3"></i></span>`);
       const href = conta.getAttribute('href') || 'conta.html';
       const ini = (conta.querySelector('.conta-ava') || {}).textContent || '';
       wrapC.insertAdjacentHTML('beforeend', `<div class="conta-menu" role="menu" hidden>
@@ -162,6 +173,7 @@
         <button role="menuitemcheckbox" type="button" class="menu-tema" data-menu-tema aria-checked="false">${ICO.lua}<span>Modo escuro</span><span class="chave" aria-hidden="true"><span></span></span></button>
         <button role="menuitem" type="button" data-menu-sair>${ICO.sair}Sair</button>
       </div>`);
+      wrapC.querySelectorAll('.conta-menu > *').forEach((el, i) => el.style.setProperty('--i', i));   /* itens entram um por um */
       conta.onclick = null;
       conta.addEventListener('click', e => { e.preventDefault(); e.stopImmediatePropagation(); alternar(wrapC); }, true);
       /* "Minha conta" na mesma página (psicólogo: Minha agenda → parte Conta): abre sem recarregar */
@@ -187,7 +199,7 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && aberto) { const b = aberto.querySelector('button, a'); fechar(); if (b) b.focus(); } });
     return true;
   }
-  function alternar(w) { if (aberto === w) { fechar(); return; } fechar(); aberto = w; w.classList.add('aberto'); w.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'true'); w.querySelector('.notif-painel, .conta-menu').hidden = false; }
+  function alternar(w) { if (aberto === w) { fechar(); return; } fechar(); aberto = w; w.classList.add('aberto'); w.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'true'); const cx = w.querySelector('.notif-painel, .conta-menu'); clearTimeout(cx._t); cx.classList.remove('saindo'); cx.hidden = false; }
   /* admin respondeu a conferência do Pix direto no sininho */
   document.addEventListener('click', async e => {
     const b = e.target.closest('[data-conf-sim], [data-conf-nao]'); if (!b || !DB.responderConferencia) return;
@@ -202,7 +214,13 @@
   });
   /* clicou num aviso: fecha a caixa (se o aviso for desta mesma tela, a tela só troca de aba) */
   document.addEventListener('click', e => { if (e.target.closest('.notif-item')) setTimeout(fechar, 0); });
-  function fechar() { if (!aberto) return; const w = aberto; aberto = null; w.classList.remove('aberto'); w.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'false'); w.querySelector('.notif-painel, .conta-menu').hidden = true; }
+  function fechar() {
+    if (!aberto) return; const w = aberto; aberto = null; w.classList.remove('aberto'); w.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'false');
+    const cx = w.querySelector('.notif-painel, .conta-menu');
+    /* v268: o menu da conta encolhe de volta para o botão antes de sumir */
+    if (cx.classList.contains('conta-menu') && !matchMedia('(prefers-reduced-motion: reduce)').matches) { cx.classList.add('saindo'); clearTimeout(cx._t); cx._t = setTimeout(() => { cx.hidden = true; cx.classList.remove('saindo'); }, 180); }
+    else cx.hidden = true;
+  }
 
   function desenhar() {
     const total = ITENS.reduce((s, i) => s + i.n, 0);
@@ -248,6 +266,7 @@
     vigiarMudancas();
     atualizar();
     try { DB.aoMudar(() => atualizar()); } catch (e) { /* sem tempo real */ }
+    window.addEventListener('pb:conferencia', () => atualizar());   /* v279: algo marcado nesta tela (ex.: horário enviado ao paciente) */
     setInterval(atualizar, 60e3);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) atualizar(); });
   }
@@ -279,5 +298,96 @@
   window.Notificacoes = { atualizar, montar, itens: () => ITENS.slice() };
   /* o sininho e o menu da conta entram já (sem esperar a página toda): assim não aparece o "Sair" antigo por um instante */
   montar();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+})();
+
+/* =====================================================================
+   v283: ajustes de celular para todas as telas do painel
+   1) abas da equipe numa linha só, que desliza (a aba aberta fica à vista)
+   2) texto de explicação do topo: 1 linha + "saiba mais" (só no celular)
+   3) campo de mês vira "‹ Novembro de 2026 ›"
+   4) no celular, "Clique" vira "Toque"
+   ===================================================================== */
+(function () {
+  const CEL = () => matchMedia('(max-width: 640px)').matches;
+  const TOQUE = matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+  /* 1) aba aberta sempre à vista na linha que desliza */
+  function abaAVista(suave) {
+    document.querySelectorAll('.abas-quebra').forEach(nav => {
+      const sel = nav.querySelector('.aba[aria-selected="true"]');
+      if (!sel || nav.scrollWidth <= nav.clientWidth) return;
+      nav.scrollTo({ left: sel.offsetLeft - (nav.clientWidth - sel.offsetWidth) / 2, behavior: suave ? 'smooth' : 'auto' });
+    });
+  }
+  document.addEventListener('click', e => { if (e.target.closest('.abas-quebra .aba')) setTimeout(() => abaAVista(true), 30); });
+  document.addEventListener('pb:aba', () => setTimeout(() => abaAVista(true), 30));
+  /* trocou de aba ou de tela (barra de baixo, abas, menus): resume o texto da parte que acabou de aparecer */
+  document.addEventListener('pb:aba', () => setTimeout(resumirTextos, 60));
+  document.addEventListener('click', () => setTimeout(resumirTextos, 120));
+
+  /* 2) explicação do topo: uma linha e "saiba mais" */
+  function resumirTextos() {
+    document.querySelectorAll('.secao-topo > div > p:not(.disp-fuso):not([data-aviso-sim])').forEach(p => {
+      if (p.dataset.resumo || p.hidden || !p.textContent.trim()) return;
+      if (!CEL() || !p.offsetParent) return;   /* aba escondida: resume quando ela aparecer */
+      p.dataset.resumo = '1';
+      p.classList.add('txt-1l');
+      if (p.scrollHeight <= p.clientHeight + 2) { p.classList.remove('txt-1l'); return; }   /* já cabe numa linha */
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn-link txt-mais'; b.textContent = 'saiba mais';
+      b.addEventListener('click', () => { const ab = p.classList.toggle('aberto'); b.textContent = ab ? 'mostrar menos' : 'saiba mais'; });
+      p.after(b);
+    });
+  }
+
+  /* 3) campo de mês: ‹ Novembro de 2026 › (o campo original continua lá, escondido, e recebe o valor) */
+  function mesBonito() {
+    if (!window.U || !U.fmtMes) return;
+    document.querySelectorAll('input[type="month"]:not([data-mes-nav])').forEach(inp => {
+      inp.dataset.mesNav = '1';
+      const box = document.createElement('div');
+      box.className = 'mes-nav';
+      box.innerHTML = '<button type="button" class="cal-nav" data-d="-1" aria-label="Mês anterior">‹</button><strong aria-live="polite"></strong><button type="button" class="cal-nav" data-d="1" aria-label="Próximo mês">›</button>';
+      inp.after(box);
+      inp.classList.add('mes-oculto');
+      const rot = box.querySelector('strong');
+      const atualizar = () => { const v = inp.value || U.mesAtual(); const t = U.fmtMes(v); rot.textContent = t.charAt(0).toUpperCase() + t.slice(1); };
+      const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+      Object.defineProperty(inp, 'value', { configurable: true, get() { return desc.get.call(this); }, set(v) { desc.set.call(this, v); atualizar(); } });
+      inp.addEventListener('change', atualizar);
+      box.addEventListener('click', e => {
+        const b = e.target.closest('[data-d]'); if (!b) return;
+        inp.value = U.addMes(inp.value || U.mesAtual(), Number(b.dataset.d));
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        inp.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      const lab = inp.id && document.querySelector(`label[for="${inp.id}"]`);
+      if (lab) lab.removeAttribute('for');
+      atualizar();
+    });
+  }
+
+  /* 4) celular: "Clique" → "Toque" em todo texto que aparecer na tela */
+  const TROCA = [[/\bClique\b/g, 'Toque'], [/\bclique\b/g, 'toque'], [/\bClicar\b/g, 'Tocar'], [/\bclicar\b/g, 'tocar'], [/\bClicou\b/g, 'Tocou'], [/\bclicou\b/g, 'tocou'], [/\bclicando\b/g, 'tocando']];
+  function trocarTexto(raiz) {
+    if (!TOQUE || !raiz) return;
+    const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, { acceptNode: n => (/clic/i.test(n.nodeValue) && !n.parentElement.closest('script, style, textarea, input, [contenteditable]')) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+    const l = []; while (w.nextNode()) l.push(w.currentNode);
+    l.forEach(n => { let t = n.nodeValue; TROCA.forEach(([re, s]) => { t = t.replace(re, s); }); if (t !== n.nodeValue) n.nodeValue = t; });
+    if (raiz.querySelectorAll) raiz.querySelectorAll('[title], [placeholder]').forEach(el => {
+      ['title', 'placeholder'].forEach(a => { const v = el.getAttribute(a); if (v && /clic/i.test(v)) { let t = v; TROCA.forEach(([re, s]) => { t = t.replace(re, s); }); el.setAttribute(a, t); } });
+    });
+  }
+
+  function tudo() { mesBonito(); resumirTextos(); trocarTexto(document.body); abaAVista(false); }
+  function iniciar() {
+    tudo();
+    setTimeout(tudo, 600);    /* textos que as telas montam depois de carregar */
+    setTimeout(tudo, 1800);
+    let tr; addEventListener('resize', () => { clearTimeout(tr); tr = setTimeout(() => { resumirTextos(); abaAVista(false); }, 200); });   /* janela diminuída depois de abrir */
+    if (TOQUE) new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) trocarTexto(n); else if (n.nodeType === 3 && n.parentElement) trocarTexto(n.parentElement); })))
+      .observe(document.body, { childList: true, subtree: true });
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
 })();

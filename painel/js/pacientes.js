@@ -77,8 +77,8 @@
       p.outrosWhats = [...new Set(p.ags.map(a => U.digitos(a.paciente.whatsapp) ? '+' + U.whatsNumero(a.paciente.whatsapp) : '').filter(w => w && w !== '+' + U.whatsNumero(p.whatsapp)))];
       p.outrosEmails = [...new Set(p.ags.map(a => String(a.paciente.email || '').trim().toLowerCase()).filter(e => e && e !== String(p.email || '').trim().toLowerCase()))];
       p.psis = [...new Set(p.ags.map(a => a.psiId))];
-      p.realizadas = p.ags.filter(a => a.status === 'realizado').length;
-      p.faltas = p.ags.filter(a => a.status === 'falta').length;
+      p.realizadas = p.ags.filter(a => a.status === 'realizado' && a.tipo !== 'conhecer').length;   /* v281: conversa de 15 min não conta como sessão */
+      p.faltas = p.ags.filter(a => a.status === 'falta' && a.tipo !== 'conhecer').length;
       p.canceladas = p.ags.filter(a => ['cancelado', 'expirado'].includes(a.status)).length;
       p.pago = p.ags.filter(a => PAGO.includes(a.status)).reduce((s, a) => s + (Number(a.valor) || 0), 0);
       const futuras = p.ags.filter(a => ['confirmado', 'pendente'].includes(a.status) && ms(a) > t).sort((a, b) => ms(a) - ms(b));
@@ -94,7 +94,7 @@
       /* dias sem sessão: só para quem não tem nada marcado (conta da última sessão que já passou) */
       p.diasSem = !p.proxima && p.ultima ? Math.floor((t - ms(p.ultima)) / 864e5) : null;
       /* paciente novo: a primeira sessão paga (confirmada, realizada ou falta) foi marcada há 30 dias ou menos */
-      const pagas = p.ags.filter(a => ['confirmado', 'realizado', 'falta'].includes(a.status)).map(a => a.confirmadoEm || a.criadoEm || 0).filter(Boolean);
+      const pagas = p.ags.filter(a => a.tipo !== 'conhecer' && ['confirmado', 'realizado', 'falta'].includes(a.status)).map(a => a.confirmadoEm || a.criadoEm || 0).filter(Boolean);
       p.chegou = pagas.length ? Math.min(...pagas) : null;
       p.diasDesde = p.chegou ? Math.floor((t - p.chegou) / 864e5) : null;
       p.novo = p.diasDesde != null && p.diasDesde <= NOVO_DIAS;
@@ -234,7 +234,7 @@
             <h2>Histórico</h2>
             <div class="tabela-rolagem"><table class="tabela pc-hist">
               <thead><tr><th>Quando</th><th>Psicólogo</th><th>Situação</th><th class="pc-h-valor">Valor</th></tr></thead>
-              <tbody>${hist.itens.map((a, i, l) => { const fut = x => x && ms(x) > t; return `<tr${fut(a) ? ` class="futura${!fut(l[i - 1]) ? ' fut-ini' : ''}${!fut(l[i + 1]) ? ' fut-fim' : ''}"` : ''}><td><b>${esc(U.fmtCurta(a.data))}</b><small>${esc(U.intervalo(a.hora, a.duracao))}</small></td><td>${esc(PSIS[a.psiId]?.nome || '—')}<small>${a.tipo === 'mensal' ? `Plano mensal ${a.sessao}/${a.totalSessoes}` : 'Avulsa'}</small></td><td>${U.badge(a.status)}</td><td class="pc-h-valor">${U.moeda(a.valor)}</td></tr>`; }).join('')}</tbody>
+              <tbody>${hist.itens.map((a, i, l) => { const fut = x => x && ms(x) > t; return `<tr${fut(a) ? ` class="futura${!fut(l[i - 1]) ? ' fut-ini' : ''}${!fut(l[i + 1]) ? ' fut-fim' : ''}"` : ''}><td><b>${esc(U.fmtCurta(a.data))}</b><small>${esc(U.intervalo(a.hora, a.duracao))}</small></td><td>${esc(PSIS[a.psiId]?.nome || '—')}<small>${a.tipo === 'conhecer' ? 'Conversa 15 min' : a.tipo === 'mensal' ? `Plano mensal ${a.sessao}/${a.totalSessoes}` : 'Avulsa'}</small></td><td>${U.badge(a.status)}</td><td class="pc-h-valor">${a.tipo === 'conhecer' ? '—' : U.moeda(a.valor)}</td></tr>`; }).join('')}</tbody>
             </table></div>
             <nav class="paginacao pc-hist-pag" id="pc-hist-pag" aria-label="Páginas do histórico">${Paginacao.html(hist, ['atendimento', 'atendimentos'])}</nav>
           </div>

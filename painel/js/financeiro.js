@@ -38,7 +38,7 @@
   async function carregar() {
     const psis = await DB.listarPsicologos({ todos: true });
     PSIS = Object.fromEntries(psis.map(p => [p.id, p]));
-    AGS = await DB.listarAgendamentos({ status: FEITAS });
+    AGS = (await DB.listarAgendamentos({ status: FEITAS })).filter(a => a.tipo !== 'conhecer');   /* v266: conversa de 15 min não tem repasse */
   }
 
   /* busca por nome, CRP ou OPP (sem acento, sem diferença de maiúscula; no CRP/OPP vale só os números) */

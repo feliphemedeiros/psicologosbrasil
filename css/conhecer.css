@@ -537,3 +537,16 @@
   .cn-fim-lista { margin-bottom: 24px; }
   .cn-fim-lista li { font-size: .88rem; padding: 9px 13px; }
 }
+
+/* v277: WhatsApp com país (mesmo botão de bandeira da caixa "Agende sua sessão" do perfil) */
+.cn-tel { --agc-cor: var(--cn-azul); --agc-titulo: var(--cn-tinta); --agc-borda: var(--cn-linha); --agc-muted: #6b7190; }
+.cn-campo .cn-rot { font-weight: 700; font-size: .95rem; }
+.cn-campo-tel { display: grid; gap: 6px; }
+.cn-tel .agc-tel-pais { min-height: 52px; min-width: 104px; background: #fff; }
+.cn-tel .agc-tel-pais span { display: inline; font-size: inherit; font-weight: inherit; color: inherit; }
+.cn-tel .agc-tel-band { width: 28px; height: 21px; border-radius: 4px; object-fit: cover; box-shadow: 0 0 0 1px rgba(16, 27, 77, .08); }
+.cn-tel .agc-tel-ddi { font-size: 16px; font-weight: 700; }
+.cn-tel input[type=tel] { flex: 1; min-width: 0; }
+@media (max-height: 700px) { .cn-campo .cn-rot { font-size: .88rem; } .cn-tel .agc-tel-pais { min-height: 48px; } }
+/* computador: o WhatsApp (com o botão do país) ganha mais espaço que o e-mail */
+@media (min-width: 900px) { .cn-form-2:has(.cn-campo-tel) { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }

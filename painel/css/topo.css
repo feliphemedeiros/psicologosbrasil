@@ -296,3 +296,97 @@ html[data-tema="escuro"] .atend.st-confirmado.sem-ciente { box-shadow: inset 7px
 /* caixinha em destaque usa a cor do próprio número (ex.: "Total a pagar" amarelo, "Pago" verde) */
 .numero.destaque[data-cor]:not([data-cor=""]) { border-color: color-mix(in srgb, var(--cor) 45%, transparent) !important; }
 .numero.destaque[data-cor]:not([data-cor=""]) strong { color: var(--cor) !important; }
+
+/* =====================================================================
+   v268: botão da conta com a animação do menu do site
+   3 risquinhos que giram e viram X; o cartão abre do canto do botão e os itens entram um por um
+   ===================================================================== */
+.conta-seta.cm-ico { display: flex; flex-direction: column; justify-content: space-between; width: 18px; height: 16px; margin: 0 2px; transition: transform 330ms ease-out; }
+.cm-l { display: block; width: 100%; height: 2px; border-radius: 2px; background: currentColor; }
+.cm-1, .cm-3 { width: 50%; transition: transform 300ms cubic-bezier(.52, -.8, .52, .52); }
+.conta-seta.cm-ico { place-items: normal; align-items: stretch; }
+.cm-1 { transform-origin: right; align-self: flex-start; }
+.cm-3 { align-self: flex-end; transform-origin: left; }
+.topo-pop.aberto .conta-seta.cm-ico { transform: rotate(-45deg); color: var(--sea); }
+.topo-pop.aberto .cm-1 { transform: rotate(-90deg) translateX(1px); }
+.topo-pop.aberto .cm-3 { transform: rotate(-90deg) translateX(-1px); }
+.conta-menu { animation: cmEntra .3s cubic-bezier(.23, 1, .32, 1); transform-origin: top right; }
+.conta-menu.saindo { animation: cmSai .18s ease-in forwards; pointer-events: none; }
+.conta-menu:not(.saindo) > * { animation: cmItem .45s cubic-bezier(.23, 1, .32, 1) both; animation-delay: calc(.06s + var(--i, 0) * .045s); }
+@keyframes cmEntra { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes cmSai { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.75); } }
+@keyframes cmItem { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .conta-seta.cm-ico, .cm-1, .cm-3 { transition: none; }
+  .conta-menu, .conta-menu > * { animation: none !important; }
+}
+
+/* v270: conversa de 15 min confirmada (ciente) fica com a faixa azul, não verde */
+html:not([data-tema="escuro"]) .atend.st-confirmado.tipo-conhecer:not(.sem-ciente) { box-shadow: inset 6px 0 0 var(--sea), var(--sombra); border-color: #b9c2f0; }
+html[data-tema="escuro"] .atend.st-confirmado.tipo-conhecer:not(.sem-ciente) { box-shadow: inset 7px 0 0 #8d9cff; border-color: rgba(141, 156, 255, .42); }
+/* v270: sessão paga confirmada continua com o fundo verde depois do "Estou ciente" */
+html:not([data-tema="escuro"]) .atend.st-confirmado:not(.sem-ciente):not(.tipo-conhecer) { background: var(--ok-bg); border-color: #a9dcbf; }
+html[data-tema="escuro"] .atend.st-confirmado:not(.sem-ciente):not(.tipo-conhecer) { background: rgba(84, 211, 145, .10); }
+html:not([data-tema="escuro"]) .atend .badge-cn { background: #fff; border: 1px solid #b9c2f0; }
+
+/* v271: a faixa da lateral é sempre a cor do tipo (verde = sessão paga, azul = conversa);
+   "falta o Estou ciente" = borda amarela em volta + etiqueta "Falta confirmar" */
+html:not([data-tema="escuro"]) .atend.st-confirmado.sem-ciente.sem-ciente { box-shadow: inset 6px 0 0 #1f9d5c, 0 0 0 1px #e9ad3c, var(--sombra); border-color: #e9ad3c; }
+html:not([data-tema="escuro"]) .atend.st-confirmado.tipo-conhecer.sem-ciente.sem-ciente { box-shadow: inset 6px 0 0 var(--sea), 0 0 0 1px #e9ad3c, var(--sombra); border-color: #e9ad3c; }
+html[data-tema="escuro"] .atend.st-confirmado.sem-ciente.sem-ciente { box-shadow: inset 7px 0 0 #4fd38c, 0 0 0 1px rgba(242, 169, 59, .8); border-color: rgba(242, 169, 59, .8); }
+html[data-tema="escuro"] .atend.st-confirmado.tipo-conhecer.sem-ciente.sem-ciente { box-shadow: inset 7px 0 0 #8d9cff, 0 0 0 1px rgba(242, 169, 59, .8); border-color: rgba(242, 169, 59, .8); }
+.pill-falta { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: #fff1cf; color: #8a5300; border: 1px solid #e9ad3c; }
+.pill-falta::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #e08a00; animation: faltaPulso 1.6s ease-in-out infinite; }
+@keyframes faltaPulso { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+html[data-tema="escuro"] .pill-falta { background: rgba(242, 169, 59, .16); color: #ffc66b; border-color: rgba(242, 169, 59, .55); }
+html[data-tema="escuro"] .pill-falta::before { background: #f2a93b; }
+@media (prefers-reduced-motion: reduce) { .pill-falta::before { animation: none; } }
+/* v272: sem a borda amarela em volta — o aviso fica só na etiqueta "Falta confirmar" */
+html:not([data-tema="escuro"]) .atend.st-confirmado.sem-ciente.sem-ciente { box-shadow: inset 6px 0 0 #1f9d5c, var(--sombra); border-color: #a9dcbf; }
+html:not([data-tema="escuro"]) .atend.st-confirmado.tipo-conhecer.sem-ciente.sem-ciente { box-shadow: inset 6px 0 0 var(--sea), var(--sombra); border-color: #b9c2f0; }
+html[data-tema="escuro"] .atend.st-confirmado.sem-ciente.sem-ciente { box-shadow: inset 7px 0 0 #4fd38c; border-color: rgba(84, 211, 145, .4); }
+html[data-tema="escuro"] .atend.st-confirmado.tipo-conhecer.sem-ciente.sem-ciente { box-shadow: inset 7px 0 0 #8d9cff; border-color: rgba(141, 156, 255, .42); }
+
+/* =====================================================================
+   v282: revisão do celular
+   ===================================================================== */
+@media (max-width: 640px) {
+  /* cartões (pré-reservas, conversas, lembretes) nunca passam da largura da tela */
+  .cards { grid-template-columns: minmax(0, 1fr) !important; }
+  .cards > .card { min-width: 0; }
+  .card .btn { white-space: normal; text-align: center; line-height: 1.25; }
+  .card .card-topo { flex-wrap: wrap; row-gap: 6px; }
+  /* caixinhas de número (Resumo e Financeiro): o texto não passa por baixo do ícone */
+  #numeros-resumo .numero[data-cor], #fin-numeros .numero[data-cor], .numeros .numero[data-cor] { padding-right: 52px; }
+  .numeros .num-ico { top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 10px; }
+  .numeros .num-ico svg { width: 17px; height: 17px; }
+}
+@media (max-width: 640px) {
+  /* Pacientes: o WhatsApp e o e-mail quebram linha em vez de cortar com "…" */
+  .pc-quem small { white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* =====================================================================
+   v283: celular — abas numa linha que desliza, texto do topo resumido, campo de mês
+   ===================================================================== */
+@media (max-width: 640px) {
+  .abas.abas-quebra { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding: 10px 16px 12px; gap: 6px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .abas.abas-quebra::-webkit-scrollbar { display: none; }
+  .abas.abas-quebra .aba { flex: none; white-space: nowrap; scroll-snap-align: start; }
+  .abas.abas-quebra::after { content: ""; flex: none; width: 12px; }   /* respiro no fim da linha */
+  .secao-topo p.txt-1l:not(.aberto) { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .txt-mais { display: inline-block; margin-top: 2px; font-size: 13px; font-weight: 700; }
+}
+.mes-oculto { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important; }
+.mes-nav { display: inline-flex; align-items: center; gap: 10px; }
+.mes-nav strong { min-width: 150px; text-align: center; font-size: 16px; color: var(--texto); }
+.mes-nav .cal-nav { width: 40px; height: 40px; }
+html[data-tema="escuro"] .mes-nav .cal-nav { background: var(--card); }
+@media (max-width: 640px) {
+  /* v284: pré-reserva — "Confirmar pagamento" (travado ou não) ocupa a linha inteira; "Cancelar" vem embaixo */
+  .card .acoes.acoes-pre { flex-wrap: wrap; }
+  .card .acoes.acoes-pre > .btn { flex: 1 1 100%; min-width: 0; justify-content: center; }
+  .card .acoes.acoes-pre .btn-travado { overflow: visible; }
+  .card .btn-passo { min-width: 0; max-width: 100%; }
+}

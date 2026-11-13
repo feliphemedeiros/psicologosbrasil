@@ -31,6 +31,8 @@ window.AGENDA_CONFIG = {
   equipe: { dias: [1, 2, 3, 4, 5], inicio: 8, fim: 20, prazoHoras: 2, antecedenciaHoras: 4 },
 
   duracaoSessao: 50,          // minutos
+  limiteConversas: 10,        // quantas conversas de 15 min (com psicólogos diferentes) cada paciente pode fazer
+  duracaoConhecer: 15,        // minutos da conversa "Conheça o psicólogo" (ocupa o horário inteiro do psicólogo)
   horaInicio: 7,              // primeira hora que aparece na grade do psicólogo
   horaFim: 21,                // última hora de início de sessão na grade
   diasVisiveis: 45,           // quantos dias à frente o paciente pode escolher

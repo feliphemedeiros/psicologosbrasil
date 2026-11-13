@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/agenda.css?v=219">
+  <link rel="stylesheet" href="css/agenda.css?v=288">
   <link rel="stylesheet" href="css/escuro.css?v=120">
-  <link rel="stylesheet" href="css/topo.css?v=206">
+  <link rel="stylesheet" href="css/topo.css?v=284">
   <link rel="stylesheet" href="css/campos.css">
   <script src="js/campos.js" defer></script>
   <script src="js/tema.js?v=205"></script>
@@ -85,12 +85,14 @@
 
       <div class="aviso-sim" id="aviso-contas">
         <strong>Modo de teste</strong>
-        Admin: <code>admin</code> / <code>admin123</code> ·
-        Suporte: <code>suporte</code> / <code>suporte123</code><br>
-        Psicólogos: <code>helena</code> / <code>helena123</code> ·
-        <code>lucas</code> / <code>lucas123</code> · <code>beatriz</code> / <code>beatriz123</code> ·
-        <code>tiago</code> / <code>tiago123</code> · <code>aline</code> / <code>aline123</code> · <code>sam</code> / <code>sam123</code><br>
+        <span class="contas-teste">
+          <span>Admin: <code>admin@teste.com</code> / <code>admin123</code></span>
+          <span>Suporte: <code>suporte@teste.com</code> / <code>suporte123</code></span>
+          <span>Psicóloga: <code>helena@teste.com</code> / <code>helena123</code></span>
+          <span class="ct-mais">Outros psicólogos: <code>lucas</code>, <code>beatriz</code>, <code>tiago</code>, <code>aline</code> e <code>sam</code>, sempre <code>nome@teste.com</code> / <code>nome123</code></span>
+        </span>
         O código de 6 números aparece aqui na tela (simula o e-mail).
+        <button type="button" class="btn-link ct-reset" id="resetar-teste">Não consegue entrar? Restaurar contas de teste</button>
       </div>
     </div>
   </main>
@@ -120,13 +122,13 @@
 
   <script src="../js/firebase-config.js"></script>
   <script src="../js/nuvem.js"></script>
-  <script src="../js/agenda/config.js?v=116"></script>
+  <script src="../js/agenda/config.js?v=267"></script>
   <script src="../js/agenda/util.js?v=163"></script>
-  <script src="../js/agenda/db.js?v=220"></script>
-  <script src="../js/agenda/db-firebase.js?v=220"></script>
-  <script src="../js/agenda/servicos.js?v=178"></script>
-  <script src="js/sessao.js?v=206"></script>
-  <script src="js/notificacoes.js?v=205"></script>
+  <script src="../js/agenda/db.js?v=286"></script>
+  <script src="../js/agenda/db-firebase.js?v=286"></script>
+  <script src="../js/agenda/servicos.js?v=274"></script>
+  <script src="js/sessao.js?v=267"></script>
+  <script src="js/notificacoes.js?v=288"></script>
   <script src="js/exemplo.js"></script>
   <script>
   (function () {
@@ -163,6 +165,16 @@
         av.hidden = false;
       }
     }
+    /* modo de teste: apaga os dados guardados neste navegador e volta às contas de teste */
+    const btnReset = $('#resetar-teste');
+    if (btnReset) btnReset.addEventListener('click', async () => {
+      if (!confirm('Restaurar as contas de teste? Os dados de teste deste navegador voltam ao início.')) return;
+      try { await DB.resetarDemo(); } catch (e) { /* ignora */ }
+      try { sessionStorage.clear(); } catch (e) { /* ignora */ }
+      btnReset.textContent = 'Pronto! Contas de teste restauradas. Pode entrar.';
+      btnReset.disabled = true;
+      $('#usuario').focus();
+    });
     function esconderEmail(e) {
       const [n, d] = String(e || '').split('@');
       if (!d) return 'o seu e-mail';
@@ -275,7 +287,8 @@
       $('[data-papel]').textContent = Auth.nomePapel(s);
       $('[data-sair]').onclick = () => Auth.sair();
       const h = new Date().getHours();
-      $('[data-saudacao]').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}, ${s.nome.split(' ')[0]}!`;
+      { const pn = s.nome.split(' ')[0]; const gen = /^(equipe|suporte|admin|administrador)$/i.test(pn);   /* conta genérica: só "Boa noite!" */
+        $('[data-saudacao]').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}${gen ? '' : ', ' + pn}!`; }
       if (DB.modo !== 'local') $('[data-rodape-teste]').remove();
 
       const info = await resumos();
@@ -470,6 +483,7 @@
         } catch (e) {}
         const hoje = U.hojeISO(), lem = U.lembretes(await DB.listarAgendamentos({ status: ['confirmado'], de: hoje, ate: U.addDias(hoje, 3) }));
         if (lem.pendentes) r.agenda += `<br><b class="tag-lem">● ${lem.pendentes} lembrete${lem.pendentes > 1 ? 's' : ''} para enviar</b>`;
+        try { if (DB.listarConhecer) { const n = (await DB.listarConhecer()).filter(p => p.status === 'novo').length; if (n) r.agenda += `<br><b class="tag-cn">● ${n} pedido${n > 1 ? 's' : ''} de conversa de 15 min</b>`; } } catch (e) {}   /* v266 */
       } catch (e) {}
       if (!window.FIREBASE_CONFIG) {
         try {

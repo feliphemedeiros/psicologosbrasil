@@ -24,6 +24,48 @@
   if (!C || C.banco !== 'firebase' || typeof NUVEM === 'undefined' || NUVEM.modo !== 'firebase') return;
 
   const OCUPA = ['pendente', 'confirmado', 'realizado', 'falta'];
+  /* v267: conversas de 15 min — horários próprios do psicólogo (aba "Conversas 15 min") */
+  const minutos = h => Number(String(h).slice(0, 2)) * 60 + Number(String(h).slice(3, 5));
+  const cruza = (ini, dur, ocup) => ocup.some(([i, f]) => ini < f && ini + dur > i);
+  const mesmaPessoa = (a, b) => {
+    const wa = U.whatsNumero(a && a.whatsapp), wb = U.whatsNumero(b && b.whatsapp);
+    const ea = String((a && a.email) || '').trim().toLowerCase(), eb = String((b && b.email) || '').trim().toLowerCase();
+    return !!((wa && wa === wb) || (ea && ea === eb));
+  };
+  const CONVERSA_CONTA = ['confirmado', 'realizado', 'falta'];   /* o que conta no limite de conversas por paciente */
+  /* intervalos ocupados (em minutos) de um psicólogo num dia: sessões e conversas */
+  function ocupacoesDia(ags, psiId, data, ignorarIds = []) {
+    const t = agora();
+    return ags.filter(a => a.psiId === psiId && a.data === data && OCUPA.includes(a.status) && !ignorarIds.includes(a.id)
+        && !(a.status === 'pendente' && a.expiraEm && a.expiraEm < t))
+      .map(a => [minutos(a.hora), minutos(a.hora) + (a.duracao || C.duracaoSessao)]);
+  }
+  /* horários de conversa livres: os que o psicólogo abriu, sem sessão ou conversa por cima e ainda no futuro */
+  function calcLivres15(conv, ags, psiId, fuso) {
+    if (!conv || !conv.ativo) return [];
+    const dur = C.duracaoConhecer || 15, limite = agora() + 30 * 60e3, hoje = U.hojeISO(fuso || U.FUSO_BR), fim = U.addDias(hoje, C.diasVisiveis);
+    const l = [];
+    Object.keys(conv.datas || {}).filter(d => d >= hoje && d <= fim).sort().forEach(data => {
+      const ocup = ocupacoesDia(ags, psiId, data);
+      (conv.datas[data] || []).slice().sort().forEach(h => {
+        if (U.dataHora(data, h, fuso).getTime() > limite && !cruza(minutos(h), dur, ocup)) l.push({ data, hora: h });
+      });
+    });
+    return l;
+  }
+  /* limite de conversas por paciente e "já conversou com este psicólogo" */
+  function conferirLimite(conversas, paciente, psiId) {
+    const minhas = conversas.filter(a => a.tipo === 'conhecer' && CONVERSA_CONTA.includes(a.status) && mesmaPessoa(a.paciente, paciente));
+    const lim = C.limiteConversas || 10;
+    if (minhas.length >= lim) throw new Error(`Esta pessoa já usou as ${lim} conversas de 15 min.`);
+    if (minhas.some(a => a.psiId === psiId)) throw new Error('Esta pessoa já fez (ou tem marcada) uma conversa com este psicólogo. Escolha outro.');
+  }
+  /* v266: "Conheça o psicólogo em 15 minutos" (igual ao db.js) */
+  /* nome com a primeira letra maiúscula ("joao da silva" → "Joao da Silva") */
+  const nomeProprio = n => String(n || '').trim().replace(/\s+/g, ' ').split(' ').map((w, i) => { const l = w.toLocaleLowerCase('pt-BR'); return i > 0 && ['de', 'da', 'do', 'das', 'dos', 'e'].includes(l) ? l : l.charAt(0).toLocaleUpperCase('pt-BR') + l.slice(1); }).join(' ');
+  const MOTIVOS_NAO = { nao_respondeu: 'Não respondeu', caro: 'Achou caro', horario: 'Não tinha horário bom', outro_lugar: 'Escolheu outro lugar', outro: 'Outro motivo' };
+  const CONHECER_STATUS = { novo: 'Pedido novo', contato: 'Em contato pelo WhatsApp', marcada: 'Conversa marcada', paciente: 'Virou paciente', nao: 'Não seguiu' };
+  const resumoConhecer = p => ({ tipoSessao: p.tipoSessao || '', motivos: p.motivos || [], objetivos: p.objetivos || [], preferencias: p.preferencias || [], horario: p.horario || '', sobre: p.sobre || '' });
   const FATURA = ['realizado', 'falta'];
   const agora = () => Date.now();
   const clone = o => JSON.parse(JSON.stringify(o));
@@ -412,7 +454,7 @@
       if (!p.consentimento) throw new Error('Marque a autorização para podermos falar com você.');
       const pedido = {
         id: U.id('cn'), criadoEm: agora(), status: 'novo',
-        paciente: { nome, whatsapp, email },
+        paciente: { nome: nomeProprio(nome), whatsapp, email },
         tipoSessao: txt(p.tipoSessao, 30), motivos: lista(p.motivos, 25), objetivos: lista(p.objetivos, 15),
         preferencias: lista(p.preferencias, 12), horario: txt(p.horario, 30), sobre: txt(p.sobre, 1500),
         origem: txt(p.origem, 120), consentimento: true
@@ -425,6 +467,121 @@
       const { fs, db } = await fb();
       const r = await fs.getDocs(fs.query(fs.collection(db, 'conhecer'), fs.orderBy('criadoEm', 'desc'), fs.limit(300)));
       return r.docs.map(x => x.data());
+    }),
+    /* v266: aba "Conversas 15 min" (painel da equipe) */
+    atualizarConhecer: comErro(async (id, { status, motivo } = {}, por = '') => {
+      if (!CONHECER_STATUS[status]) throw new Error('Situação inválida.');
+      const { fs, db } = await fb();
+      const ref = fs.doc(db, 'conhecer', id);
+      const s = await fs.getDoc(ref);
+      if (!s.exists()) throw new Error('Pedido não encontrado.');
+      const p = s.data(), t = agora();
+      const mn = status === 'nao' && MOTIVOS_NAO[motivo] ? motivo : null;   /* v286: motivo de "não seguiu" (opcional) */
+      const mud = { status, motivoNao: mn, historico: [...(p.historico || []), { em: t, texto: `${CONHECER_STATUS[status]}${mn ? ': ' + MOTIVOS_NAO[mn] : ''} (por ${por})` }] };
+      if (status === 'contato' && !p.contato) mud.contato = { em: t, por };
+      await fs.updateDoc(ref, mud);
+      return clone({ ...p, ...mud });
+    }),
+    /* v267: horários de conversa do psicólogo (coleção conversas15/{psiId}) */
+    obterConversas15: comErro(async psiId => {
+      const { fs, db } = await fb();
+      const s = await fs.getDoc(fs.doc(db, 'conversas15', psiId));
+      return s.exists() ? { ativo: false, datas: {}, ...s.data() } : { ativo: false, datas: {} };
+    }),
+    listarConversas15: comErro(async () => {
+      const { fs, db } = await fb();
+      const r = await fs.getDocs(fs.collection(db, 'conversas15'));
+      const o = {}; r.docs.forEach(x => { o[x.id] = x.data(); });
+      return o;
+    }),
+    salvarConversas15: comErro(async (psiId, { ativo, mudancas = {} } = {}) => {
+      const { fs, db } = await fb();
+      const ref = fs.doc(db, 'conversas15', psiId);
+      return await fs.runTransaction(db, async tx => {
+        const s = await tx.get(ref);
+        const c = s.exists() ? { ativo: false, datas: {}, ...s.data() } : { ativo: false, datas: {} };
+        c.datas = { ...(c.datas || {}) };
+        if (typeof ativo === 'boolean') c.ativo = ativo;
+        Object.entries(mudancas).forEach(([data, hs]) => { const l = [...new Set(hs)].filter(h => /^\d{2}:\d{2}$/.test(h)).sort(); if (l.length) c.datas[data] = l; else delete c.datas[data]; });
+        const hoje = U.hojeISO(); Object.keys(c.datas).forEach(k => { if (k < hoje) delete c.datas[k]; });
+        tx.set(ref, { ativo: !!c.ativo, datas: c.datas, atualizado: agora() });
+        return clone(c);
+      });
+    }),
+    listarConversas: comErro(async ({ psiId } = {}) => {
+      const { fs, db } = await fb();
+      const col = fs.collection(db, 'agendamentos'), meu = psiDaSessao();
+      const alvo = meu || psiId;
+      const q = alvo ? fs.query(col, fs.where('psiId', '==', alvo), fs.where('tipo', '==', 'conhecer')) : fs.query(col, fs.where('tipo', '==', 'conhecer'));
+      return (await fs.getDocs(q)).docs.map(d => d.data());
+    }),
+    livres15: comErro(async psiId => {
+      const [conv, ags, pub] = await Promise.all([
+        Firebase.obterConversas15(psiId),
+        Firebase.listarAgendamentos({ psiId, de: U.hojeISO() }),
+        fb().then(({ fs, db }) => fs.getDoc(fs.doc(db, 'agenda_publico', psiId))).catch(() => null)
+      ]);
+      const psi = pub && pub.exists() ? pub.data() : {};
+      if (psi.ativo === false) return [];
+      return calcLivres15(conv, ags.filter(a => a.psiId === psiId), psiId, psi.fuso);
+    }),
+    marcarConversa: comErro(async (id, { psiId, data, hora, linkMeet = '', por = '' }) => {
+      const { fs, db } = await fb();
+      const t = agora();
+      /* antes da transação: limite por paciente e o horário ainda livre (sessões e conversas do dia) */
+      const pedidoSnap = await fs.getDoc(fs.doc(db, 'conhecer', id));
+      if (!pedidoSnap.exists()) throw new Error('Pedido não encontrado.');
+      conferirLimite(await Firebase.listarConversas(), pedidoSnap.data().paciente, psiId);
+      if (!(await Firebase.livres15(psiId)).some(x => x.data === data && x.hora === hora)) throw new Error('Esse horário de conversa acabou de ser ocupado. Escolha outro.');
+      return await fs.runTransaction(db, async tx => {
+        const cRef = fs.doc(db, 'conhecer', id);
+        const cSnap = await tx.get(cRef);
+        if (!cSnap.exists()) throw new Error('Pedido não encontrado.');
+        const p = cSnap.data();
+        if (p.agId) {
+          const velho = await tx.get(fs.doc(db, 'agendamentos', p.agId));
+          if (velho.exists() && velho.data().status === 'confirmado') throw new Error('Esta pessoa já tem uma conversa marcada. Desmarque antes de marcar outra.');
+        }
+        const pSnap = await tx.get(fs.doc(db, 'agenda_publico', psiId));
+        const psi = pSnap.exists() ? pSnap.data() : null;
+        if (!psi || !psi.ativo) throw new Error('Psicólogo não encontrado.');
+        const dSnap = await tx.get(fs.doc(db, 'disponibilidade', psiId));
+        const disp = dSnap.exists() ? dSnap.data() : { datas: {}, bloqueios: [] };
+        /* trava o horário da conversa e os horários de sessão que cruzam com ela (o site não oferece a sessão por cima) */
+        const dur = C.duracaoConhecer || 15, ini = minutos(hora);
+        const horasTrava = [...new Set([hora, ...((disp.datas || {})[data] || []).filter(h => minutos(h) < ini + dur && minutos(h) + C.duracaoSessao > ini)])];
+        const travaRefs = horasTrava.map(h => fs.doc(db, 'slots', slotId(psiId, data, h)));
+        const travaSnaps = [];
+        for (const r of travaRefs) travaSnaps.push(await tx.get(r));
+        if (travaSnaps.some(x => x.exists() && ocupa(x.data(), t))) throw new Error('Esse horário acabou de ser ocupado. Escolha outro.');
+        const a = {
+          id: U.id('ag'), codigo: U.codigo(), grupo: U.id('g'), sessao: 1, totalSessoes: 1,
+          psiId, data, hora, duracao: C.duracaoConhecer || 15, tipo: 'conhecer', valor: 0,
+          paciente: { ...clone(p.paciente), nome: nomeProprio(p.paciente.nome) }, fuso: psi.fuso || U.FUSO_BR, fusoPaciente: psi.fuso || U.FUSO_BR,
+          status: 'confirmado', criadoEm: t, expiraEm: null, confirmadoEm: t, linkMeet, psiCiente: false,
+          conhecerId: p.id, resumo: resumoConhecer(p),
+          historico: [{ em: t, texto: `Conversa de 15 min marcada por ${por}` }]
+        };
+        a.travas = horasTrava;
+        horasTrava.forEach((h, k) => tx.set(travaRefs[k], { psiId, data, hora: h, status: 'confirmado', grupo: a.grupo, agId: a.id, expiraEm: null, conversa: true }));
+        tx.set(fs.doc(db, 'agendamentos', a.id), a);
+        tx.update(cRef, {
+          status: 'marcada', agId: a.id, psiId, ...(p.contato ? {} : { contato: { em: t, por } }),
+          historico: [...(p.historico || []), { em: t, texto: `Conversa marcada com ${psi.nome}: ${U.fmtCurta(data)}, ${U.fmtHora(hora)} (por ${por})` }]
+        });
+        return clone(a);
+      });
+    }),
+    desmarcarConversa: comErro(async (id, por = '') => {
+      const { fs, db } = await fb();
+      const ref = fs.doc(db, 'conhecer', id);
+      const s = await fs.getDoc(ref);
+      if (!s.exists()) throw new Error('Pedido não encontrado.');
+      const p = s.data();
+      if (p.agId) await Firebase.cancelar([p.agId], por, 'conversa de 15 min desmarcada');
+      const mud = { status: 'contato', agId: null, psiId: null, historico: [...(p.historico || []), { em: agora(), texto: `Conversa desmarcada (por ${por})` }] };
+      await fs.updateDoc(ref, mud);
+      return clone({ ...p, ...mud });
     }),
     criarPreReserva: comErro(async ({ psiId, data, hora, tipo = 'avulsa', paciente }) => {
       const nome = String(paciente?.nome || '').trim();
@@ -528,8 +685,13 @@
           const sref = fs.doc(db, 'slots', slotId(a.psiId, a.data, a.hora));
           const ss = await tx.get(sref);
           const historico = [...(a.historico || []), { em: agora(), texto: `Cancelado por ${por}${motivo ? ': ' + motivo : ''}` }];
+          /* v267: conversa de 15 min trava também os horários de sessão que cruzam com ela */
+          const extras = (a.travas || []).filter(h => h !== a.hora).map(h => fs.doc(db, 'slots', slotId(a.psiId, a.data, h)));
+          const extrasSnap = [];
+          for (const r of extras) extrasSnap.push(await tx.get(r));
           tx.update(ref, { status: 'cancelado', historico });
           if (ss.exists() && ss.data().agId === id) tx.update(sref, { status: 'cancelado' });
+          extrasSnap.forEach((x, k) => { if (x.exists() && x.data().agId === id) tx.update(extras[k], { status: 'cancelado' }); });
         });
       }
     }),
@@ -609,7 +771,7 @@
       if (!s.exists()) throw new Error('Agendamento não encontrado.');
       const a = s.data();
       a.lembretes = { ...(a.lembretes || {}), [tipo]: agora() };
-      a.historico = [...(a.historico || []), { em: agora(), texto: { paciente: 'Lembrete enviado ao paciente', psicologo: 'Lembrete enviado ao psicólogo', renovacao: 'Renovação do plano oferecida ao paciente' }[tipo] + ` (por ${por})` }];
+      a.historico = [...(a.historico || []), { em: agora(), texto: { paciente: 'Lembrete enviado ao paciente', psicologo: 'Lembrete enviado ao psicólogo', renovacao: 'Renovação do plano oferecida ao paciente', horario: 'Horário e link da conversa enviados ao paciente' }[tipo] + ` (por ${por})` }];
       await fs.updateDoc(ref, { lembretes: a.lembretes, historico: a.historico });
       return clone(a);
     }),
@@ -719,7 +881,7 @@
         ags = s.docs.map(d => d.data());
       }
       const alvo = psiId || meu;
-      const doMes = ags.filter(a => a.data.startsWith(mes) && (!alvo || a.psiId === alvo));
+      const doMes = ags.filter(a => a.data.startsWith(mes) && (!alvo || a.psiId === alvo) && a.tipo !== 'conhecer');   /* conversa de 15 min não entra no financeiro */
       return psis
         .filter(p => !alvo || p.id === alvo)
         .map(p => {

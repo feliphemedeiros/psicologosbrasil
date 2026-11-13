@@ -221,7 +221,7 @@ function equipeIniciar() {
   equipeIniciar.fechar = eqFechar;
   const g = $('#cfg-equipe'); if (!g || !DB.equipe) return;
   if (DB.modo !== 'firebase') {
-    $('#eq-intro').innerHTML = '<b>Modo teste:</b> as contas ficam só neste navegador e entram com o usuário (a parte do e-mail antes do @) e a senha. Com o Firebase, todos entram com e-mail, senha e o código do app autenticador.';
+    $('#eq-intro').innerHTML = '<b>Modo teste:</b> as contas ficam só neste navegador e entram com o e-mail e a senha. Com o Firebase, todos entram com e-mail, senha e o código do app autenticador.';
     $('#eq-nota').textContent = 'No modo teste não há envio de e-mail: a pessoa já pode entrar com a senha provisória. No primeiro acesso, o painel pede para ela criar a dela.';
   }
   $('#eq-papel').addEventListener('change', equipePapel);
