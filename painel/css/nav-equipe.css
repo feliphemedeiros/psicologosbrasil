@@ -1,0 +1,71 @@
+/* v291: barra de baixo da equipe em TODAS as telas do painel (js/nav-equipe.js).
+   Também vale nas telas que não carregam agenda.css (Psicólogos, Artigos, Usuários, Configurações). */
+.nav-equipe { display: none; }
+@media (max-width: 900px) {
+  body.com-nav-equipe { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  body.com-nav-equipe .areas-btn { display: none !important; }   /* as áreas ficam no "Mais" */
+  .nav-flutuante.nav-equipe {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px;
+    position: fixed; z-index: 60; left: 14px; right: 14px; bottom: calc(10px + env(safe-area-inset-bottom));
+    max-width: 400px; margin: 0 auto; padding: 5px;
+    background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border: 1px solid var(--borda, var(--linha, #e2e5f0)); border-radius: 999px; box-shadow: 0 10px 30px rgba(16, 24, 64, .16);
+    font-family: inherit;
+  }
+  .nav-equipe button {
+    all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    min-height: 50px; min-width: 0; padding: 0 2px; border-radius: 999px; color: var(--muted, var(--suave, #646a8a)); font-size: 10px; letter-spacing: -.01em; font-weight: 600; -webkit-tap-highlight-color: transparent;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .nav-equipe button:focus-visible { outline: 2px solid var(--sea, #3d52d9); outline-offset: -2px; }
+  .nav-equipe .nf-ico { position: relative; display: grid; place-items: center; width: 24px; height: 22px; }
+  .nav-equipe svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-equipe button.on { background: var(--sea-claro, #eef0fc); color: var(--sea, #3d52d9); font-weight: 800; }
+  .nav-equipe .nf-txt { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-equipe .nf-cont { position: absolute; top: -5px; right: -9px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: #f2b12e; color: #3d2a00; font-size: 10px; font-weight: 800; display: grid; place-items: center; box-sizing: border-box; box-shadow: 0 0 0 2px rgba(255, 255, 255, .94); }
+  .nav-equipe .nf-cont:empty { display: none; }
+  .nav-equipe .nf-cont.nf-verde { background: #1f9d5c; color: #fff; }
+  html[data-tema="escuro"] .nav-flutuante.nav-equipe { background: rgba(23, 27, 47, .94); border-color: rgba(255, 255, 255, .1); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
+  html[data-tema="escuro"] .nav-equipe button { color: #a9adbd; }
+  html[data-tema="escuro"] .nav-equipe button.on { background: rgba(141, 156, 255, .18); color: #c3cbff; }
+  html[data-tema="escuro"] .nav-equipe .nf-cont { box-shadow: 0 0 0 2px rgba(23, 27, 47, .94); }
+  /* ficha do psicólogo aberta: o editor tem a barra própria (Perfil · Mais · Publicar) */
+  body.ficha-aberta .nav-equipe { display: none !important; }
+  body.com-nav-equipe.ficha-aberta { padding-bottom: 0; }
+}
+
+/* folha "Mais" */
+@media (min-width: 901px) { .folha-mais { display: none !important; } }
+.folha-mais { width: 100vw; max-width: 100vw; margin: auto 0 0; padding: 0; border: 0; border-radius: 24px 24px 0 0; background: var(--card, #fff); color: var(--texto, #1b1f3b); box-shadow: 0 -10px 40px rgba(16, 24, 64, .25); font-family: inherit; }
+.folha-mais[open] { animation: fmSobe .26s cubic-bezier(.2, .8, .2, 1); }
+.folha-mais::backdrop { background: rgba(10, 14, 35, .45); }
+@keyframes fmSobe { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .folha-mais[open] { animation: none; } }
+.fm-in { padding: 10px 16px calc(18px + env(safe-area-inset-bottom)); display: grid; gap: 4px; }
+.fm-alca { width: 44px; height: 5px; border-radius: 999px; background: var(--borda, var(--linha, #e2e5f0)); margin: 2px auto 8px; }
+.fm-cab { display: flex; align-items: center; justify-content: space-between; margin: 0 4px 6px; }
+.fm-cab h3 { margin: 0; font-size: 17px; }
+.fm-x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--sea-claro, #eef0fc); color: var(--sea, #3d52d9); font-size: 22px; line-height: 1; cursor: pointer; }
+.fm-op { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border-radius: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fm-op:active, .fm-op:focus-visible { background: var(--bg, #f5f6fa); }
+.fm-op b { display: block; font-size: 15px; }
+.fm-op small { display: block; color: var(--muted, var(--suave, #646a8a)); font-size: 12.5px; margin-top: 1px; }
+.fm-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--sea-claro, #eef0fc); color: var(--sea, #3d52d9); }
+.fm-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html.fm-aberta { overflow: hidden; }
+.fm-sec { margin: 10px 4px 2px; padding-top: 10px; border-top: 1px solid var(--borda, var(--linha, #e2e5f0)); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted, var(--suave, #646a8a)); }
+.fm-op.fm-area { color: inherit; text-decoration: none; }
+.fm-op.fm-area > span:nth-child(2) { flex: 1; min-width: 0; }
+.fm-op.fm-area.atual { background: var(--sea-claro, #eef0fc); }
+.fm-aqui { flex: none; font-size: 11px; font-weight: 800; color: var(--sea, #3d52d9); }
+.fm-area .fm-ico { background: var(--hub-bg, var(--sea-claro, #eef0fc)); color: var(--hub-cor, var(--sea, #3d52d9)); }
+.fm-area[data-area="psicologos"] { --hub-cor: #2f5bd3; --hub-bg: #e6edfc; }
+.fm-area[data-area="pacientes"] { --hub-cor: #0f8f86; --hub-bg: #ddf3f1; }
+.fm-area[data-area="artigos"] { --hub-cor: #c2410c; --hub-bg: #fdeadf; }
+.fm-area[data-area="usuarios"] { --hub-cor: #be185d; --hub-bg: #fbe4ef; }
+.fm-area[data-area="financeiro"] { --hub-cor: #155e75; --hub-bg: #d9eef3; }
+.fm-area[data-area="config"] { --hub-cor: #475569; --hub-bg: #e8ecf1; }
+.fm-area[data-area="conta"] { --hub-cor: #0369a1; --hub-bg: #def0fa; }
+html[data-tema="escuro"] .fm-area .fm-ico { background: color-mix(in srgb, var(--hub-cor, #8d9cff) 22%, transparent); color: color-mix(in srgb, var(--hub-cor, #8d9cff) 55%, #fff); }
+html[data-tema="escuro"] .fm-op.fm-area.atual { background: rgba(141, 156, 255, .14); }
+html[data-tema="escuro"] .fm-aqui { color: #aab6ff; }

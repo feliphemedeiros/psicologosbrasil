@@ -484,15 +484,15 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: 14px; }
 .hub-info:empty { display: none; }
 .hub-desc { grid-area: desc; margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.45; }
 /* cor de cada área (só ícone e seta; os avisos continuam amarelo = pendente, verde = pronto) */
-.hub-cartao[data-area="psicologos"], .am-item[data-area="psicologos"], .areas-btn[data-area="psicologos"] { --hub-cor: #2f5bd3; --hub-bg: #e6edfc; }
-.hub-cartao[data-area="pacientes"], .am-item[data-area="pacientes"], .areas-btn[data-area="pacientes"]  { --hub-cor: #0f8f86; --hub-bg: #ddf3f1; }
-.hub-cartao[data-area="artigos"], .am-item[data-area="artigos"], .areas-btn[data-area="artigos"]    { --hub-cor: #c2410c; --hub-bg: #fdeadf; }
-.hub-cartao[data-area="agenda"], .am-item[data-area="agenda"], .areas-btn[data-area="agenda"]     { --hub-cor: #7c3aed; --hub-bg: #eee7fd; }
-.hub-cartao[data-area="usuarios"], .am-item[data-area="usuarios"], .areas-btn[data-area="usuarios"]   { --hub-cor: #be185d; --hub-bg: #fbe4ef; }
-.hub-cartao[data-area="financeiro"], .am-item[data-area="financeiro"], .areas-btn[data-area="financeiro"] { --hub-cor: #155e75; --hub-bg: #dcecf1; }
-.hub-cartao[data-area="config"], .am-item[data-area="config"], .areas-btn[data-area="config"]     { --hub-cor: #475569; --hub-bg: #e8ecf1; }
-.hub-cartao[data-area="conta"], .am-item[data-area="conta"], .areas-btn[data-area="conta"]      { --hub-cor: #0369a1; --hub-bg: #def0fa; }
-.hub-cartao[data-area="acompanhar"], .am-item[data-area="acompanhar"], .areas-btn[data-area="acompanhar"] { --hub-cor: #4d7c0f; --hub-bg: #ecf4dc; }
+.hub-cartao[data-area="psicologos"], .am-item[data-area="psicologos"], .areas-btn[data-area="psicologos"], .fm-area[data-area="psicologos"] { --hub-cor: #2f5bd3; --hub-bg: #e6edfc; }
+.hub-cartao[data-area="pacientes"], .am-item[data-area="pacientes"], .areas-btn[data-area="pacientes"], .fm-area[data-area="pacientes"]  { --hub-cor: #0f8f86; --hub-bg: #ddf3f1; }
+.hub-cartao[data-area="artigos"], .am-item[data-area="artigos"], .areas-btn[data-area="artigos"], .fm-area[data-area="artigos"]    { --hub-cor: #c2410c; --hub-bg: #fdeadf; }
+.hub-cartao[data-area="agenda"], .am-item[data-area="agenda"], .areas-btn[data-area="agenda"], .fm-area[data-area="agenda"]     { --hub-cor: #7c3aed; --hub-bg: #eee7fd; }
+.hub-cartao[data-area="usuarios"], .am-item[data-area="usuarios"], .areas-btn[data-area="usuarios"], .fm-area[data-area="usuarios"]   { --hub-cor: #be185d; --hub-bg: #fbe4ef; }
+.hub-cartao[data-area="financeiro"], .am-item[data-area="financeiro"], .areas-btn[data-area="financeiro"], .fm-area[data-area="financeiro"] { --hub-cor: #155e75; --hub-bg: #dcecf1; }
+.hub-cartao[data-area="config"], .am-item[data-area="config"], .areas-btn[data-area="config"], .fm-area[data-area="config"]     { --hub-cor: #475569; --hub-bg: #e8ecf1; }
+.hub-cartao[data-area="conta"], .am-item[data-area="conta"], .areas-btn[data-area="conta"], .fm-area[data-area="conta"]      { --hub-cor: #0369a1; --hub-bg: #def0fa; }
+.hub-cartao[data-area="acompanhar"], .am-item[data-area="acompanhar"], .areas-btn[data-area="acompanhar"], .fm-area[data-area="acompanhar"] { --hub-cor: #4d7c0f; --hub-bg: #ecf4dc; }
 @media (max-width: 1100px) { .hub-cartoes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* menus e abas que passam da tela no celular: esmaece a ponta para mostrar que dá para arrastar */
 .tem-mais { -webkit-mask-image: linear-gradient(to right, #000 80%, transparent); mask-image: linear-gradient(to right, #000 80%, transparent); }
@@ -1763,3 +1763,15 @@ html[data-tema="escuro"] .cn-mot[aria-checked="true"] { background: var(--sea-bo
 .fm-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--sea-claro); color: var(--sea); }
 .fm-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 html.fm-aberta { overflow: hidden; }
+
+/* v289: botão "Abrir horários" do aviso leva ao calendário e o destaca por um instante */
+@keyframes calDestaque { 0% { box-shadow: 0 0 0 0 rgba(61,82,217,.55); } 60% { box-shadow: 0 0 0 10px rgba(61,82,217,0); } 100% { box-shadow: 0 0 0 0 rgba(61,82,217,0); } }
+.cal.cal-destaque { border-radius: 14px; outline: 2px solid var(--sea, #3d52d9); outline-offset: 4px; animation: calDestaque 1s ease-out 2; transition: outline-color .4s; }
+@media (prefers-reduced-motion: reduce) { .cal.cal-destaque { animation: none; } }
+
+/* v290: agenda da equipe no celular — sem "Trocar de área" (as áreas ficam no "Mais" da barra de baixo) */
+@media (max-width: 900px) { body.com-nav-equipe .areas-btn { display: none !important; } }
+.fm-sec { margin: 10px 4px 2px; padding-top: 10px; border-top: 1px solid var(--borda); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.fm-op.fm-area { color: inherit; text-decoration: none; }
+.fm-area .fm-ico { background: var(--hub-bg, var(--sea-claro)); color: var(--hub-cor, var(--sea)); }
+html[data-tema="escuro"] .fm-area .fm-ico { background: color-mix(in srgb, var(--hub-cor) 22%, transparent); color: color-mix(in srgb, var(--hub-cor) 55%, #fff); }

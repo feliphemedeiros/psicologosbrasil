@@ -127,6 +127,16 @@
 
     /* As três etapas (escolha, dados e pagamento) usam a MESMA altura de caixa.
        Cada tela tem um corpo e um rodapé fixo embaixo; ver .agc-caixa no CSS. */
+    /* indicador de etapas no topo da caixa: ● Horário → ○ Seus dados → ○ Confirmação */
+    function etapas(atual) {
+      const nomes = ['Horário', 'Seus dados', 'Confirmação'];
+      return `<ol class="agc-trilha" aria-label="Etapas do agendamento">${nomes.map((n, i) => {
+        const k = i + 1, st = k < atual || atual > 3 ? 'feita' : k === atual ? 'atual' : '';
+        return `<li class="${st}"${k === atual ? ' aria-current="step"' : ''}><span class="agc-trilha-bola" aria-hidden="true">${st === 'feita' ? '✓' : k}</span><span>${n}</span></li>`;
+      }).join('<li class="agc-trilha-seta" aria-hidden="true"></li>')}</ol>`;
+    }
+    const SETA = '<svg class="agc-seta" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+
     function renderEscolha() {
       const p = est.psi;
       const dia = est.diasV.find(d => d.data === est.vdata);
@@ -138,10 +148,14 @@
         ? `Continuar · ${C.sessoesMensal}x, ${DIAS_CURTOS[U.diaSemana(v.data)]} às ${U.fmtHora(v.hora)}`
         : `Continuar · ${U.fmtCurta(v.data)} às ${U.fmtHora(v.hora)}`; }
 
+      /* brilho rápido no botão sempre que um horário novo é escolhido (mostra que dá para avançar) */
+      const chave = est.hora ? est.data + '|' + est.hora : '';
+      const brilha = !!chave && chave !== est.ultimoBrilho; est.ultimoBrilho = chave;
       const semDias = !est.dias.length, primeiro = esc(U.primeiroNome(p.nome || ''));
       raiz.innerHTML = `
         <div class="agc-caixa${semDias ? ' agc-sem' : ''}">
           <div class="agc-corpo">
+            ${semDias ? '' : etapas(1)}
             <div class="agc-topo">
               <h3 class="agc-tit">Agende sua sessão</h3>
               <span class="agc-sub">Online · ${C.duracaoSessao} min</span>
@@ -192,7 +206,7 @@
 
           <div class="agc-rodape">
             ${est.dias.length ? `
-              <button type="button" class="agc-btn" data-continuar ${est.hora ? '' : 'disabled'}>${textoBtn}</button>
+              <button type="button" class="agc-btn agc-btn-avancar${brilha ? ' agc-brilho' : ''}" data-continuar ${est.hora ? '' : 'disabled'}><span>${textoBtn}</span>${est.hora ? SETA : ''}</button>
               <p class="agc-nota agc-centro">Você não paga agora.</p>` : `
               <a class="agc-btn agc-btn-whats" href="${U.linkWhats(C.whatsappPlataforma, `Olá! Quero agendar com ${p.nome}, mas não encontrei horário no site.`)}" target="_blank" rel="noopener">Pedir um horário com ${primeiro}</a>
               <a class="agc-btn agc-btn-sec agc-outros" href="${(typeof BASE !== 'undefined' ? BASE : '/')}psicologos/?ordem=horario">Ver psicólogos com horário livre</a>`}
@@ -244,6 +258,7 @@
       raiz.innerHTML = `
         <form class="agc-caixa" novalidate data-form>
           <div class="agc-corpo">
+            ${etapas(2)}
             <div class="agc-topo agc-topo-dados">
               <h3 class="agc-tit">Seus dados</h3>
               <button type="button" class="agc-voltar" data-voltar>‹ Trocar horário</button>
@@ -281,7 +296,7 @@
             </div>
           </div>
           <div class="agc-rodape">
-            <button type="submit" class="agc-btn" ${est.enviando ? 'disabled' : ''}>${est.enviando ? 'Enviando…' : 'Enviar agendamento'}</button>
+            <button type="submit" class="agc-btn agc-btn-final" ${est.enviando ? 'disabled' : ''}>${est.enviando ? 'Enviando…' : 'Enviar agendamento'}</button>
             <p class="agc-nota agc-centro">Você ainda não paga nada agora.</p>
           </div>
         </form>`;
@@ -306,6 +321,7 @@
       raiz.innerHTML = `
         <div class="agc-caixa agc-sucesso">
           <div class="agc-corpo">
+            ${etapas(4)}
             <p class="agc-reservado"><span aria-hidden="true">✓</span> Agendamento enviado · <strong class="agc-codigo">#${esc(a.codigo)}</strong></p>
             <p class="agc-quando"><strong>${esc(est.psi.nome)}</strong> · ${quando}</p>
 

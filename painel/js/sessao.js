@@ -155,11 +155,15 @@
       /* suporte: Agenda primeiro (é o dia a dia dele), depois Psicólogos, Pacientes e o resto */
       return s && s.papel === 'suporte' && l.includes('agenda') ? ['agenda', ...l.filter(k => k !== 'agenda')] : l;
     },
+    /* nome, link e ícone de uma área (usado pelo "Mais" da barra de baixo) */
+    infoArea(k) { const A = AREAS[k]; return A ? { nome: A.nome, url: A.url, ico: A.ico } : null; },
     pode(area, s) { return Auth.areas(s || Auth.sessao()).includes(area); },
     /* Quem tem uma área só vai direto para ela; os outros escolhem na tela inicial */
     irParaInicio(s) {
       const a = Auth.areas(s);
-      if (a.length === 1) location.replace(AREAS[a[0]].url);
+      /* suporte: entra direto nas Pré-reservas (o dia a dia dele); as outras áreas ficam no "Mais" da barra de baixo e no topo */
+      if (s && s.papel === 'suporte' && a.includes('agenda')) location.replace('agenda.html#pre');
+      else if (a.length === 1) location.replace(AREAS[a[0]].url);
       else location.replace('index.html');
     },
     /* Protege a página. Aceita áreas ('agenda') ou papéis ('admin') */

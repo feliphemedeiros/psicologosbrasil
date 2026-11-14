@@ -917,7 +917,27 @@
     box.hidden = !box.innerHTML;
   }
   document.addEventListener('click', async e => {
-    if (e.target.closest('#aviso-agenda [data-abrir]')) { ativar('disponibilidade'); scrollTo({ top: 0, behavior: 'smooth' }); }
+    if (e.target.closest('#aviso-agenda [data-abrir]')) {
+      /* vai para Disponibilidade, já no mês do dia seguinte ao último horário aberto, desce até o calendário e destaca */
+      ativar('disponibilidade');
+      const hoje = U.hojeISO();
+      const futuras = Object.keys(cal.datas).filter(d => d >= hoje && (cal.datas[d] || []).length && !RASC[d]).sort();
+      const ultima = futuras[futuras.length - 1];
+      let alvo = ultima ? U.addDias(ultima, 1) : hoje;
+      if (alvo < hoje) alvo = hoje;
+      if (alvo > limiteData()) alvo = limiteData();
+      cal.mes = alvo.slice(0, 7); renderCal();
+      const bloco = $('#cal-grade') && ($('#cal-grade').closest('.cal-layout') || $('#cal-grade'));
+      if (bloco) {
+        requestAnimationFrame(() => {
+          const topoFixo = ($('.topo') && getComputedStyle($('.topo')).position === 'sticky') ? $('.topo').offsetHeight : 0;
+          scrollTo({ top: bloco.getBoundingClientRect().top + scrollY - topoFixo - 16, behavior: 'smooth' });
+          const c = bloco.querySelector('.cal') || bloco;
+          c.classList.remove('cal-destaque'); void c.offsetWidth; c.classList.add('cal-destaque');
+          setTimeout(() => c.classList.remove('cal-destaque'), 2200);
+        });
+      }
+    }
     if (e.target.closest('#aviso-agenda [data-ligar]')) {
       try { await DB.definirAgendaOnline(PSI_ID, true); estadoAgenda.pausada = false; mostrarAgendaOnline(true); avisosAgenda(); U.toast('Agenda online: os pacientes já podem agendar.', 'ok'); }
       catch (err) { U.toast(err.message || 'Não consegui ligar a agenda.', 'erro'); }

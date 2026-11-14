@@ -375,3 +375,29 @@ img.agc-tel-band { display: block; width: 26px; height: 19.5px; border-radius: 4
 .agc-pais-op .agc-pais-band { font-size: 24px; }
 .agc-pais-img { display: block; width: 32px; height: 24px; border-radius: 5px; object-fit: cover; box-shadow: 0 0 0 1px rgba(16, 27, 77, .12); }
 span.agc-pais-img { width: auto; height: auto; box-shadow: none; }
+
+/* v289: indicador de etapas no topo da caixa (● Horário → ○ Seus dados → ○ Confirmação) */
+.agc-trilha { list-style: none; margin: -4px 0 14px; padding: 0; display: flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; color: var(--agc-muted); }
+.agc-trilha li { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.agc-trilha-bola { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .7rem; border: 1.5px solid var(--agc-borda); background: #fff; color: var(--agc-muted); flex-shrink: 0; }
+.agc-trilha li.atual { color: var(--agc-cor); }
+.agc-trilha li.atual .agc-trilha-bola { background: var(--agc-cor); border-color: var(--agc-cor); color: #fff; box-shadow: 0 0 0 3px var(--agc-claro); }
+.agc-trilha li.feita { color: var(--agc-ok); }
+.agc-trilha li.feita .agc-trilha-bola { background: var(--agc-ok); border-color: var(--agc-ok); color: #fff; }
+.agc-trilha li.agc-trilha-seta { flex: 1; min-width: 8px; height: 2px; border-radius: 2px; background: var(--agc-borda); }
+.agc-trilha li.feita + .agc-trilha-seta { background: var(--agc-ok); }
+@media (max-width: 380px) { .agc-trilha { font-size: .72rem; gap: 4px; } }
+
+/* botão Continuar: seta → e brilho rápido quando um horário é escolhido */
+.agc-btn-avancar { position: relative; overflow: hidden; }
+.agc-btn-avancar .agc-seta { flex-shrink: 0; transition: transform .2s ease; }
+.agc-btn-avancar:hover:not(:disabled) .agc-seta { transform: translateX(3px); }
+.agc-btn-avancar.agc-brilho::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); transform: skewX(-18deg); animation: agcBrilho .9s ease-out .1s 1 both; }
+.agc-btn-avancar.agc-brilho .agc-seta { animation: agcSeta .6s ease-out .2s 1; }
+@keyframes agcBrilho { from { left: -60%; } to { left: 120%; } }
+@keyframes agcSeta { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+/* verde só no último passo */
+.agc-btn-final { background: #1faa59; }
+@media (prefers-reduced-motion: reduce) { .agc-btn-avancar.agc-brilho::after, .agc-btn-avancar.agc-brilho .agc-seta { animation: none; } }
+@media (max-width: 350px) { .agc-trilha li:not(.atual) > span:not(.agc-trilha-bola) { display: none; } }

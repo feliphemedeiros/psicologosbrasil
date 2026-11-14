@@ -141,7 +141,9 @@ textarea.codigo{font-family:ui-monospace,Consolas,monospace;font-size:13px;min-h
 .linha-check input{accent-color:var(--sea);width:18px;height:18px}
 
 .previa-frame{width:100%;height:70vh;border:1px solid var(--linha);border-radius:10px;background:#fff}
-.disp{display:flex;gap:6px;margin-bottom:10px}
+.disp{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.disp > *{min-width:0}
+@media (max-width:640px){.disp [data-larg]{display:none!important}.previa-frame{height:75vh;width:100%!important;max-width:100%}}
 .html-saida{min-height:60vh}
 
 .rodape-ed{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-top:1px solid var(--linha);flex-wrap:wrap;background:#fbfcfe;border-radius:0 0 16px 16px}
@@ -555,10 +557,11 @@ html[data-tema="escuro"] .visao-equipe{background:rgba(141,156,255,.12)}
 html[data-tema="escuro"] .ficha{background:transparent}
 html[data-tema="escuro"] .ficha-abas a:hover{background:transparent}
 @media (max-width:760px){.ficha-abas{width:100%;flex-wrap:wrap;gap:6px}.ficha-abas a,.ficha-abas span{border-color:var(--linha)}}
-/* celular: abas da ficha do psicólogo em botões, todas à vista (sem arrastar), igual à Agenda */
+/* celular: abas da ficha do psicólogo em botões, numa linha só que desliza (igual à Agenda) */
 @media (max-width:640px){
-  .ficha-topo{flex-wrap:wrap;gap:6px;padding:10px 16px 12px;overflow:visible;-webkit-mask-image:none;mask-image:none}
-  .ficha-topo .aba{padding:8px 14px;border:1.5px solid var(--linha);border-radius:999px;border-bottom-width:1.5px;font-size:14px}
+  .ficha-topo{flex-wrap:nowrap;gap:6px;padding:10px 16px 12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-mask-image:none;mask-image:none}
+  .ficha-topo::after{content:"";flex:none;width:12px}
+  .ficha-topo .aba{flex:none;scroll-snap-align:start;padding:8px 14px;border:1.5px solid var(--linha);border-radius:999px;border-bottom-width:1.5px;font-size:14px}
   .ficha-topo .aba.atual{background:var(--claro,#eef0fc);border-color:var(--sea)}
   html[data-tema="escuro"] .ficha-topo .aba.atual{background:rgba(141,156,255,.14)}
 }
