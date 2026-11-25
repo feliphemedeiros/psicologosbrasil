@@ -432,3 +432,18 @@ html.menu-open .lp-barra, html.menu-open .lp-wa-fixo { z-index: 14 !important; }
 }
 .ann a:active { transform: translateY(0) scale(.97); box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .ann:hover a { transform: none; } }
+
+/* v301: menu com 5 itens (Psicólogos, Como funciona, Brasileiros no exterior, Artigos, Quem somos) — cada item numa linha só */
+nav.top a { white-space: nowrap; }
+@media (min-width: 1181px) and (max-width: 1320px) {
+  nav.top a { padding: 10px 8px; font-size: 0.8rem; letter-spacing: 0.03em; }
+  nav.top a::after { left: 8px; right: 8px; }
+}
+
+/* v302: ao passar o mouse no menu do topo, o item ganha um fundo azul-clarinho e o texto fica azul
+   (mesmo tom do botão "Psicólogo brasileiro em Portugal" da página inicial) */
+nav.top a { transition: background-color .18s ease, color .18s ease; }
+@media (hover: hover) {
+  nav.top a:hover { background: var(--mist); color: var(--sea); }
+}
+nav.top a:focus-visible { background: var(--mist); color: var(--sea); outline: 2px solid var(--sea); outline-offset: 1px; }

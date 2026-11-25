@@ -470,3 +470,9 @@ a:hover > .seta-i, a:hover .seta-i, a:focus-visible .seta-i { transform: transla
 }
 .btn:active, .btn-brilho:active { transform: translateY(0) scale(.97); box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .btn:hover, .btn-brilho:hover { transform: none; } }
+
+/* v263: no celular, rótulos em maiúsculas e textos de apoio com no mínimo 12 px (antes 10,5 a 11,8 px) */
+@media (max-width: 760px) {
+  html body .kick, html body .cn-kicker, html body .ax-tag, html body .tema-rot,
+  html body .ps-confia li, html body .cf-curto, html body .fab-tema small { font-size: 12px; }
+}
