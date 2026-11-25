@@ -109,9 +109,6 @@
 .pb-ck-faixa{height:4px;border-radius:999px;background:linear-gradient(90deg,var(--sea,#1f35b5),var(--sun,#ffc83d));margin:-6px 0 14px;width:56px}
 @keyframes pbCkEntra{from{opacity:0;transform:translateY(16px)}}
 @media (max-width:560px){.pb-ck{left:10px;right:10px;bottom:10px;width:auto;padding:18px 16px 16px;border-radius:20px}.pb-ck-acoes button{flex:1 1 100%}.pb-ck-mais{flex:1 1 100%!important;text-align:center}}
-.pb-ck-curto{display:none}
-/* v263: no celular o primeiro aviso vira uma faixa baixa no pé da tela (antes cobria metade da tela) */
-@media (max-width:560px){.pb-ck:not(.pb-ck-det){padding:14px 14px 12px;border-radius:18px;max-height:42vh;overflow:auto}.pb-ck:not(.pb-ck-det) .pb-ck-ico,.pb-ck:not(.pb-ck-det) .pb-ck-faixa{display:none}.pb-ck:not(.pb-ck-det) .pb-ck-topo{margin:0 96px 4px 0}.pb-ck:not(.pb-ck-det) h2{font-size:1.02rem}.pb-ck:not(.pb-ck-det) p{font-size:13.5px;line-height:1.45;margin:0 0 10px}.pb-ck:not(.pb-ck-det) .pb-ck-longo{display:none}.pb-ck:not(.pb-ck-det) .pb-ck-curto{display:inline}.pb-ck:not(.pb-ck-det) .pb-ck-acoes{flex-wrap:nowrap}.pb-ck:not(.pb-ck-det) .pb-ck-acoes button{flex:1 1 0;min-height:44px;padding:10px 8px;font-size:14px}.pb-ck:not(.pb-ck-det) .pb-ck-acoes .pb-ck-mais{position:absolute;top:8px;right:8px;flex:none!important;min-height:36px;padding:6px 8px!important;font-size:13px}}
 @media (prefers-reduced-motion:reduce){.pb-ck{animation:none}.pb-ck-sw span,.pb-ck-sw span::after{transition:none}}
 .pb-ck-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;opacity:.85}
 .pb-ck-link:hover{opacity:1}`;
@@ -134,7 +131,7 @@
     voltarFoco = document.activeElement;
     const atual = ler();
     caixa = document.createElement("section");
-    caixa.className = detalhes ? "pb-ck pb-ck-det" : "pb-ck";
+    caixa.className = "pb-ck";
     caixa.setAttribute("role", "dialog");
     caixa.setAttribute("aria-live", "polite");
     caixa.setAttribute("aria-labelledby", "pb-ck-tit");
@@ -152,7 +149,7 @@
       </div>` : `
       <div class="pb-ck-topo"><span class="pb-ck-ico">${ICONE}</span><h2 id="pb-ck-tit">Sua privacidade importa</h2></div>
       <div class="pb-ck-faixa" aria-hidden="true"></div>
-      <p><span class="pb-ck-longo">Usamos cookies essenciais para o site funcionar e, com a sua permissão, cookies de estatísticas para entender as visitas e melhorar a sua experiência. Nada do que você conversa com o psicólogo passa por cookies. Saiba mais na </span><span class="pb-ck-curto">Usamos cookies essenciais e, com a sua permissão, de estatísticas. Nada da sua conversa com o psicólogo passa por cookies. </span><a href="${POLITICA}">Política de privacidade</a>.</p>
+      <p>Usamos cookies essenciais para o site funcionar e, com a sua permissão, cookies de estatísticas para entender as visitas e melhorar a sua experiência. Nada do que você conversa com o psicólogo passa por cookies. Saiba mais na <a href="${POLITICA}">Política de privacidade</a>.</p>
       <div class="pb-ck-acoes">
         <button type="button" class="pb-ck-sim" data-ck="todos">Aceitar</button>
         <button type="button" class="pb-ck-nao" data-ck="essenciais">Só os essenciais</button>

@@ -644,9 +644,3 @@ details.lp-faq-i { border-radius: 22px; }
   .pf-frase{margin-left:auto;margin-right:auto}
 }
 
-
-/* v169: bolinha verde do "Atendendo online" pulsando de leve, igual à do botão "Psicólogos online" do topo
-   (clareia e volta, com uma onda verde saindo dela). A animação vem do header.css (online-pisca e online-onda). */
-.lp-online i { position: relative; flex: none; background: #22c55e; box-shadow: none; animation: online-pisca 2s ease-in-out infinite; }
-.lp-online i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #4ade80; animation: online-onda 2s ease-out infinite; }
-@media (prefers-reduced-motion: reduce) { .lp-online i, .lp-online i::after { animation: none; } }
