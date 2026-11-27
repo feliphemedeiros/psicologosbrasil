@@ -432,3 +432,14 @@ html.menu-open .lp-barra, html.menu-open .lp-wa-fixo { z-index: 14 !important; }
 }
 .ann a:active { transform: translateY(0) scale(.97); box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .ann:hover a { transform: none; } }
+
+/* v264: menu do topo padrão em todas as páginas (Psicólogos · Como funciona · Brasileiros no exterior ·
+   Conteúdos · Quem somos) e botão "Agendar" (WhatsApp). Cada item fica numa linha só. */
+nav.top a { white-space: nowrap; }
+@media (min-width: 1181px) and (max-width: 1320px) {
+  nav.top a { padding: 10px 8px; font-size: 0.8rem; letter-spacing: 0.03em; }
+  nav.top a::after { left: 8px; right: 8px; }
+}
+.btn-agendar { gap: 8px; }
+.btn-agendar svg { flex: none; }
+.drawer-cta .btn-agendar { width: 100%; }

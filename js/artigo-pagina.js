@@ -51,7 +51,7 @@
     document.title = "Artigo não encontrado | Psicólogos Brasil";
     meta("robots", "noindex");
     alvo.innerHTML = `<div class="artigo"><div class="artigo-wrap">
-      <nav class="trilha" aria-label="Você está em"><a href="${RAIZ_ABS}">Início</a> › <a href="${RAIZ_ABS}blog/">Artigos</a></nav>
+      <nav class="trilha" aria-label="Você está em"><a href="${RAIZ_ABS}">Início</a> › <a href="${RAIZ_ABS}blog/">Conteúdos</a></nav>
       <h1 class="page-title" tabindex="-1">Artigo não encontrado</h1>
       <p class="artigo-resumo">Este artigo não existe mais ou o endereço está incompleto.</p>
       <p><a class="btn" href="${RAIZ_ABS}blog/">Ver todos os artigos</a></p></div></div>`;
@@ -77,7 +77,7 @@
 
     alvo.innerHTML = `<article class="artigo">
   <div class="artigo-wrap">
-    <nav class="trilha" aria-label="Você está em"><a href="${RAIZ_ABS}">Início</a> › <a href="${RAIZ_ABS}blog/">Artigos</a>${a.categoria ? ` › <span>${esc(a.categoria)}</span>` : ""}</nav>
+    <nav class="trilha" aria-label="Você está em"><a href="${RAIZ_ABS}">Início</a> › <a href="${RAIZ_ABS}blog/">Conteúdos</a>${a.categoria ? ` › <span>${esc(a.categoria)}</span>` : ""}</nav>
     <header class="artigo-topo">
       ${a.categoria ? `<span class="artigo-cat">${esc(a.categoria)}</span>` : ""}
       <h1 tabindex="-1">${esc(titulo)}</h1>
@@ -110,7 +110,7 @@
     }, {
       "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
         { "@type": "ListItem", position: 1, name: "Início", item: RAIZ_ABS },
-        { "@type": "ListItem", position: 2, name: "Artigos", item: RAIZ_ABS + "blog/" },
+        { "@type": "ListItem", position: 2, name: "Conteúdos", item: RAIZ_ABS + "blog/" },
         { "@type": "ListItem", position: 3, name: titulo, item: url }]
     }];
     if (faq.length) ld.push({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map((f) => ({ "@type": "Question", name: f.p, acceptedAnswer: { "@type": "Answer", text: f.r } })) });

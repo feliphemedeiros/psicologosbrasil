@@ -156,3 +156,7 @@ html[data-tema="escuro"] .lg-preencher { background: #5a4700; color: #ffe9a3; }
 @media (max-width: 600px) {
   .lg-ficha > div { grid-template-columns: 1fr; gap: 2px; padding: 12px 16px; }
 }
+
+/* v263: no celular pequeno uma palavra longa empurrava o texto para fora da tela */
+.lg-layout > * { min-width: 0; }
+.lg-sec { overflow-wrap: anywhere; }

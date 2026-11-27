@@ -665,3 +665,7 @@
   .anx .ax-cta .btn { width: 100%; justify-content: center; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) { .anx .ax-mais-txt { animation: none; } .anx .ax-mais .seta-i { transition: none; } }
+
+/* v263: "Ler mais" com altura confortável para o dedo (era 24 px) */
+.anx .ax-mais { min-height: 44px; padding: 10px 0; }
+@media (max-width: 760px) { .anx .ax-tag, .anx .ax-hero .ax-tag { font-size: 12px; } }
